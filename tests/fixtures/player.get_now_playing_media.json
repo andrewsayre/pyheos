@@ -1,0 +1,19 @@
+{
+	"heos": {
+		"command": "player/get_now_playing_media",
+		"result": "success",
+		"message": "pid={player_id}"
+	},
+	"payload": {
+		"type": "song",
+		"song": "Disney Hits",
+		"album": "",
+		"artist": "",
+		"image_url": "",
+		"album_id": "",
+		"mid": "catalog/playlists/genres/624899011/B07M9D4DTF/chunk=0/#prime_playlist",
+		"qid": 1,
+		"sid": 13
+	},
+	"options": []
+}

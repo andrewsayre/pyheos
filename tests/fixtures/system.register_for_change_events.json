@@ -1,0 +1,7 @@
+{
+	"heos": {
+		"command": "system/register_for_change_events",
+		"result": "success",
+		"message": "enable={enable}"
+	}
+}
