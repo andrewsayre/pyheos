@@ -176,9 +176,9 @@ class HeosEventHandler:
 
     async def handle_event(self, response: HeosResponse):
         """Handle a response event."""
-        if response.command == const.COMMAND_PLAYER_STATE_CHANGED:
+        if response.command == const.EVENT_PLAYER_STATE_CHANGED:
             self._handle_state_changed(response)
-        elif response.command == const.COMMAND_PLAYER_NOW_PLAYING_CHANGED:
+        elif response.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self._handle_now_playing_changed(response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
@@ -190,7 +190,8 @@ class HeosEventHandler:
         if player:
             player._state = state  # pylint: disable=protected-access
             self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id)
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_PLAYER_STATE_CHANGED)
             _LOGGER.debug("'%s' state changed to '%s'", player, state)
 
     async def _handle_now_playing_changed(self, response: HeosResponse):
@@ -199,5 +200,6 @@ class HeosEventHandler:
         if player:
             await player.refresh_now_playing_media()
             self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id)
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_PLAYER_NOW_PLAYING_CHANGED)
             _LOGGER.debug("'%s' now playing media changed", player)

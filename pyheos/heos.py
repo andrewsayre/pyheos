@@ -8,7 +8,6 @@ from .const import DEFAULT_TIMEOUT
 from .dispatch import Dispatcher
 from .player import HeosPlayer
 
-
 _LOGGER = logging.getLogger(__name__)
 
 

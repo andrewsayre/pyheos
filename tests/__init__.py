@@ -1,10 +1,11 @@
 """Tests for the pyheos library."""
-from urllib.parse import urlparse, parse_qsl
-from pyheos import const
-from pyheos.connection import SEPARATOR_BYTES, SEPARATOR
-from collections import defaultdict
-
 import asyncio
+from collections import defaultdict
+from typing import List
+from urllib.parse import parse_qsl, urlparse
+
+from pyheos import const
+from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
 
 
 def get_fixture(file: str):
@@ -21,7 +22,7 @@ class MockHeosDevice:
         """Init a new instance of the mock heos device."""
         self._server = None  # type: asyncio.AbstractServer
         self._started = False
-        self.connections = []
+        self.connections = []  # type: List[ConnectionLog]
 
     async def start(self):
         """Start the heos server."""
@@ -35,9 +36,16 @@ class MockHeosDevice:
         self._server.close()
         await self._server.wait_closed()
 
-    async def _handle_connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    async def write_event(self, event: str):
+        """Send an event through the event channel."""
+        connection = next(conn for conn in self.connections
+                          if conn.is_registered_for_events)
+        await connection.write(event)
 
-        log = ConnectionLog()
+    async def _handle_connection(
+            self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+
+        log = ConnectionLog(writer)
         self.connections.append(log)
 
         while self._started:
@@ -53,7 +61,8 @@ class MockHeosDevice:
             query = dict(parse_qsl(url_parts.query))
 
             command = url_parts.hostname + url_parts.path
-            fixture_name = "{}.{}".format(url_parts.hostname, url_parts.path.lstrip('/'))
+            fixture_name = "{}.{}".format(url_parts.hostname,
+                                          url_parts.path.lstrip('/'))
             response = None
 
             if command == 'system/register_for_change_events':
@@ -78,11 +87,20 @@ class MockHeosDevice:
             writer.write((response + SEPARATOR).encode())
             await writer.drain()
 
+        self.connections.remove(log)
+
 
 class ConnectionLog:
     """Define a connection log."""
 
-    def __init__(self):
+    def __init__(self, writer: asyncio.StreamWriter):
         """Initialize the connection log."""
+        self._writer = writer
         self.is_registered_for_events = False
         self.commands = defaultdict(list)
+
+    async def write(self, payload: str):
+        """Write the payload to the stream."""
+        data = (payload + SEPARATOR).encode()
+        self._writer.write(data)
+        await self._writer.drain()
