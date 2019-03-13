@@ -22,3 +22,25 @@ def heos_fixture(event_loop):
     event_loop.run_until_complete(heos.connect())
     yield heos
     event_loop.run_until_complete(heos.disconnect())
+
+
+@pytest.fixture
+def handler():
+    """Fixture handler to mock in the dispatcher."""
+    def target(*args, **kwargs):
+        target.fired = True
+        target.args = args
+        target.kwargs = kwargs
+    target.fired = False
+    return target
+
+
+@pytest.fixture
+def async_handler():
+    """Fixture async handler to mock in the dispatcher."""
+    async def target(*args, **kwargs):
+        target.fired = True
+        target.args = args
+        target.kwargs = kwargs
+    target.fired = False
+    return target
