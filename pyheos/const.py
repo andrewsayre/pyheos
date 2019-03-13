@@ -5,8 +5,7 @@ __version__ = "0.0.1"
 
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 2
-
-BASE_URI = "heos://"
+DEFAULT_STEP = 5
 
 PLAY_STATE_PLAY = 'play'
 PLAY_STATE_PAUSE = 'pause'
@@ -19,6 +18,7 @@ VALID_PLAY_STATES = (
 
 SIGNAL_PLAYER_UPDATED = "player_updated"
 
+BASE_URI = "heos://"
 # Player commands
 COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"
 COMMAND_GET_PLAY_STATE = BASE_URI + "player/get_play_state?pid={player_id}"
@@ -32,6 +32,9 @@ COMMAND_SET_VOLUME = \
     BASE_URI + "player/set_volume?pid={player_id}&level={level}"
 COMMAND_GET_MUTE = BASE_URI + "player/get_mute?pid={player_id}"
 COMMAND_SET_MUTE = BASE_URI + "player/set_mute?pid={player_id}&state={state}"
+COMMAND_VOLUME_UP = BASE_URI + "player/volume_up?pid={player_id}&step={step}"
+COMMAND_VOLUME_DOWN = \
+    BASE_URI + "player/volume_down?pid={player_id}&step={step}"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = \

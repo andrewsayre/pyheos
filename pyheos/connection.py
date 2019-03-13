@@ -124,10 +124,10 @@ class HeosCommands:
         response = await self._connection.command(command)
         return int(response.get_message('level'))
 
-    async def set_volume(self, player_id: int, level: int):
+    async def set_volume(self, player_id: int, level: int) -> bool:
         """Set the volume of the player."""
         if level < 0 or level > 100:
-            raise ValueError("Level must be in the rage 0-100")
+            raise ValueError("'level' must be in the range 0-100")
         command = const.COMMAND_SET_VOLUME.format(
             player_id=player_id, level=level)
         response = await self._connection.command(command)
@@ -146,6 +146,26 @@ class HeosCommands:
             player_id=player_id, state=mute_state)
         response = await self._connection.command(command)
         return response.get_message('state') == mute_state
+
+    async def volume_up(self, player_id: int,
+                        step: int = const.DEFAULT_STEP) -> bool:
+        """Increase the volume level."""
+        if step < 1 or step > 10:
+            raise ValueError("'step' must be in the range 1-10")
+        command = const.COMMAND_VOLUME_UP.format(
+            player_id=player_id, step=step)
+        response = await self._connection.command(command)
+        return int(response.get_message('step')) == step
+
+    async def volume_down(self, player_id: int,
+                          step: int = const.DEFAULT_STEP) -> bool:
+        """Increase the volume level."""
+        if step < 1 or step > 10:
+            raise ValueError("'step' must be in the range 1-10")
+        command = const.COMMAND_VOLUME_DOWN.format(
+            player_id=player_id, step=step)
+        response = await self._connection.command(command)
+        return int(response.get_message('step')) == step
 
 
 class HeosEventConnection(HeosConnection):
