@@ -2,7 +2,7 @@
 import asyncio
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import DefaultDict, List
+from typing import Callable, DefaultDict, List, Union
 from urllib.parse import parse_qsl, urlparse
 
 from pyheos import const
@@ -52,7 +52,7 @@ class MockHeosDevice:
                           if conn.is_registered_for_events)
         await connection.write(event)
 
-    def register_one_time(self, command: str, fixture: str):
+    def register_one_time(self, command: str, fixture: Union[str, Callable]):
         """Register fixture to command to use one time."""
         self._custom_handlers[command].append(fixture)
 
@@ -84,7 +84,10 @@ class MockHeosDevice:
             if custom_fixtures:
                 # use first one
                 fixture = custom_fixtures.pop(0)
-                response = await get_fixture(fixture)
+                if isinstance(fixture, Callable):
+                    response = fixture(command, query)
+                else:
+                    response = await get_fixture(fixture)
             elif command == 'system/register_for_change_events':
                 enable = query["enable"]
                 if enable == 'on':

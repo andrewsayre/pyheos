@@ -1,0 +1,1 @@
+{"heos": {"message": "pid={player_id}&state={state}", "command": "player/set_play_state", "result": "success"}}

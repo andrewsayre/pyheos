@@ -1,6 +1,8 @@
 """Define the player module."""
 from typing import Optional
 
+from pyheos import const
+
 
 class HeosPlayer:
     """Define a HEOS player."""
@@ -52,6 +54,22 @@ class HeosPlayer:
         """Pull the latest now playing media."""
         await self._commands.get_now_playing_state(
             self._player_id, self._now_playing_media)
+
+    async def set_state(self, state: str) -> bool:
+        """Set the state of the player."""
+        return await self._commands.set_player_state(self._player_id, state)
+
+    async def play(self) -> bool:
+        """Set the start to play."""
+        return await self.set_state(const.PLAY_STATE_PLAY)
+
+    async def pause(self) -> bool:
+        """Set the start to pause."""
+        return await self.set_state(const.PLAY_STATE_PAUSE)
+
+    async def stop(self) -> bool:
+        """Set the start to stop."""
+        return await self.set_state(const.PLAY_STATE_STOP)
 
     @property
     def name(self) -> str:

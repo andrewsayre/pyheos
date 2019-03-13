@@ -18,7 +18,7 @@ class HeosResponse:
 
     def __str__(self):
         """Get a user-readable representation of the response."""
-        return "{}".format(self._raw_data)
+        return "{}".format(self._raw_data['heos'])
 
     def __repr__(self):
         """Get a debug representation of the player."""
@@ -26,7 +26,8 @@ class HeosResponse:
 
     def from_json(self, data: dict):
         """Populate the response from json."""
-        heos = self._raw_data = data['heos']
+        self._raw_data = data
+        heos = data['heos']
         self.command = heos['command']
         self.result = heos.get('result') == 'success'
         raw_message = heos.get('message')
