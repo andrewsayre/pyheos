@@ -78,7 +78,7 @@ class HeosCommandConnection(HeosConnection):
 class HeosCommands:
     """Define a class that encapsulates well-known commands."""
 
-    def __init__(self, connection: HeosCommandConnection):
+    def __init__(self, connection: HeosConnection):
         """Init the command wrapper."""
         self._connection = connection
 
@@ -205,7 +205,9 @@ class HeosEventHandler:
 
     async def handle_event(self, response: HeosResponse):
         """Handle a response event."""
-        if response.command == const.EVENT_PLAYER_STATE_CHANGED:
+        if response.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
+            self._handle_now_playing_progress(response)
+        elif response.command == const.EVENT_PLAYER_STATE_CHANGED:
             self._handle_state_changed(response)
         elif response.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self._handle_now_playing_changed(response)
@@ -250,3 +252,19 @@ class HeosEventHandler:
                 const.EVENT_PLAYER_VOLUME_CHANGED)
             _LOGGER.debug("'%s' volume changed to '%s', mute changed to '%s'",
                           player, level, mute)
+
+    def _handle_now_playing_progress(self, response: HeosResponse):
+        player_id = response.get_player_id()
+        current_position = int(response.get_message('cur_pos'))
+        duration = int(response.get_message('duration'))
+        player = self._heos.get_player(player_id)
+        if player:
+            # pylint: disable=protected-access
+            player.now_playing_media._current_position = current_position
+            # pylint: disable=protected-access
+            player.now_playing_media._duration = duration
+            self._heos.dispatcher.send(
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_PLAYER_NOW_PLAYING_PROGRESS)
+            _LOGGER.debug("'%s' now playing progress changed: %s/%s",
+                          player, current_position, duration)

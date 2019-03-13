@@ -19,6 +19,8 @@ class HeosNowPlayingMedia:
         self._media_id = None  # type: str
         self._queue_id = None  # type: int
         self._song_id = None  # type: int
+        self._current_position = None  # type: int
+        self._duration = None  # type: int
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
@@ -32,6 +34,8 @@ class HeosNowPlayingMedia:
         self._media_id = data['mid']
         self._queue_id = int(data['qid'])
         self._song_id = int(data['sid'])
+        self._current_position = None
+        self._duration = None
 
     @property
     def type(self) -> str:
@@ -82,6 +86,16 @@ class HeosNowPlayingMedia:
     def song_id(self) -> int:
         """Get the source id of the playing media."""
         return self._song_id
+
+    @property
+    def current_position(self) -> int:
+        """Get the current position within the playing media."""
+        return self._current_position
+
+    @property
+    def duration(self):
+        """Get the duration of the current playing media."""
+        return self._duration
 
 
 class HeosPlayer:

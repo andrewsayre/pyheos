@@ -1,0 +1,1 @@
+{"heos": {"command": "event/player_now_playing_progress", "message": "pid={player_id}&cur_pos={cur_pos}&duration={duration}"}}

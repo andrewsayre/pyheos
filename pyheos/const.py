@@ -40,4 +40,5 @@ COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"
 EVENT_PLAYER_NOW_PLAYING_CHANGED = "event/player_now_playing_changed"
+EVENT_PLAYER_NOW_PLAYING_PROGRESS = "event/player_now_playing_progress"
 EVENT_PLAYER_VOLUME_CHANGED = "event/player_volume_changed"
