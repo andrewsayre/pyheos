@@ -29,7 +29,7 @@ setup(name=const['__title__'],
       keywords="heos",
       zip_safe=False,
       classifiers=[
-          "Development Status :: 1 - Planning",
+          "Development Status :: 4 - Beta",
           "Intended Audience :: Developers",
           "License :: OSI Approved :: MIT License",
           "Operating System :: OS Independent",
