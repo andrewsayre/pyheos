@@ -9,7 +9,7 @@
 			"pid": 1,
 			"model": "HEOS Drive",
 			"version": "1.493.180",
-			"ip": "172.16.0.14",
+			"ip": "192.168.0.1",
 			"network": "wired",
 			"lineout": 1
 		}, {
@@ -17,8 +17,8 @@
 			"pid": 2,
 			"model": "HEOS Drive",
 			"version": "1.493.180",
-			"ip": "172.16.0.15",
-			"network": "wired",
+			"ip": "192.168.0.2",
+			"network": "wireless",
 			"lineout": 1
 		}
 	]

@@ -1,18 +1,26 @@
 """Tests for the pyheos library."""
 import asyncio
 from collections import defaultdict
-from typing import List
+from concurrent.futures import ThreadPoolExecutor
+from typing import DefaultDict, List
 from urllib.parse import parse_qsl, urlparse
 
 from pyheos import const
 from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
 
+FILE_IO_POOL = ThreadPoolExecutor()
 
-def get_fixture(file: str):
+
+async def get_fixture(file: str):
     """Load a fixtures file."""
     file_name = "tests/fixtures/{file}.json".format(file=file)
-    with open(file_name) as open_file:
-        return open_file.read()
+
+    def read_file():
+        with open(file_name) as open_file:
+            return open_file.read()
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(FILE_IO_POOL, read_file)
 
 
 class MockHeosDevice:
@@ -23,6 +31,8 @@ class MockHeosDevice:
         self._server = None  # type: asyncio.AbstractServer
         self._started = False
         self.connections = []  # type: List[ConnectionLog]
+        self._custom_handlers = \
+            defaultdict(list)  # type: DefaultDict[str, List[str]]
 
     async def start(self):
         """Start the heos server."""
@@ -41,6 +51,10 @@ class MockHeosDevice:
         connection = next(conn for conn in self.connections
                           if conn.is_registered_for_events)
         await connection.write(event)
+
+    def register_one_time(self, command: str, fixture: str):
+        """Register fixture to command to use one time."""
+        self._custom_handlers[command].append(fixture)
 
     async def _handle_connection(
             self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -65,21 +79,27 @@ class MockHeosDevice:
                                           url_parts.path.lstrip('/'))
             response = None
 
-            if command == 'system/register_for_change_events':
+            # See if we have any custom handlers registered
+            custom_fixtures = self._custom_handlers[command]
+            if custom_fixtures:
+                # use first one
+                fixture = custom_fixtures.pop(0)
+                response = await get_fixture(fixture)
+            elif command == 'system/register_for_change_events':
                 enable = query["enable"]
                 if enable == 'on':
                     log.is_registered_for_events = True
-                response = get_fixture(fixture_name).replace(
+                response = (await get_fixture(fixture_name)).replace(
                     "{enable}", enable)
             elif command == 'player/get_players':
-                response = get_fixture(fixture_name)
+                response = await get_fixture(fixture_name)
 
             elif command == 'player/get_play_state':
-                response = get_fixture(fixture_name).replace(
+                response = (await get_fixture(fixture_name)).replace(
                     '{player_id}', query['pid'])
 
             elif command == 'player/get_now_playing_media':
-                response = get_fixture(fixture_name).replace(
+                response = (await get_fixture(fixture_name)).replace(
                     '{player_id}', query['pid'])
 
             log.commands[command].append(result)

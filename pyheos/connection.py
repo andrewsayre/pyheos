@@ -60,8 +60,7 @@ class HeosConnection:
                 self._reader.readuntil(SEPARATOR_BYTES), self.timeout)
         # Create response object
         data = json.loads(result.decode())
-        response = HeosResponse()
-        response.from_json(data)
+        response = HeosResponse(data)
         _LOGGER.debug("Executed command '%s': '%s'", command, data)
         return response
 
