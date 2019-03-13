@@ -1,0 +1,1 @@
+{"heos": {"command": "event/player_volume_changed", "message": "pid={player_id}&level={level}&mute={mute}"}}

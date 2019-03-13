@@ -119,3 +119,36 @@ async def test_player_now_playing_changed_event(mock_device, heos):
     assert now_playing.song_id == 1
     assert now_playing.song == "I've Been Waiting (feat. Fall Out Boy)"
     assert now_playing.station == "Today's Hits Radio"
+
+
+@pytest.mark.asyncio
+async def test_player_volume_changed_event(mock_device, heos):
+    """Test volume state updates when event is received."""
+    # assert not playing
+    player = heos.get_player(1)
+    assert player.volume == 36
+    assert not player.is_muted
+
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        assert player_id == player.player_id
+        assert event == const.EVENT_PLAYER_VOLUME_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = (await get_fixture("event.player_volume_changed")) \
+        .replace("{player_id}", str(player.player_id)) \
+        .replace("{level}", '50') \
+        .replace("{mute}", 'on')
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set or timeout
+    await asyncio.wait_for(signal.wait(), 1)
+    # Assert state changed
+    assert player.volume == 50
+    assert player.is_muted
+    assert heos.get_player(2).volume == 36
+    assert not heos.get_player(2).is_muted

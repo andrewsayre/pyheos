@@ -26,6 +26,12 @@ COMMAND_SET_PLAY_STATE = \
     BASE_URI + "player/set_play_state?pid={player_id}&state={state}"
 COMMAND_GET_NOW_PLAYING_MEDIA = \
     BASE_URI + "player/get_now_playing_media?pid={player_id}"
+COMMAND_GET_VOLUME = \
+    BASE_URI + "player/get_volume?pid={player_id}"
+COMMAND_SET_VOLUME = \
+    BASE_URI + "player/set_volume?pid={player_id}&level={level}"
+COMMAND_GET_MUTE = BASE_URI + "player/get_mute?pid={player_id}"
+COMMAND_SET_MUTE = BASE_URI + "player/set_mute?pid={player_id}&state={state}"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
@@ -34,3 +40,4 @@ COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"
 EVENT_PLAYER_NOW_PLAYING_CHANGED = "event/player_now_playing_changed"
+EVENT_PLAYER_VOLUME_CHANGED = "event/player_volume_changed"

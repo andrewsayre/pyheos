@@ -35,7 +35,7 @@ class HeosConnection:
         self._reader, self._writer = await asyncio.open_connection(
             self.host, const.CLI_PORT)
         self._connected = True
-        _LOGGER.debug("Connected to %s", self.host)
+        _LOGGER.debug("%s connected to %s", self.__class__.__name__, self.host)
 
     async def disconnect(self):
         """Disconnect from the device."""
@@ -44,7 +44,8 @@ class HeosConnection:
         self._connected = False
         if self._writer:
             self._writer.close()
-        _LOGGER.debug("Disconnected from %s", self.host)
+        _LOGGER.debug("%s disconnected from %s",
+                      self.__class__.__name__, self.host)
 
     async def command(self, command: str) -> Optional[HeosResponse]:
         """Run a command and get it's response."""
@@ -117,6 +118,35 @@ class HeosCommands:
         response = await self._connection.command(command)
         now_playing_media.from_data(response.payload)
 
+    async def get_volume(self, player_id: int) -> int:
+        """Get the volume of the player."""
+        command = const.COMMAND_GET_VOLUME.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return int(response.get_message('level'))
+
+    async def set_volume(self, player_id: int, level: int):
+        """Set the volume of the player."""
+        if level < 0 or level > 100:
+            raise ValueError("Level must be in the rage 0-100")
+        command = const.COMMAND_SET_VOLUME.format(
+            player_id=player_id, level=level)
+        response = await self._connection.command(command)
+        return int(response.get_message('level')) == level
+
+    async def get_mute(self, player_id: str) -> bool:
+        """Get the mute state of the player."""
+        command = const.COMMAND_GET_MUTE.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return response.get_message("state") == "on"
+
+    async def set_mute(self, player_id: str, state: bool) -> bool:
+        """Set the mute state of the player."""
+        mute_state = "on" if state else "off"
+        command = const.COMMAND_SET_MUTE.format(
+            player_id=player_id, state=mute_state)
+        response = await self._connection.command(command)
+        return response.get_message('state') == mute_state
+
 
 class HeosEventConnection(HeosConnection):
     """Define the event update channel connection."""
@@ -179,6 +209,8 @@ class HeosEventHandler:
             self._handle_state_changed(response)
         elif response.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self._handle_now_playing_changed(response)
+        elif response.command == const.EVENT_PLAYER_VOLUME_CHANGED:
+            self._handle_volume_changed(response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
 
@@ -202,3 +234,19 @@ class HeosEventHandler:
                 const.SIGNAL_PLAYER_UPDATED, player_id,
                 const.EVENT_PLAYER_NOW_PLAYING_CHANGED)
             _LOGGER.debug("'%s' now playing media changed", player)
+
+    def _handle_volume_changed(self, response: HeosResponse):
+        player_id = response.get_player_id()
+        level = int(response.get_message('level'))
+        mute = response.get_message('mute')
+        player = self._heos.get_player(player_id)
+        if player:
+            # pylint: disable=protected-access
+            player._volume = level
+            # pylint: disable=protected-access
+            player._is_muted = mute == 'on'
+            self._heos.dispatcher.send(
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_PLAYER_VOLUME_CHANGED)
+            _LOGGER.debug("'%s' volume changed to '%s', mute changed to '%s'",
+                          player, level, mute)

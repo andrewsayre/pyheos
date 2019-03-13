@@ -1,0 +1,1 @@
+{"heos": {"result": "success", "command": "player/set_mute", "message": "pid={player_id}&state={state}"}}

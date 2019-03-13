@@ -105,6 +105,14 @@ class MockHeosDevice:
                 response = (await get_fixture(fixture_name)).replace(
                     '{player_id}', query['pid'])
 
+            elif command == 'player/get_volume':
+                response = (await get_fixture(fixture_name)).replace(
+                    '{player_id}', query['pid'])
+
+            elif command == 'player/get_mute':
+                response = (await get_fixture(fixture_name)).replace(
+                    '{player_id}', query['pid'])
+
             log.commands[command].append(result)
 
             writer.write((response + SEPARATOR).encode())

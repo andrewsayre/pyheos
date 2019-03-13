@@ -4,119 +4,6 @@ from typing import Optional
 from pyheos import const
 
 
-class HeosPlayer:
-    """Define a HEOS player."""
-
-    def __init__(self, commands, data: Optional[dict] = None):
-        """Initialize a player with the data."""
-        self._commands = commands
-        self._name = None       # type: str
-        self._player_id = None  # type: int
-        self._model = None  # type: str
-        self._version = None  # type: str
-        self._ip_address = None  # type: str
-        self._network = None  # type: str
-        self._line_out = None  # type: int
-        if data:
-            self.from_data(data)
-        self._state = None  # type: None
-        self._now_playing_media = HeosNowPlayingMedia()
-
-    def __str__(self):
-        """Get a user-readable representation of the player."""
-        return "{{{} ({})}}".format(self._name, self._model)
-
-    def __repr__(self):
-        """Get a debug representation of the player."""
-        return "{{{} ({}) with id {} at {}}}".format(
-            self.name, self._model, self._player_id, self._ip_address)
-
-    def from_data(self, data: dict):
-        """Update the attributes from the supplied data."""
-        self._name = data['name']
-        self._player_id = int(data['pid'])
-        self._model = data['model']
-        self._version = data['version']
-        self._ip_address = data['ip']
-        self._network = data['network']
-        self._line_out = int(data['lineout'])
-
-    async def refresh(self):
-        """Pull current state."""
-        await self.refresh_state()
-        await self.refresh_now_playing_media()
-
-    async def refresh_state(self):
-        """Refresh the now playing state."""
-        self._state = await self._commands.get_player_state(self._player_id)
-
-    async def refresh_now_playing_media(self):
-        """Pull the latest now playing media."""
-        await self._commands.get_now_playing_state(
-            self._player_id, self._now_playing_media)
-
-    async def set_state(self, state: str) -> bool:
-        """Set the state of the player."""
-        return await self._commands.set_player_state(self._player_id, state)
-
-    async def play(self) -> bool:
-        """Set the start to play."""
-        return await self.set_state(const.PLAY_STATE_PLAY)
-
-    async def pause(self) -> bool:
-        """Set the start to pause."""
-        return await self.set_state(const.PLAY_STATE_PAUSE)
-
-    async def stop(self) -> bool:
-        """Set the start to stop."""
-        return await self.set_state(const.PLAY_STATE_STOP)
-
-    @property
-    def name(self) -> str:
-        """Get the name of the device."""
-        return self._name
-
-    @property
-    def player_id(self) -> int:
-        """Get the unique id of the player."""
-        return self._player_id
-
-    @property
-    def model(self) -> str:
-        """Get the model of the device."""
-        return self._model
-
-    @property
-    def version(self) -> str:
-        """Get the version of the device."""
-        return self._version
-
-    @property
-    def ip_address(self) -> str:
-        """Get the IP Address of the device."""
-        return self._ip_address
-
-    @property
-    def network(self) -> str:
-        """Get the network connection type."""
-        return self._network
-
-    @property
-    def line_out(self) -> int:
-        """Get the line out configuration."""
-        return self._line_out
-
-    @property
-    def state(self):
-        """Get the state of the player."""
-        return self._state
-
-    @property
-    def now_playing_media(self):
-        """Get the now playing media information."""
-        return self._now_playing_media
-
-
 class HeosNowPlayingMedia:
     """Define now playing media information."""
 
@@ -195,3 +82,154 @@ class HeosNowPlayingMedia:
     def song_id(self) -> int:
         """Get the source id of the playing media."""
         return self._song_id
+
+
+class HeosPlayer:
+    """Define a HEOS player."""
+
+    def __init__(self, commands, data: Optional[dict] = None):
+        """Initialize a player with the data."""
+        self._commands = commands
+        self._name = None       # type: str
+        self._player_id = None  # type: int
+        self._model = None  # type: str
+        self._version = None  # type: str
+        self._ip_address = None  # type: str
+        self._network = None  # type: str
+        self._line_out = None  # type: int
+        if data:
+            self.from_data(data)
+        self._state = None  # type: None
+        self._volume = None  # type: int
+        self._is_muted = None  # type: bool
+        self._now_playing_media = HeosNowPlayingMedia()
+
+    def __str__(self):
+        """Get a user-readable representation of the player."""
+        return "{{{} ({})}}".format(self._name, self._model)
+
+    def __repr__(self):
+        """Get a debug representation of the player."""
+        return "{{{} ({}) with id {} at {}}}".format(
+            self.name, self._model, self._player_id, self._ip_address)
+
+    def from_data(self, data: dict):
+        """Update the attributes from the supplied data."""
+        self._name = data['name']
+        self._player_id = int(data['pid'])
+        self._model = data['model']
+        self._version = data['version']
+        self._ip_address = data['ip']
+        self._network = data['network']
+        self._line_out = int(data['lineout'])
+
+    async def refresh(self):
+        """Pull current state."""
+        await self.refresh_state()
+        await self.refresh_now_playing_media()
+        await self.refresh_volume()
+        await self.refresh_mute()
+
+    async def refresh_state(self):
+        """Refresh the now playing state."""
+        self._state = await self._commands.get_player_state(self._player_id)
+
+    async def refresh_now_playing_media(self):
+        """Pull the latest now playing media."""
+        await self._commands.get_now_playing_state(
+            self._player_id, self._now_playing_media)
+
+    async def refresh_volume(self):
+        """Pull the latest volume."""
+        self._volume = await self._commands.get_volume(self._player_id)
+
+    async def refresh_mute(self):
+        """Pull the latest mute status."""
+        self._is_muted = await self._commands.get_mute(self._player_id)
+
+    async def set_state(self, state: str) -> bool:
+        """Set the state of the player."""
+        return await self._commands.set_player_state(self._player_id, state)
+
+    async def play(self) -> bool:
+        """Set the start to play."""
+        return await self.set_state(const.PLAY_STATE_PLAY)
+
+    async def pause(self) -> bool:
+        """Set the start to pause."""
+        return await self.set_state(const.PLAY_STATE_PAUSE)
+
+    async def stop(self) -> bool:
+        """Set the start to stop."""
+        return await self.set_state(const.PLAY_STATE_STOP)
+
+    async def set_volume(self, level: int) -> bool:
+        """Set the volume level."""
+        return await self._commands.set_volume(self._player_id, level)
+
+    async def set_mute(self, state: bool) -> bool:
+        """Set the mute state."""
+        return await self._commands.set_mute(self._player_id, state)
+
+    async def mute(self):
+        """Set mute state."""
+        return await self.set_mute(True)
+
+    async def unmute(self):
+        """Clear mute state."""
+        return await self.set_mute(False)
+
+    @property
+    def name(self) -> str:
+        """Get the name of the device."""
+        return self._name
+
+    @property
+    def player_id(self) -> int:
+        """Get the unique id of the player."""
+        return self._player_id
+
+    @property
+    def model(self) -> str:
+        """Get the model of the device."""
+        return self._model
+
+    @property
+    def version(self) -> str:
+        """Get the version of the device."""
+        return self._version
+
+    @property
+    def ip_address(self) -> str:
+        """Get the IP Address of the device."""
+        return self._ip_address
+
+    @property
+    def network(self) -> str:
+        """Get the network connection type."""
+        return self._network
+
+    @property
+    def line_out(self) -> int:
+        """Get the line out configuration."""
+        return self._line_out
+
+    @property
+    def state(self) -> str:
+        """Get the state of the player."""
+        return self._state
+
+    @property
+    def now_playing_media(self) -> HeosNowPlayingMedia:
+        """Get the now playing media information."""
+        return self._now_playing_media
+
+    @property
+    def volume(self) -> int:
+        """Get the volume of the player."""
+        return self._volume
+
+    @property
+    def is_muted(self) -> bool:
+        """Get whether the device is muted or not."""
+        return self._is_muted
