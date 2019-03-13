@@ -77,3 +77,6 @@ async def test_set_volume_and_mute(mock_device, heos):
 
     mock_device.register_one_time("player/volume_down", 'player.volume_down')
     assert await player.volume_down(6)
+
+    mock_device.register_one_time("player/toggle_mute", 'player.toggle_mute')
+    assert await player.toggle_mute()

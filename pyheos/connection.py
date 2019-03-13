@@ -88,7 +88,7 @@ class HeosCommands:
         command = const.COMMAND_REGISTER_FOR_CHANGE_EVENTS.format(
             enable=enable_mode)
         response = await self._connection.command(command)
-        return response.get_message('enable') == enable_mode
+        return response.result
 
     async def get_players(self) -> Sequence[HeosPlayer]:
         """Get players."""
@@ -108,15 +108,17 @@ class HeosCommands:
         command = const.COMMAND_SET_PLAY_STATE.format(
             player_id=player_id, state=state)
         response = await self._connection.command(command)
-        return response.get_message('state') == state
+        return response.result
 
     async def get_now_playing_state(
-            self, player_id: int, now_playing_media: HeosNowPlayingMedia):
+            self, player_id: int,
+            now_playing_media: HeosNowPlayingMedia) -> bool:
         """Get the now playing media information."""
         command = const.COMMAND_GET_NOW_PLAYING_MEDIA.format(
             player_id=player_id)
         response = await self._connection.command(command)
         now_playing_media.from_data(response.payload)
+        return response.result
 
     async def get_volume(self, player_id: int) -> int:
         """Get the volume of the player."""
@@ -131,13 +133,13 @@ class HeosCommands:
         command = const.COMMAND_SET_VOLUME.format(
             player_id=player_id, level=level)
         response = await self._connection.command(command)
-        return int(response.get_message('level')) == level
+        return response.result
 
     async def get_mute(self, player_id: str) -> bool:
         """Get the mute state of the player."""
         command = const.COMMAND_GET_MUTE.format(player_id=player_id)
         response = await self._connection.command(command)
-        return response.get_message("state") == "on"
+        return response.get_message('state') == 'on'
 
     async def set_mute(self, player_id: str, state: bool) -> bool:
         """Set the mute state of the player."""
@@ -145,7 +147,7 @@ class HeosCommands:
         command = const.COMMAND_SET_MUTE.format(
             player_id=player_id, state=mute_state)
         response = await self._connection.command(command)
-        return response.get_message('state') == mute_state
+        return response.result
 
     async def volume_up(self, player_id: int,
                         step: int = const.DEFAULT_STEP) -> bool:
@@ -155,7 +157,7 @@ class HeosCommands:
         command = const.COMMAND_VOLUME_UP.format(
             player_id=player_id, step=step)
         response = await self._connection.command(command)
-        return int(response.get_message('step')) == step
+        return response.result
 
     async def volume_down(self, player_id: int,
                           step: int = const.DEFAULT_STEP) -> bool:
@@ -165,7 +167,13 @@ class HeosCommands:
         command = const.COMMAND_VOLUME_DOWN.format(
             player_id=player_id, step=step)
         response = await self._connection.command(command)
-        return int(response.get_message('step')) == step
+        return response.result
+
+    async def toggle_mute(self, player_id: int) -> bool:
+        """Toggle the mute state.."""
+        command = const.COMMAND_TOGGLE_MUTE.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return response.result
 
 
 class HeosEventConnection(HeosConnection):

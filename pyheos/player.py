@@ -201,6 +201,10 @@ class HeosPlayer:
         """Raise the volume."""
         return await self._commands.volume_down(self._player_id, step)
 
+    async def toggle_mute(self):
+        """Toggle mute state."""
+        return await self._commands.toggle_mute(self._player_id)
+
     @property
     def name(self) -> str:
         """Get the name of the device."""

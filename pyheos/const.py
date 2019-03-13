@@ -35,6 +35,7 @@ COMMAND_SET_MUTE = BASE_URI + "player/set_mute?pid={player_id}&state={state}"
 COMMAND_VOLUME_UP = BASE_URI + "player/volume_up?pid={player_id}&step={step}"
 COMMAND_VOLUME_DOWN = \
     BASE_URI + "player/volume_down?pid={player_id}&step={step}"
+COMMAND_TOGGLE_MUTE = BASE_URI + "player/toggle_mute?pid={player_id}"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
