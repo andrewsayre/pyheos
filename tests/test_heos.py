@@ -185,3 +185,55 @@ async def test_player_now_playing_progress_event(mock_device, heos):
     assert player.now_playing_media.current_position == 113000
     assert heos.get_player(2).now_playing_media.duration is None
     assert heos.get_player(2).now_playing_media.current_position is None
+
+
+@pytest.mark.asyncio
+async def test_repeat_mode_changed_event(mock_device, heos):
+    """Test repeat mode changes when event received."""
+    # assert not playing
+    player = heos.get_player(1)
+    assert player.repeat == const.REPEAT_OFF
+
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        assert player_id == player.player_id
+        assert event == const.EVENT_REPEAT_MODE_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.repeat_mode_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set or timeout
+    await asyncio.wait_for(signal.wait(), 1)
+    # Assert state changed
+    assert player.repeat == const.REPEAT_ON_ALL
+
+
+@pytest.mark.asyncio
+async def test_shuffle_mode_changed_event(mock_device, heos):
+    """Test shuffle mode changes when event received."""
+    # assert not playing
+    player = heos.get_player(1)
+    assert not player.shuffle
+
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        assert player_id == player.player_id
+        assert event == const.EVENT_SHUFFLE_MODE_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.shuffle_mode_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set or timeout
+    await asyncio.wait_for(signal.wait(), 1)
+    # Assert state changed
+    assert player.shuffle

@@ -97,19 +97,12 @@ class MockHeosDevice:
             elif command == 'player/get_players':
                 response = await get_fixture(fixture_name)
 
-            elif command == 'player/get_play_state':
-                response = (await get_fixture(fixture_name)).replace(
-                    '{player_id}', query['pid'])
-
-            elif command == 'player/get_now_playing_media':
-                response = (await get_fixture(fixture_name)).replace(
-                    '{player_id}', query['pid'])
-
-            elif command == 'player/get_volume':
-                response = (await get_fixture(fixture_name)).replace(
-                    '{player_id}', query['pid'])
-
-            elif command == 'player/get_mute':
+            elif command in (
+                    'player/get_play_state',
+                    'player/get_now_playing_media',
+                    'player/get_volume',
+                    'player/get_mute',
+                    'player/get_play_mode'):
                 response = (await get_fixture(fixture_name)).replace(
                     '{player_id}', query['pid'])
 

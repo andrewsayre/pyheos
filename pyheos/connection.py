@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Tuple
 
 from . import const
 from .player import HeosNowPlayingMedia, HeosPlayer
@@ -175,6 +175,24 @@ class HeosCommands:
         response = await self._connection.command(command)
         return response.result
 
+    async def get_play_mode(self, player_id: int) -> Tuple[str, bool]:
+        """Get the current play mode."""
+        command = const.COMMAND_GET_PLAY_MODE.format(player_id=player_id)
+        response = await self._connection.command(command)
+        repeat = response.get_message('repeat')
+        shuffle = response.get_message('shuffle') == 'on'
+        return repeat, shuffle
+
+    async def set_play_mode(self, player_id: int, repeat: str, shuffle: bool):
+        """Set the current play mode."""
+        if repeat not in const.VALID_REPEAT_MODES:
+            raise ValueError("Invalid 'repeat': %s", repeat)
+        command = const.COMMAND_SET_PLAY_MODE.format(
+            player_id=player_id,repeat=repeat,
+            shuffle='on' if shuffle else 'off')
+        response = await self._connection.command(command)
+        return response.result
+
 
 class HeosEventConnection(HeosConnection):
     """Define the event update channel connection."""
@@ -197,10 +215,7 @@ class HeosEventConnection(HeosConnection):
         await super().disconnect()
         if self._event_handler_task:
             self._event_handler_task.cancel()
-            try:
-                await self._event_handler_task
-            except asyncio.CancelledError:
-                pass
+            await self._event_handler_task
             self._event_handler_task = None
 
     async def _event_handler(self):
@@ -208,20 +223,15 @@ class HeosEventConnection(HeosConnection):
             # Wait for response
             try:
                 result = await self._reader.readuntil(SEPARATOR_BYTES)
-            except asyncio.IncompleteReadError:
-                # Occurs when the task is being killed
-                break
-
-            if result is None:
-                continue
-            # Create response object
-            try:
                 data = json.loads(result.decode())
                 response = HeosResponse()
                 response.from_json(data)
                 await self._handler.handle_event(response)
+            except asyncio.CancelledError:
+                # Occurs when the task is being killed
+                return
             except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Failed to handle event: %s", result)
+                _LOGGER.exception("Failed to handle event")
 
 
 class HeosEventHandler:
@@ -234,17 +244,21 @@ class HeosEventHandler:
     async def handle_event(self, response: HeosResponse):
         """Handle a response event."""
         if response.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
-            self._handle_now_playing_progress(response)
+            self._now_playing_progress(response)
         elif response.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._handle_state_changed(response)
+            self._state_changed(response)
         elif response.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
-            await self._handle_now_playing_changed(response)
+            await self._now_playing_changed(response)
         elif response.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._handle_volume_changed(response)
+            self._volume_changed(response)
+        elif response.command == const.EVENT_REPEAT_MODE_CHANGED:
+            self._repeat_mode_changed(response)
+        elif response.command == const.EVENT_SHUFFLE_MODE_CHANGED:
+            self._shuffle_mode_changed(response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
 
-    def _handle_state_changed(self, response: HeosResponse):
+    def _state_changed(self, response: HeosResponse):
         player_id = response.get_player_id()
         state = response.get_message('state')
         player = self._heos.get_player(player_id)
@@ -255,7 +269,7 @@ class HeosEventHandler:
                 const.EVENT_PLAYER_STATE_CHANGED)
             _LOGGER.debug("'%s' state changed to '%s'", player, state)
 
-    async def _handle_now_playing_changed(self, response: HeosResponse):
+    async def _now_playing_changed(self, response: HeosResponse):
         player_id = response.get_player_id()
         player = self._heos.get_player(player_id)
         if player:
@@ -265,7 +279,7 @@ class HeosEventHandler:
                 const.EVENT_PLAYER_NOW_PLAYING_CHANGED)
             _LOGGER.debug("'%s' now playing media changed", player)
 
-    def _handle_volume_changed(self, response: HeosResponse):
+    def _volume_changed(self, response: HeosResponse):
         player_id = response.get_player_id()
         level = int(response.get_message('level'))
         mute = response.get_message('mute')
@@ -281,7 +295,7 @@ class HeosEventHandler:
             _LOGGER.debug("'%s' volume changed to '%s', mute changed to '%s'",
                           player, level, mute)
 
-    def _handle_now_playing_progress(self, response: HeosResponse):
+    def _now_playing_progress(self, response: HeosResponse):
         player_id = response.get_player_id()
         current_position = int(response.get_message('cur_pos'))
         duration = int(response.get_message('duration'))
@@ -296,3 +310,29 @@ class HeosEventHandler:
                 const.EVENT_PLAYER_NOW_PLAYING_PROGRESS)
             _LOGGER.debug("'%s' now playing progress changed: %s/%s",
                           player, current_position, duration)
+
+    def _repeat_mode_changed(self, response: HeosResponse):
+        player_id = response.get_player_id()
+        repeat = response.get_message('repeat')
+        player = self._heos.get_player(player_id)
+        if player:
+            # pylint: disable=protected-access
+            player._repeat = repeat
+            self._heos.dispatcher.send(
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_REPEAT_MODE_CHANGED)
+            _LOGGER.debug("'%s' repeat mode changed to '%s'",
+                          player, repeat)
+
+    def _shuffle_mode_changed(self, response: HeosResponse):
+        player_id = response.get_player_id()
+        shuffle = response.get_message('shuffle') == 'on'
+        player = self._heos.get_player(player_id)
+        if player:
+            # pylint: disable=protected-access
+            player._shuffle = shuffle
+            self._heos.dispatcher.send(
+                const.SIGNAL_PLAYER_UPDATED, player_id,
+                const.EVENT_SHUFFLE_MODE_CHANGED)
+            _LOGGER.debug("'%s' shuffle to '%s'",
+                          player, shuffle)

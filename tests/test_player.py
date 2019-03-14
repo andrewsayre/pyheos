@@ -2,6 +2,7 @@
 import pytest
 
 from pyheos.player import HeosPlayer
+from pyheos import const
 
 from . import get_fixture
 
@@ -43,6 +44,9 @@ async def test_set_state(mock_device, heos):
     mock_device.register_one_time("player/set_play_state", _response_callback)
     assert await player.stop()
 
+    with pytest.raises(ValueError):
+        await player.set_state("invalid")
+
 
 @pytest.mark.asyncio
 async def test_set_volume_and_mute(mock_device, heos):
@@ -57,6 +61,10 @@ async def test_set_volume_and_mute(mock_device, heos):
             .replace("{level}", args['level'])
 
     mock_device.register_one_time("player/set_volume", _volume_callback)
+    with pytest.raises(ValueError):
+        await player.set_volume(-1)
+    with pytest.raises(ValueError):
+        await player.set_volume(101)
     assert await player.set_volume(100)
 
     mute_response = await get_fixture('player.set_mute')
@@ -74,9 +82,38 @@ async def test_set_volume_and_mute(mock_device, heos):
 
     mock_device.register_one_time("player/volume_up", 'player.volume_up')
     assert await player.volume_up(6)
+    with pytest.raises(ValueError):
+        await player.volume_up(0)
+    with pytest.raises(ValueError):
+        await player.volume_up(11)
 
     mock_device.register_one_time("player/volume_down", 'player.volume_down')
     assert await player.volume_down(6)
+    with pytest.raises(ValueError):
+        await player.volume_down(0)
+    with pytest.raises(ValueError):
+        await player.volume_down(11)
 
     mock_device.register_one_time("player/toggle_mute", 'player.toggle_mute')
     assert await player.toggle_mute()
+
+
+@pytest.mark.asyncio
+async def test_set_play_mode(mock_device, heos):
+    """Test the volume commands."""
+    player = heos.get_player(1)
+
+    response = await get_fixture('player.set_play_mode')
+
+    def _callback(command, args):
+        assert command == 'player/set_play_mode'
+        assert args['repeat'] == const.REPEAT_ON_ALL
+        assert args['shuffle'] == 'on'
+        assert args['pid'] == str(player.player_id)
+        return response
+
+    mock_device.register_one_time("player/set_play_mode", _callback)
+    assert await player.set_play_mode(const.REPEAT_ON_ALL, True)
+    # Assert invalid mode
+    with pytest.raises(ValueError):
+        await player.set_play_mode("repeat", True)

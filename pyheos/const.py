@@ -16,6 +16,15 @@ VALID_PLAY_STATES = (
     PLAY_STATE_STOP
 )
 
+REPEAT_ON_ALL = "on_all"
+REPEAT_ON_ONE = "on_one"
+REPEAT_OFF = "off"
+VALID_REPEAT_MODES = (
+    REPEAT_ON_ALL,
+    REPEAT_ON_ONE,
+    REPEAT_OFF
+)
+
 SIGNAL_PLAYER_UPDATED = "player_updated"
 
 BASE_URI = "heos://"
@@ -36,6 +45,10 @@ COMMAND_VOLUME_UP = BASE_URI + "player/volume_up?pid={player_id}&step={step}"
 COMMAND_VOLUME_DOWN = \
     BASE_URI + "player/volume_down?pid={player_id}&step={step}"
 COMMAND_TOGGLE_MUTE = BASE_URI + "player/toggle_mute?pid={player_id}"
+COMMAND_GET_PLAY_MODE = BASE_URI + "player/get_play_mode?pid={player_id}"
+COMMAND_SET_PLAY_MODE = BASE_URI + "player/set_play_mode?pid={player_id}" \
+                                   "&repeat={repeat}&shuffle={shuffle}"
+
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
@@ -46,3 +59,5 @@ EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"
 EVENT_PLAYER_NOW_PLAYING_CHANGED = "event/player_now_playing_changed"
 EVENT_PLAYER_NOW_PLAYING_PROGRESS = "event/player_now_playing_progress"
 EVENT_PLAYER_VOLUME_CHANGED = "event/player_volume_changed"
+EVENT_REPEAT_MODE_CHANGED = "event/repeat_mode_changed"
+EVENT_SHUFFLE_MODE_CHANGED = "event/shuffle_mode_changed"

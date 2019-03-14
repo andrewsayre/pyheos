@@ -116,6 +116,8 @@ class HeosPlayer:
         self._state = None  # type: None
         self._volume = None  # type: int
         self._is_muted = None  # type: bool
+        self._repeat = None  # type: str
+        self._shuffle = None  # type: bool
         self._now_playing_media = HeosNowPlayingMedia()
 
     def __str__(self):
@@ -143,6 +145,7 @@ class HeosPlayer:
         await self.refresh_now_playing_media()
         await self.refresh_volume()
         await self.refresh_mute()
+        await self.refresh_play_mode()
 
     async def refresh_state(self):
         """Refresh the now playing state."""
@@ -160,6 +163,11 @@ class HeosPlayer:
     async def refresh_mute(self):
         """Pull the latest mute status."""
         self._is_muted = await self._commands.get_mute(self._player_id)
+
+    async def refresh_play_mode(self):
+        """Pull the latest play mode."""
+        self._repeat, self._shuffle = \
+            await self._commands.get_play_mode(self._player_id)
 
     async def set_state(self, state: str) -> bool:
         """Set the state of the player."""
@@ -204,6 +212,11 @@ class HeosPlayer:
     async def toggle_mute(self):
         """Toggle mute state."""
         return await self._commands.toggle_mute(self._player_id)
+
+    async def set_play_mode(self, repeat: str, shuffle: bool):
+        """Set the play mode of the player."""
+        return await self._commands.set_play_mode(
+            self._player_id, repeat, shuffle)
 
     @property
     def name(self) -> str:
@@ -259,3 +272,13 @@ class HeosPlayer:
     def is_muted(self) -> bool:
         """Get whether the device is muted or not."""
         return self._is_muted
+
+    @property
+    def repeat(self) -> str:
+        """Get the repeat mode."""
+        return self._repeat
+
+    @property
+    def shuffle(self) -> bool:
+        """Get if shuffle is active."""
+        return self._shuffle
