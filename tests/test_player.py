@@ -1,8 +1,8 @@
 """Tests for the player module."""
 import pytest
 
-from pyheos.player import HeosPlayer
 from pyheos import const
+from pyheos.player import HeosPlayer
 
 from . import get_fixture
 

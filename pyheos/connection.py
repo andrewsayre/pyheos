@@ -186,9 +186,9 @@ class HeosCommands:
     async def set_play_mode(self, player_id: int, repeat: str, shuffle: bool):
         """Set the current play mode."""
         if repeat not in const.VALID_REPEAT_MODES:
-            raise ValueError("Invalid 'repeat': %s", repeat)
+            raise ValueError("Invalid repeat mode: " + repeat)
         command = const.COMMAND_SET_PLAY_MODE.format(
-            player_id=player_id,repeat=repeat,
+            player_id=player_id, repeat=repeat,
             shuffle='on' if shuffle else 'off')
         response = await self._connection.command(command)
         return response.result
