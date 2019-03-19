@@ -41,6 +41,10 @@ async def test_connect_loads_players_and_subscribes(mock_device, heos):
     assert player.network == 'wired'
     assert player.state == const.PLAY_STATE_STOP
     assert player.version == '1.493.180'
+    assert player.volume == 36
+    assert not player.is_muted
+    assert player.repeat == const.REPEAT_OFF
+    assert not player.shuffle
 
 
 @pytest.mark.asyncio

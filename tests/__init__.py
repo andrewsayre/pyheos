@@ -2,7 +2,7 @@
 import asyncio
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, DefaultDict, List, Union
+from typing import Callable, List, Union
 from urllib.parse import parse_qsl, urlparse
 
 from pyheos import const
@@ -31,8 +31,7 @@ class MockHeosDevice:
         self._server = None  # type: asyncio.AbstractServer
         self._started = False
         self.connections = []  # type: List[ConnectionLog]
-        self._custom_handlers = \
-            defaultdict(list)  # type: DefaultDict[str, List[str]]
+        self._custom_handlers = defaultdict(list)
 
     async def start(self):
         """Start the heos server."""
@@ -55,6 +54,21 @@ class MockHeosDevice:
     def register_one_time(self, command: str, fixture: Union[str, Callable]):
         """Register fixture to command to use one time."""
         self._custom_handlers[command].append(fixture)
+
+    def register_command(self, fixture, player_id, target_args=None):
+        """Create a callback fixture."""
+        expected_command = fixture.replace(".", "/")
+
+        async def callback(command, args):
+            response = await get_fixture(fixture)
+            assert command == expected_command
+            assert args['pid'] == str(player_id)
+            if target_args:
+                for key, value in target_args.items():
+                    assert args.get(key) == value, key
+            return response
+
+        self._custom_handlers[expected_command].append(callback)
 
     async def _handle_connection(
             self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -84,7 +98,9 @@ class MockHeosDevice:
             if custom_fixtures:
                 # use first one
                 fixture = custom_fixtures.pop(0)
-                if isinstance(fixture, Callable):
+                if asyncio.iscoroutinefunction(fixture):
+                    response = await fixture(command, query)
+                elif isinstance(fixture, Callable):
                     response = fixture(command, query)
                 else:
                     response = await get_fixture(fixture)

@@ -193,6 +193,24 @@ class HeosCommands:
         response = await self._connection.command(command)
         return response.result
 
+    async def clear_queue(self, player_id: int) -> bool:
+        """Clear the queue."""
+        command = const.COMMAND_CLEAR_QUEUE.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return response.result
+
+    async def play_next(self, player_id: int) -> bool:
+        """Play next."""
+        command = const.COMMAND_PLAY_NEXT.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return response.result
+
+    async def play_previous(self, player_id: int) -> bool:
+        """Play next."""
+        command = const.COMMAND_PLAY_PREVIOUS.format(player_id=player_id)
+        response = await self._connection.command(command)
+        return response.result
+
 
 class HeosEventConnection(HeosConnection):
     """Define the event update channel connection."""

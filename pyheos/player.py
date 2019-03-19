@@ -193,30 +193,42 @@ class HeosPlayer:
         """Set the mute state."""
         return await self._commands.set_mute(self._player_id, state)
 
-    async def mute(self):
+    async def mute(self) -> bool:
         """Set mute state."""
         return await self.set_mute(True)
 
-    async def unmute(self):
+    async def unmute(self) -> bool:
         """Clear mute state."""
         return await self.set_mute(False)
 
-    async def volume_up(self, step: int = const.DEFAULT_STEP):
+    async def volume_up(self, step: int = const.DEFAULT_STEP) -> bool:
         """Raise the volume."""
         return await self._commands.volume_up(self._player_id, step)
 
-    async def volume_down(self, step: int = const.DEFAULT_STEP):
+    async def volume_down(self, step: int = const.DEFAULT_STEP) -> bool:
         """Raise the volume."""
         return await self._commands.volume_down(self._player_id, step)
 
-    async def toggle_mute(self):
+    async def toggle_mute(self) -> bool:
         """Toggle mute state."""
         return await self._commands.toggle_mute(self._player_id)
 
-    async def set_play_mode(self, repeat: str, shuffle: bool):
+    async def set_play_mode(self, repeat: str, shuffle: bool) -> bool:
         """Set the play mode of the player."""
         return await self._commands.set_play_mode(
             self._player_id, repeat, shuffle)
+
+    async def clear_queue(self) -> bool:
+        """Clear the queue of the player."""
+        return await self._commands.clear_queue(self._player_id)
+
+    async def play_next(self) -> bool:
+        """Clear the queue of the player."""
+        return await self._commands.play_next(self._player_id)
+
+    async def play_previous(self) -> bool:
+        """Clear the queue of the player."""
+        return await self._commands.play_previous(self._player_id)
 
     @property
     def name(self) -> str:

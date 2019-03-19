@@ -102,18 +102,35 @@ async def test_set_volume_and_mute(mock_device, heos):
 async def test_set_play_mode(mock_device, heos):
     """Test the volume commands."""
     player = heos.get_player(1)
-
-    response = await get_fixture('player.set_play_mode')
-
-    def _callback(command, args):
-        assert command == 'player/set_play_mode'
-        assert args['repeat'] == const.REPEAT_ON_ALL
-        assert args['shuffle'] == 'on'
-        assert args['pid'] == str(player.player_id)
-        return response
-
-    mock_device.register_one_time("player/set_play_mode", _callback)
+    args = {
+        'repeat': const.REPEAT_ON_ALL,
+        'shuffle': 'on'
+    }
+    mock_device.register_command(
+        'player.set_play_mode', player.player_id, args)
     assert await player.set_play_mode(const.REPEAT_ON_ALL, True)
+
     # Assert invalid mode
     with pytest.raises(ValueError):
         await player.set_play_mode("repeat", True)
+
+
+@pytest.mark.asyncio
+async def test_play_next_previous(mock_device, heos):
+    """Test the volume commands."""
+    player = heos.get_player(1)
+
+    mock_device.register_command('player.play_next', player.player_id)
+    assert await player.play_next()
+
+    mock_device.register_command('player.play_previous', player.player_id)
+    assert await player.play_previous()
+
+
+@pytest.mark.asyncio
+async def test_clear_queue(mock_device, heos):
+    """Test the volume commands."""
+    player = heos.get_player(1)
+
+    mock_device.register_command('player.clear_queue', player.player_id)
+    assert await player.clear_queue()

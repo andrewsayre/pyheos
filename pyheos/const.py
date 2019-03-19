@@ -48,6 +48,9 @@ COMMAND_TOGGLE_MUTE = BASE_URI + "player/toggle_mute?pid={player_id}"
 COMMAND_GET_PLAY_MODE = BASE_URI + "player/get_play_mode?pid={player_id}"
 COMMAND_SET_PLAY_MODE = BASE_URI + "player/set_play_mode?pid={player_id}" \
                                    "&repeat={repeat}&shuffle={shuffle}"
+COMMAND_CLEAR_QUEUE = BASE_URI + "player/clear_queue?pid={player_id}"
+COMMAND_PLAY_NEXT = BASE_URI + "player/play_next?pid={player_id}"
+COMMAND_PLAY_PREVIOUS = BASE_URI + "player/play_previous?pid={player_id}"
 
 
 # System commands
