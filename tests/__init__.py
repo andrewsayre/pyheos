@@ -55,9 +55,10 @@ class MockHeosDevice:
         """Register fixture to command to use one time."""
         self._custom_handlers[command].append(fixture)
 
-    def register_command(self, fixture, player_id, target_args=None):
+    def register_command(self, fixture, player_id, target_args=None, *,
+                         command=None):
         """Create a callback fixture."""
-        expected_command = fixture.replace(".", "/")
+        expected_command = command or fixture.replace(".", "/")
 
         async def callback(command, args):
             response = await get_fixture(fixture)
@@ -124,8 +125,13 @@ class MockHeosDevice:
 
             log.commands[command].append(result)
 
-            writer.write((response + SEPARATOR).encode())
-            await writer.drain()
+            if isinstance(response, str):
+                writer.write((response + SEPARATOR).encode())
+                await writer.drain()
+            else:
+                for resp in response:
+                    writer.write((resp + SEPARATOR).encode())
+                    await writer.drain()
 
         self.connections.remove(log)
 

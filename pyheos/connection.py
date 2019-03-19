@@ -56,14 +56,20 @@ class HeosConnection:
             # Send command
             self._writer.write((command + SEPARATOR).encode())
             await self._writer.drain()
-            # Wait for response
-            result = await asyncio.wait_for(
-                self._reader.readuntil(SEPARATOR_BYTES), self.timeout)
-        # Create response object
-        data = json.loads(result.decode())
-        response = HeosResponse(data)
-        _LOGGER.debug("Executed command '%s': '%s'", command, data)
-        return response
+
+            while True:
+                # Wait for response
+                result = await asyncio.wait_for(
+                    self._reader.readuntil(SEPARATOR_BYTES), self.timeout)
+                # Create response object
+                data = json.loads(result.decode())
+                response = HeosResponse(data)
+                # Support pending process
+                if not response.is_under_process:
+                    _LOGGER.debug("Executed command '%s': '%s'", command, data)
+                    return response
+                _LOGGER.debug("Command under process '%s': '%s'",
+                              command, data)
 
 
 class HeosCommandConnection(HeosConnection):

@@ -134,3 +134,18 @@ async def test_clear_queue(mock_device, heos):
 
     mock_device.register_command('player.clear_queue', player.player_id)
     assert await player.clear_queue()
+
+    # Also test with a 'command under process' response
+    called = False
+
+    async def callback(command, args):
+        nonlocal called
+        called = True
+        assert command == 'player/clear_queue'
+        processing = await get_fixture('player.clear_queue_processing')
+        clear_queue = await get_fixture('player.clear_queue')
+        return processing, clear_queue
+    mock_device.register_one_time('player/clear_queue', callback)
+
+    assert await player.clear_queue()
+    assert called

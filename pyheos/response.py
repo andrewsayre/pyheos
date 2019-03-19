@@ -32,8 +32,13 @@ class HeosResponse:
         self.result = heos.get('result') == 'success'
         raw_message = heos.get('message')
         if raw_message:
-            self.message = dict(parse_qsl(raw_message))
+            self.message = dict(parse_qsl(raw_message, True))
         self.payload = data.get('payload')
+
+    @property
+    def is_under_process(self) -> bool:
+        """Return True if the response represents a command under process."""
+        return self.message and 'command under process' in self.message
 
     def get_message(self, key: str) -> Any:
         """Get message paramter by key."""
