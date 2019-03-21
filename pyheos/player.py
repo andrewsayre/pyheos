@@ -1,4 +1,5 @@
 """Define the player module."""
+import asyncio
 from typing import Optional
 
 from pyheos import const
@@ -141,11 +142,11 @@ class HeosPlayer:
 
     async def refresh(self):
         """Pull current state."""
-        await self.refresh_state()
-        await self.refresh_now_playing_media()
-        await self.refresh_volume()
-        await self.refresh_mute()
-        await self.refresh_play_mode()
+        await asyncio.gather(self.refresh_state(),
+                             self.refresh_now_playing_media(),
+                             self.refresh_volume(),
+                             self.refresh_mute(),
+                             self.refresh_play_mode())
 
     async def refresh_state(self):
         """Refresh the now playing state."""

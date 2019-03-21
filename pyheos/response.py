@@ -40,6 +40,11 @@ class HeosResponse:
         """Return True if the response represents a command under process."""
         return self.message and 'command under process' in self.message
 
+    @property
+    def is_event(self) -> bool:
+        """Return True if the response is an event."""
+        return self.command.startswith("event/")
+
     def get_message(self, key: str) -> Any:
         """Get message paramter by key."""
         if self.message:

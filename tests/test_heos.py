@@ -22,13 +22,9 @@ def test_init():
 async def test_connect_loads_players_and_subscribes(mock_device, heos):
     """Test the heos connect method."""
     # Assert 1st connection is used for commands
-    assert len(mock_device.connections) == 2
-    command_log = mock_device.connections[0]
-    assert not command_log.is_registered_for_events
-
-    # Assert 2nd connection is registered for events
-    event_log = mock_device.connections[1]
-    assert event_log.is_registered_for_events
+    assert len(mock_device.connections) == 1
+    connection = mock_device.connections[0]
+    assert connection.is_registered_for_events
 
     # Assert players loaded
     assert len(heos.players) == 2

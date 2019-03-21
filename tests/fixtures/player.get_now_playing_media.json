@@ -2,7 +2,7 @@
 	"heos": {
 		"command": "player/get_now_playing_media",
 		"result": "success",
-		"message": "pid={player_id}"
+		"message": "pid={player_id}&sequence={sequence}"
 	},
 	"payload": {
 		"type": "song",

@@ -120,8 +120,9 @@ class MockHeosDevice:
                     'player/get_volume',
                     'player/get_mute',
                     'player/get_play_mode'):
-                response = (await get_fixture(fixture_name)).replace(
-                    '{player_id}', query['pid'])
+                response = (await get_fixture(fixture_name)) \
+                    .replace('{player_id}', query['pid']) \
+                    .replace('{sequence}', query['sequence'])
 
             log.commands[command].append(result)
 

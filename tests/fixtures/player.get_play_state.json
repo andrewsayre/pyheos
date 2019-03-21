@@ -2,6 +2,6 @@
 	"heos": {
 		"command": "player/get_play_state",
 		"result": "success",
-		"message": "pid={player_id}&state=stop"
+		"message": "pid={player_id}&state=stop&sequence={sequence}"
 	}
 }

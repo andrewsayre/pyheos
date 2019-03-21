@@ -4,7 +4,7 @@ __title__ = "pyheos"
 __version__ = "0.0.1"
 
 CLI_PORT = 1255
-DEFAULT_TIMEOUT = 2
+DEFAULT_TIMEOUT = 5
 DEFAULT_STEP = 5
 
 PLAY_STATE_PLAY = 'play'
