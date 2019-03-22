@@ -237,3 +237,37 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
     await asyncio.wait_for(signal.wait(), 1)
     # Assert state changed
     assert player.shuffle
+
+
+@pytest.mark.asyncio
+async def test_sources_changed_event(mock_device, heos):
+    """Test sources changed fires dispatcher."""
+    signal = asyncio.Event()
+
+    async def handler(event: str):
+        assert event == const.EVENT_SOURCES_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.sources_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set or timeout
+    await asyncio.wait_for(signal.wait(), 1)
+
+
+@pytest.mark.asyncio
+async def test_get_music_sources(mock_device, heos):
+    """Test the heos connect method."""
+    mock_device.register_one_time("browse/get_music_sources",
+                                  'browse.get_music_sources')
+    sources = await heos.get_music_sources()
+    assert len(sources) == 15
+    pandora = next(source for source in sources if source.name == 'Pandora')
+    assert pandora.source_id == 1
+    assert pandora.image_url == 'https://production.ws.skyegloup.com:443/' \
+                                'media/images/service/logos/pandora.png'
+    assert pandora.type == const.TYPE_MUSIC_SERVICE
+    assert pandora.available
+    assert pandora.service_username == 'test@test.com'

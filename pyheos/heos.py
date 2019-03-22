@@ -1,4 +1,5 @@
 """Define the heos manager module."""
+import asyncio
 import logging
 from typing import Optional, Sequence
 
@@ -6,6 +7,7 @@ from .connection import HeosConnection
 from .const import DEFAULT_TIMEOUT
 from .dispatch import Dispatcher
 from .player import HeosPlayer
+from .source import HeosSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,14 +27,17 @@ class Heos:
         await self._connection.connect()
         # get players and pull initial state
         players = await self._connection.commands.get_players()
-        for player in players:
-            await player.refresh()
+        await asyncio.gather(*[player.refresh() for player in players])
         self._players = {player.player_id: player for player in players}
 
     async def disconnect(self):
         """Disconnect from the CLI."""
         await self._connection.disconnect()
         self._players.clear()
+
+    async def get_music_sources(self) -> Sequence[HeosSource]:
+        """Get available music sources."""
+        return await self._connection.commands.get_music_sources()
 
     @property
     def dispatcher(self) -> Dispatcher:

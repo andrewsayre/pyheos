@@ -25,9 +25,17 @@ VALID_REPEAT_MODES = (
     REPEAT_OFF
 )
 
+TYPE_MUSIC_SERVICE = 'music_service'
+
+
 SIGNAL_PLAYER_UPDATED = "player_updated"
+SIGNAL_HEOS_UPDATED = "heos_updated"
 
 BASE_URI = "heos://"
+
+# Browse commands
+COMMAND_BROWSE_GET_SOURCES = BASE_URI + "browse/get_music_sources"
+
 # Player commands
 COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"
 COMMAND_GET_PLAY_STATE = BASE_URI + "player/get_play_state?pid={player_id}"
@@ -64,3 +72,4 @@ EVENT_PLAYER_NOW_PLAYING_PROGRESS = "event/player_now_playing_progress"
 EVENT_PLAYER_VOLUME_CHANGED = "event/player_volume_changed"
 EVENT_REPEAT_MODE_CHANGED = "event/repeat_mode_changed"
 EVENT_SHUFFLE_MODE_CHANGED = "event/shuffle_mode_changed"
+EVENT_SOURCES_CHANGED = "event/sources_changed"

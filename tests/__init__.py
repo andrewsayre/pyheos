@@ -119,7 +119,8 @@ class MockHeosDevice:
                     'player/get_now_playing_media',
                     'player/get_volume',
                     'player/get_mute',
-                    'player/get_play_mode'):
+                    'player/get_play_mode',
+                    'browse/get_music_sources'):
                 response = (await get_fixture(fixture_name)) \
                     .replace('{player_id}', query['pid']) \
                     .replace('{sequence}', query['sequence'])

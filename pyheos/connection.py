@@ -10,6 +10,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from . import const
 from .player import HeosNowPlayingMedia, HeosPlayer
 from .response import HeosResponse
+from .source import HeosSource
 
 SEPARATOR = '\r\n'
 SEPARATOR_BYTES = SEPARATOR.encode()
@@ -295,6 +296,12 @@ class HeosCommands:
         response = await self._connection.command(command)
         return response.result
 
+    async def get_music_sources(self) -> Sequence[HeosSource]:
+        """Get available music sources."""
+        response = await self._connection.command(
+            const.COMMAND_BROWSE_GET_SOURCES)
+        return [HeosSource(self, data) for data in response.payload]
+
 
 class HeosEventHandler:
     """Define a class that handles unsolicited events."""
@@ -317,6 +324,10 @@ class HeosEventHandler:
             self._repeat_mode_changed(response)
         elif response.command == const.EVENT_SHUFFLE_MODE_CHANGED:
             self._shuffle_mode_changed(response)
+        elif response.command == const.EVENT_SOURCES_CHANGED:
+            self._heos.dispatcher.send(
+                const.SIGNAL_HEOS_UPDATED,
+                const.EVENT_SOURCES_CHANGED)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
 
