@@ -150,3 +150,15 @@ async def test_play_favorite(mock_device, heos):
     # Test invalid starting index
     with pytest.raises(ValueError):
         await player.play_favorite(0)
+
+
+@pytest.mark.asyncio
+async def test_play_url(mock_device, heos):
+    """Test the play favorite."""
+    player = heos.get_player(1)
+    url = "https://my.website.com/podcast.mp3"
+    args = {'pid': '1', 'url': url}
+    mock_device.register(const.COMMAND_BROWSE_PLAY_STREAM,
+                         args, 'browse.play_stream')
+
+    assert await player.play_url(url)

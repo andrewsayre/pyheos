@@ -97,6 +97,7 @@ COMMAND_BROWSE_PLAY_INPUT = BASE_URI + "browse/play_input?pid={player_id}&" \
                                        "input={input_name}"
 COMMAND_BROWSE_PLAY_PRESET = \
     BASE_URI + "browse/play_preset?pid={player_id}&preset={preset}"
+COMMAND_BROWSE_PLAY_STREAM = "browse/play_stream"
 
 # Player commands
 COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"

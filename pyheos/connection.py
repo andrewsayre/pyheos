@@ -4,8 +4,8 @@ import asyncio
 from collections import defaultdict
 import json
 import logging
-from typing import DefaultDict, List, Optional, Sequence, Tuple
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from typing import DefaultDict, List, Optional, Sequence, Tuple, Dict, Any
+from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from . import const
 from .player import HeosNowPlayingMedia, HeosPlayer
@@ -16,6 +16,31 @@ SEPARATOR = '\r\n'
 SEPARATOR_BYTES = SEPARATOR.encode()
 
 _LOGGER = logging.getLogger(__name__)
+
+
+_QUOTE_MAP = {
+    '&': '%26',
+    '=': '%3D',
+    '%': '%25'
+}
+
+
+def _quote(string: str) -> str:
+    """Quote a string per the CLI specification."""
+    return ''.join([_QUOTE_MAP.get(char, char) for char in str(string)])
+
+
+def _encode_query(items: dict) -> str:
+    """Encode a dict to query string per CLI specifications."""
+    pairs = []
+    for key, value in items.items():
+        item = key + "=" + _quote(value)
+        # Ensure 'url' goes last per CLI spec
+        if key == 'url':
+            pairs.append(item)
+        else:
+            pairs.insert(0, item)
+    return '&'.join(pairs)
 
 
 class HeosConnection:
@@ -103,7 +128,8 @@ class HeosConnection:
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Failed to handle response")
 
-    async def command(self, command: str) -> Optional[HeosResponse]:
+    async def command(self, command: str,
+                      params: Dict[str, Any] = None) -> Optional[HeosResponse]:
         """Run a command and get it's response."""
         if not self._connected:
             raise ValueError
@@ -111,14 +137,21 @@ class HeosConnection:
         # append sequence number
         sequence = self._sequence
         self._sequence += 1
-        uri = list(urlparse(command))
-        query = dict(parse_qsl(uri[4]))
-        query['sequence'] = sequence
-        uri[4] = urlencode(query, safe='/')
-        command = urlunparse(uri)
+
+        if params:
+            params['sequence'] = sequence
+            command_name = command
+            command = const.BASE_URI + command + '?' + _encode_query(params)
+        else:
+            uri = list(urlparse(command))
+            query = dict(parse_qsl(uri[4]))
+            query['sequence'] = sequence
+            uri[4] = _encode_query(query)
+            command = urlunparse(uri)
+            command_name = uri[1] + uri[2]
+
         # Add reservation
         event = ResponseEvent(sequence)
-        command_name = uri[1] + uri[2]
         pending_commands = self._pending_commands[command_name]
         pending_commands.append(event)
         # Send command
@@ -327,6 +360,15 @@ class HeosCommands:
         command = const.COMMAND_BROWSE_PLAY_PRESET.format(
             player_id=player_id, preset=preset)
         response = await self._connection.command(command)
+        return response.result
+
+    async def play_stream(self, player_id: int, url: str) -> bool:
+        params = {
+            'pid': player_id,
+            'url': url
+        }
+        response = await self._connection.command(
+            const.COMMAND_BROWSE_PLAY_STREAM, params)
         return response.result
 
 

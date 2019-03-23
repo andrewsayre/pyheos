@@ -247,6 +247,10 @@ class HeosPlayer:
         """Play the favorite by 1-based index."""
         return await self._commands.play_preset(self._player_id, preset)
 
+    async def play_url(self, url: str) -> bool:
+        """Play the specified URL."""
+        return await self._commands.play_stream(self._player_id, url)
+
     @property
     def name(self) -> str:
         """Get the name of the device."""
