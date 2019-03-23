@@ -3,11 +3,11 @@ import asyncio
 import logging
 from typing import Optional, Sequence
 
+from . import const
 from .connection import HeosConnection
-from .const import DEFAULT_TIMEOUT
 from .dispatch import Dispatcher
 from .player import HeosPlayer
-from .source import HeosSource
+from .source import HeosSource, InputSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class Heos:
     """The Heos class provides access to the CLI API."""
 
-    def __init__(self, host: str, timeout: int = DEFAULT_TIMEOUT,
+    def __init__(self, host: str, timeout: int = const.DEFAULT_TIMEOUT,
                  *, dispatcher=None):
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(self, host, timeout)
@@ -38,6 +38,21 @@ class Heos:
     async def get_music_sources(self) -> Sequence[HeosSource]:
         """Get available music sources."""
         return await self._connection.commands.get_music_sources()
+
+    async def get_input_sources(self) -> Sequence[InputSource]:
+        """Get available input sources."""
+        sources = await self.get_music_sources()
+        aux_input = next(source for source in sources
+                         if source.name == const.SOURCE_AUX_INPUT)
+        sources = await aux_input.browse()
+        input_sources = []
+        for source in sources:
+            player_id = source.source_id
+            items = await source.browse()
+            input_sources.extend(
+                [InputSource(player_id, item.name, item.media_id)
+                 for item in items])
+        return input_sources
 
     @property
     def dispatcher(self) -> Dispatcher:

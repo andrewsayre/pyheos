@@ -1,5 +1,6 @@
 """Tests for the pyheos library."""
 import asyncio
+import pytest
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Union
@@ -32,6 +33,7 @@ class MockHeosDevice:
         self._started = False
         self.connections = []  # type: List[ConnectionLog]
         self._custom_handlers = defaultdict(list)
+        self._matchers = []  # type: List[CommandMatcher]
 
     async def start(self):
         """Start the heos server."""
@@ -71,6 +73,10 @@ class MockHeosDevice:
 
         self._custom_handlers[expected_command].append(callback)
 
+    def register(self, command: str, args: dict, response: str):
+        """Register a matcher."""
+        self._matchers.append(CommandMatcher(command, args, response))
+
     async def _handle_connection(
             self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
@@ -93,6 +99,15 @@ class MockHeosDevice:
             fixture_name = "{}.{}".format(url_parts.hostname,
                                           url_parts.path.lstrip('/'))
             response = None
+
+            # Try matchers
+            matcher = next((matcher for matcher in self._matchers
+                            if matcher.is_match(command, query)), None)
+            if matcher:
+                test = await matcher.get_response()
+                writer.write((test + SEPARATOR).encode())
+                await writer.drain()
+                continue
 
             # See if we have any custom handlers registered
             custom_fixtures = self._custom_handlers[command]
@@ -119,11 +134,12 @@ class MockHeosDevice:
                     'player/get_now_playing_media',
                     'player/get_volume',
                     'player/get_mute',
-                    'player/get_play_mode',
-                    'browse/get_music_sources'):
+                    'player/get_play_mode'):
                 response = (await get_fixture(fixture_name)) \
                     .replace('{player_id}', query['pid']) \
                     .replace('{sequence}', query['sequence'])
+            else:
+                pytest.fail("Unrecognized command: " + result)
 
             log.commands[command].append(result)
 
@@ -136,6 +152,30 @@ class MockHeosDevice:
                     await writer.drain()
 
         self.connections.remove(log)
+
+
+class CommandMatcher:
+    """Define a command match response."""
+
+    def __init__(self, command: str, args: dict, response: str):
+        """Init the command response."""
+        self.command = command
+        self.args = args
+        self._response = response
+
+    def is_match(self, command, args):
+        """Determine if the command matches the target."""
+        if command != self.command:
+            return False
+        if self.args:
+            for key, value in self.args.items():
+                if not args[key] == value:
+                    return False
+        return True
+
+    async def get_response(self):
+        """Get the response body."""
+        return await get_fixture(self._response)
 
 
 class ConnectionLog:

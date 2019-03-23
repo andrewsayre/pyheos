@@ -27,6 +27,7 @@ VALID_REPEAT_MODES = (
 
 TYPE_MUSIC_SERVICE = 'music_service'
 
+SOURCE_AUX_INPUT = 'AUX Input'
 
 SIGNAL_PLAYER_UPDATED = "player_updated"
 SIGNAL_HEOS_UPDATED = "heos_updated"
@@ -35,6 +36,7 @@ BASE_URI = "heos://"
 
 # Browse commands
 COMMAND_BROWSE_GET_SOURCES = BASE_URI + "browse/get_music_sources"
+COMMAND_BROWSE_BROWSE = BASE_URI + "browse/browse?sid={source_id}"
 
 # Player commands
 COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"

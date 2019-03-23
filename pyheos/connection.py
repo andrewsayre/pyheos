@@ -302,6 +302,12 @@ class HeosCommands:
             const.COMMAND_BROWSE_GET_SOURCES)
         return [HeosSource(self, data) for data in response.payload]
 
+    async def browse(self, source_id: int) -> Sequence[dict]:
+        """Browse a music source."""
+        command = const.COMMAND_BROWSE_BROWSE.format(source_id=source_id)
+        response = await self._connection.command(command)
+        return response.payload
+
 
 class HeosEventHandler:
     """Define a class that handles unsolicited events."""

@@ -260,8 +260,8 @@ async def test_sources_changed_event(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_music_sources(mock_device, heos):
     """Test the heos connect method."""
-    mock_device.register_one_time("browse/get_music_sources",
-                                  'browse.get_music_sources')
+    mock_device.register("browse/get_music_sources", None,
+                         'browse.get_music_sources')
     sources = await heos.get_music_sources()
     assert len(sources) == 15
     pandora = next(source for source in sources if source.name == 'Pandora')
@@ -271,3 +271,25 @@ async def test_get_music_sources(mock_device, heos):
     assert pandora.type == const.TYPE_MUSIC_SERVICE
     assert pandora.available
     assert pandora.service_username == 'test@test.com'
+    assert not pandora.container
+    assert not pandora.playable
+
+
+@pytest.mark.asyncio
+async def test_get_input_sources(mock_device, heos):
+    """Test the get input sources method."""
+    mock_device.register("browse/get_music_sources", None,
+                         'browse.get_music_sources')
+    mock_device.register("browse/browse", {'sid': '1027'},
+                         'browse.browse_aux_input')
+    mock_device.register("browse/browse", {'sid': '546978854'},
+                         'browse.browse_theater_receiver')
+    mock_device.register("browse/browse", {'sid': '-263109739'},
+                         'browse.browse_heos_drive')
+
+    sources = await heos.get_input_sources()
+    assert len(sources) == 18
+    source = sources[0]
+    assert source.name == 'Theater Receiver - CBL/SAT'
+    assert source.input_name == 'inputs/cable_sat'
+    assert source.player_id == 546978854

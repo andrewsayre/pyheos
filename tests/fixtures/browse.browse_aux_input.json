@@ -1,0 +1,19 @@
+{
+	"heos": {
+		"command": "browse/browse",
+		"result": "success",
+		"message": "sid=1027&returned=3&count=3"
+	},
+	"payload": [{
+			"name": "Theater Receiver",
+			"image_url": "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_aux.png",
+			"type": "heos_service",
+			"sid": 546978854
+		}, {
+			"name": "Office",
+			"image_url": "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_aux.png",
+			"type": "heos_service",
+			"sid": -263109739
+		}
+	]
+}

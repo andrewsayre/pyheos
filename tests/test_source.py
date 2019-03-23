@@ -1,8 +1,8 @@
 """Tests for the sources module."""
-from pyheos.source import HeosSource
+from pyheos.source import HeosSource, InputSource
 
 
-def test_str_repr():
+def test_source_str_repr():
     """Test the __str__ function."""
     data = {
         "name": "AUX Input",
@@ -12,6 +12,13 @@ def test_str_repr():
         "sid": 1027,
         "available": "true"
     }
-    player = HeosSource(None, data)
-    assert str(player) == '<AUX Input (heos_service)>'
-    assert repr(player) == '<AUX Input (heos_service) 1027>'
+    source = HeosSource(None, data)
+    assert str(source) == '<AUX Input (heos_service)>'
+    assert repr(source) == '<AUX Input (heos_service) 1027>'
+
+
+def test_input_str_repr():
+    """Test the __str__ function."""
+    source = InputSource(1, "Test", "Input")
+    assert str(source) == "<Test (Input)>"
+    assert repr(source) == "<Test (Input) on 1>"
