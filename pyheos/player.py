@@ -243,6 +243,10 @@ class HeosPlayer:
         return await self.play_input(
             input_source.input_name, source_player_id=input_source.player_id)
 
+    async def play_favorite(self, preset: int) -> bool:
+        """Play the favorite by 1-based index."""
+        return await self._commands.play_preset(self._player_id, preset)
+
     @property
     def name(self) -> str:
         """Get the name of the device."""

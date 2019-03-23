@@ -136,3 +136,17 @@ async def test_play_input_source(mock_device, heos):
     # Test invalid input_name
     with pytest.raises(ValueError):
         await player.play_input("Invalid")
+
+
+@pytest.mark.asyncio
+async def test_play_favorite(mock_device, heos):
+    """Test the play favorite."""
+    player = heos.get_player(1)
+    args = {'pid': '1', 'preset': '1'}
+    mock_device.register("browse/play_preset", args, 'browse.play_preset')
+
+    assert await player.play_favorite(1)
+
+    # Test invalid starting index
+    with pytest.raises(ValueError):
+        await player.play_favorite(0)

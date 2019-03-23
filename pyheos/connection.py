@@ -320,6 +320,15 @@ class HeosCommands:
         response = await self._connection.command(command)
         return response.result
 
+    async def play_preset(self, player_id: int, preset: int) -> bool:
+        """Play the specified preset by 1-based index."""
+        if preset < 1:
+            raise ValueError("Invalid preset: " + str(preset))
+        command = const.COMMAND_BROWSE_PLAY_PRESET.format(
+            player_id=player_id, preset=preset)
+        response = await self._connection.command(command)
+        return response.result
+
 
 class HeosEventHandler:
     """Define a class that handles unsolicited events."""
