@@ -27,9 +27,12 @@ VALID_REPEAT_MODES = (
 
 # Music Source Types
 TYPE_MUSIC_SERVICE = 'music_service'
+TYPE_STATION = 'station'
+TYPE_HEOS_SERVICE = 'heos_service'
 
 # Music Sources
 SOURCE_AUX_INPUT = 'AUX Input'
+SOURCE_FAVORITES = 'Favorites'
 
 INPUT_AUX_IN_1 = "inputs/aux_in_1"
 INPUT_AUX_IN_2 = "inputs/aux_in_2"

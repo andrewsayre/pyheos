@@ -301,3 +301,20 @@ async def test_get_input_sources(mock_device, heos):
     assert source.name == 'Theater Receiver - CBL/SAT'
     assert source.input_name == const.INPUT_CABLE_SAT
     assert source.player_id == 546978854
+
+
+@pytest.mark.asyncio
+async def test_get_favorites(mock_device, heos):
+    """Test the get favorites method."""
+    mock_device.register("browse/get_music_sources", None,
+                         'browse.get_music_sources')
+    mock_device.register("browse/browse", {'sid': '1028'},
+                         'browse.browse_favorites')
+
+    sources = await heos.get_favorites()
+    assert len(sources) == 3
+    assert sorted(sources.keys()) == [1, 2, 3]
+    fav = sources[1]
+    assert fav.playable
+    assert fav.name == 'Thumbprint Radio'
+    assert fav.type == const.TYPE_STATION

@@ -1,7 +1,7 @@
 """Define the heos manager module."""
 import asyncio
 import logging
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from . import const
 from .connection import HeosConnection
@@ -53,6 +53,14 @@ class Heos:
                 [InputSource(player_id, item.name, item.media_id)
                  for item in items])
         return input_sources
+
+    async def get_favorites(self) -> Dict[int, HeosSource]:
+        """Get available favorites."""
+        sources = await self.get_music_sources()
+        favorites = next(source for source in sources
+                         if source.name == const.SOURCE_FAVORITES)
+        sources = await favorites.browse()
+        return {index + 1: source for index, source in enumerate(sources)}
 
     @property
     def dispatcher(self) -> Dispatcher:
