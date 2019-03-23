@@ -40,13 +40,15 @@ class MockHeosDevice:
         self._server = await asyncio.start_server(
             self._handle_connection, '127.0.0.1', const.CLI_PORT)
 
-        self.register('player/get_players', None, 'player.get_players')
-        self.register('player/get_play_state', None, 'player.get_play_state')
-        self.register('player/get_now_playing_media', None,
+        self.register(const.COMMAND_GET_PLAYERS, None, 'player.get_players')
+        self.register(const.COMMAND_GET_PLAY_STATE, None,
+                      'player.get_play_state')
+        self.register(const.COMMAND_GET_NOW_PLAYING_MEDIA, None,
                       'player.get_now_playing_media')
-        self.register('player/get_volume', None, 'player.get_volume')
-        self.register('player/get_mute', None, 'player.get_mute')
-        self.register('player/get_play_mode', None, 'player.get_play_mode')
+        self.register(const.COMMAND_GET_VOLUME, None, 'player.get_volume')
+        self.register(const.COMMAND_GET_MUTE, None, 'player.get_mute')
+        self.register(const.COMMAND_GET_PLAY_MODE, None,
+                      'player.get_play_mode')
 
     async def stop(self):
         """Stop the heos server."""
@@ -101,7 +103,7 @@ class MockHeosDevice:
                     await writer.drain()
                 continue
 
-            if command == 'system/register_for_change_events':
+            if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = query["enable"]
                 if enable == 'on':
                     log.is_registered_for_events = True

@@ -5,7 +5,6 @@ from collections import defaultdict
 import json
 import logging
 from typing import Any, DefaultDict, Dict, List, Optional, Sequence, Tuple
-from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from . import const
 from .player import HeosNowPlayingMedia, HeosPlayer
@@ -137,18 +136,10 @@ class HeosConnection:
         # append sequence number
         sequence = self._sequence
         self._sequence += 1
-
-        if params:
-            params['sequence'] = sequence
-            command_name = command
-            command = const.BASE_URI + command + '?' + _encode_query(params)
-        else:
-            uri = list(urlparse(command))
-            query = dict(parse_qsl(uri[4]))
-            query['sequence'] = sequence
-            uri[4] = _encode_query(query)
-            command = urlunparse(uri)
-            command_name = uri[1] + uri[2]
+        params = params or {}
+        params['sequence'] = sequence
+        command_name = command
+        command = const.BASE_URI + command + '?' + _encode_query(params)
 
         # Add reservation
         event = ResponseEvent(sequence)
@@ -202,10 +193,11 @@ class HeosCommands:
 
     async def register_for_change_events(self, enable=True) -> bool:
         """Enable or disable change event notifications."""
-        enable_mode = "on" if enable else "off"
-        command = const.COMMAND_REGISTER_FOR_CHANGE_EVENTS.format(
-            enable=enable_mode)
-        response = await self._connection.command(command)
+        params = {
+            'enable': "on" if enable else "off"
+        }
+        response = await self._connection.command(
+            const.COMMAND_REGISTER_FOR_CHANGE_EVENTS, params)
         return response.result
 
     async def get_players(self) -> Sequence[HeosPlayer]:
@@ -215,56 +207,75 @@ class HeosCommands:
 
     async def get_player_state(self, player_id: int) -> str:
         """Get the state of the player."""
-        command = const.COMMAND_GET_PLAY_STATE.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_PLAY_STATE, params)
         return response.get_message('state')
 
     async def set_player_state(self, player_id: int, state: str) -> bool:
         """Set the state of the player."""
         if state not in const.VALID_PLAY_STATES:
             raise ValueError("Invalid play state: " + state)
-        command = const.COMMAND_SET_PLAY_STATE.format(
-            player_id=player_id, state=state)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'state': state
+        }
+        response = await self._connection.command(
+            const.COMMAND_SET_PLAY_STATE, params)
         return response.result
 
     async def get_now_playing_state(
             self, player_id: int,
             now_playing_media: HeosNowPlayingMedia) -> bool:
         """Get the now playing media information."""
-        command = const.COMMAND_GET_NOW_PLAYING_MEDIA.format(
-            player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_NOW_PLAYING_MEDIA, params)
         now_playing_media.from_data(response.payload)
         return response.result
 
     async def get_volume(self, player_id: int) -> int:
         """Get the volume of the player."""
-        command = const.COMMAND_GET_VOLUME.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_VOLUME, params)
         return int(response.get_message('level'))
 
     async def set_volume(self, player_id: int, level: int) -> bool:
         """Set the volume of the player."""
         if level < 0 or level > 100:
             raise ValueError("'level' must be in the range 0-100")
-        command = const.COMMAND_SET_VOLUME.format(
-            player_id=player_id, level=level)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'level': level
+        }
+        response = await self._connection.command(
+            const.COMMAND_SET_VOLUME, params)
         return response.result
 
     async def get_mute(self, player_id: str) -> bool:
         """Get the mute state of the player."""
-        command = const.COMMAND_GET_MUTE.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_MUTE, params)
         return response.get_message('state') == 'on'
 
     async def set_mute(self, player_id: str, state: bool) -> bool:
         """Set the mute state of the player."""
-        mute_state = "on" if state else "off"
-        command = const.COMMAND_SET_MUTE.format(
-            player_id=player_id, state=mute_state)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'state': "on" if state else "off"
+        }
+        response = await self._connection.command(
+            const.COMMAND_SET_MUTE, params)
         return response.result
 
     async def volume_up(self, player_id: int,
@@ -272,9 +283,12 @@ class HeosCommands:
         """Increase the volume level."""
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
-        command = const.COMMAND_VOLUME_UP.format(
-            player_id=player_id, step=step)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'step': step
+        }
+        response = await self._connection.command(
+            const.COMMAND_VOLUME_UP, params)
         return response.result
 
     async def volume_down(self, player_id: int,
@@ -282,21 +296,30 @@ class HeosCommands:
         """Increase the volume level."""
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
-        command = const.COMMAND_VOLUME_DOWN.format(
-            player_id=player_id, step=step)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'step': step
+        }
+        response = await self._connection.command(
+            const.COMMAND_VOLUME_DOWN, params)
         return response.result
 
     async def toggle_mute(self, player_id: int) -> bool:
         """Toggle the mute state.."""
-        command = const.COMMAND_TOGGLE_MUTE.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_TOGGLE_MUTE, params)
         return response.result
 
     async def get_play_mode(self, player_id: int) -> Tuple[str, bool]:
         """Get the current play mode."""
-        command = const.COMMAND_GET_PLAY_MODE.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_PLAY_MODE, params)
         repeat = response.get_message('repeat')
         shuffle = response.get_message('shuffle') == 'on'
         return repeat, shuffle
@@ -305,28 +328,40 @@ class HeosCommands:
         """Set the current play mode."""
         if repeat not in const.VALID_REPEAT_MODES:
             raise ValueError("Invalid repeat mode: " + repeat)
-        command = const.COMMAND_SET_PLAY_MODE.format(
-            player_id=player_id, repeat=repeat,
-            shuffle='on' if shuffle else 'off')
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'repeat': repeat,
+            'shuffle': 'on' if shuffle else 'off'
+        }
+        response = await self._connection.command(
+            const.COMMAND_SET_PLAY_MODE, params)
         return response.result
 
     async def clear_queue(self, player_id: int) -> bool:
         """Clear the queue."""
-        command = const.COMMAND_CLEAR_QUEUE.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_CLEAR_QUEUE, params)
         return response.result
 
     async def play_next(self, player_id: int) -> bool:
         """Play next."""
-        command = const.COMMAND_PLAY_NEXT.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_PLAY_NEXT, params)
         return response.result
 
     async def play_previous(self, player_id: int) -> bool:
         """Play next."""
-        command = const.COMMAND_PLAY_PREVIOUS.format(player_id=player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_PLAY_PREVIOUS, params)
         return response.result
 
     async def get_music_sources(self) -> Sequence[HeosSource]:
@@ -337,8 +372,11 @@ class HeosCommands:
 
     async def browse(self, source_id: int) -> Sequence[dict]:
         """Browse a music source."""
-        command = const.COMMAND_BROWSE_BROWSE.format(source_id=source_id)
-        response = await self._connection.command(command)
+        params = {
+            'sid': source_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_BROWSE_BROWSE, params)
         return response.payload
 
     async def play_input(self, player_id: int, input_name: str, *,
@@ -346,20 +384,25 @@ class HeosCommands:
         """Play the specified input source."""
         if input_name not in const.VALID_INPUTS:
             raise ValueError("Invalid input name: " + input_name)
-        source_player_id = source_player_id or player_id
-        command = const.COMMAND_BROWSE_PLAY_INPUT.format(
-            player_id=player_id, input_name=input_name,
-            source_player_id=source_player_id)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'spid': source_player_id or player_id,
+            'input': input_name
+        }
+        response = await self._connection.command(
+            const.COMMAND_BROWSE_PLAY_INPUT, params)
         return response.result
 
     async def play_preset(self, player_id: int, preset: int) -> bool:
         """Play the specified preset by 1-based index."""
         if preset < 1:
             raise ValueError("Invalid preset: " + str(preset))
-        command = const.COMMAND_BROWSE_PLAY_PRESET.format(
-            player_id=player_id, preset=preset)
-        response = await self._connection.command(command)
+        params = {
+            'pid': player_id,
+            'preset': preset
+        }
+        response = await self._connection.command(
+            const.COMMAND_BROWSE_PLAY_PRESET, params)
         return response.result
 
     async def play_stream(self, player_id: int, url: str) -> bool:

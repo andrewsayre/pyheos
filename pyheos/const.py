@@ -90,43 +90,33 @@ SIGNAL_HEOS_UPDATED = "heos_updated"
 BASE_URI = "heos://"
 
 # Browse commands
-COMMAND_BROWSE_GET_SOURCES = BASE_URI + "browse/get_music_sources"
-COMMAND_BROWSE_BROWSE = BASE_URI + "browse/browse?sid={source_id}"
-COMMAND_BROWSE_PLAY_INPUT = BASE_URI + "browse/play_input?pid={player_id}&" \
-                                       "spid={source_player_id}&" \
-                                       "input={input_name}"
-COMMAND_BROWSE_PLAY_PRESET = \
-    BASE_URI + "browse/play_preset?pid={player_id}&preset={preset}"
+COMMAND_BROWSE_GET_SOURCES = "browse/get_music_sources"
+COMMAND_BROWSE_BROWSE = "browse/browse"
+COMMAND_BROWSE_PLAY_INPUT = "browse/play_input"
+COMMAND_BROWSE_PLAY_PRESET = "browse/play_preset"
 COMMAND_BROWSE_PLAY_STREAM = "browse/play_stream"
 
 # Player commands
-COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"
-COMMAND_GET_PLAY_STATE = BASE_URI + "player/get_play_state?pid={player_id}"
-COMMAND_SET_PLAY_STATE = \
-    BASE_URI + "player/set_play_state?pid={player_id}&state={state}"
-COMMAND_GET_NOW_PLAYING_MEDIA = \
-    BASE_URI + "player/get_now_playing_media?pid={player_id}"
-COMMAND_GET_VOLUME = \
-    BASE_URI + "player/get_volume?pid={player_id}"
-COMMAND_SET_VOLUME = \
-    BASE_URI + "player/set_volume?pid={player_id}&level={level}"
-COMMAND_GET_MUTE = BASE_URI + "player/get_mute?pid={player_id}"
-COMMAND_SET_MUTE = BASE_URI + "player/set_mute?pid={player_id}&state={state}"
-COMMAND_VOLUME_UP = BASE_URI + "player/volume_up?pid={player_id}&step={step}"
-COMMAND_VOLUME_DOWN = \
-    BASE_URI + "player/volume_down?pid={player_id}&step={step}"
-COMMAND_TOGGLE_MUTE = BASE_URI + "player/toggle_mute?pid={player_id}"
-COMMAND_GET_PLAY_MODE = BASE_URI + "player/get_play_mode?pid={player_id}"
-COMMAND_SET_PLAY_MODE = BASE_URI + "player/set_play_mode?pid={player_id}" \
-                                   "&repeat={repeat}&shuffle={shuffle}"
-COMMAND_CLEAR_QUEUE = BASE_URI + "player/clear_queue?pid={player_id}"
-COMMAND_PLAY_NEXT = BASE_URI + "player/play_next?pid={player_id}"
-COMMAND_PLAY_PREVIOUS = BASE_URI + "player/play_previous?pid={player_id}"
+COMMAND_GET_PLAYERS = "player/get_players"
+COMMAND_GET_PLAY_STATE = "player/get_play_state"
+COMMAND_SET_PLAY_STATE = "player/set_play_state"
+COMMAND_GET_NOW_PLAYING_MEDIA = "player/get_now_playing_media"
+COMMAND_GET_VOLUME = "player/get_volume"
+COMMAND_SET_VOLUME = "player/set_volume"
+COMMAND_GET_MUTE = "player/get_mute"
+COMMAND_SET_MUTE = "player/set_mute"
+COMMAND_VOLUME_UP = "player/volume_up"
+COMMAND_VOLUME_DOWN = "player/volume_down"
+COMMAND_TOGGLE_MUTE = "player/toggle_mute"
+COMMAND_GET_PLAY_MODE = "player/get_play_mode"
+COMMAND_SET_PLAY_MODE = "player/set_play_mode"
+COMMAND_CLEAR_QUEUE = "player/clear_queue"
+COMMAND_PLAY_NEXT = "player/play_next"
+COMMAND_PLAY_PREVIOUS = "player/play_previous"
 
 
 # System commands
-COMMAND_REGISTER_FOR_CHANGE_EVENTS = \
-    BASE_URI + "system/register_for_change_events?enable={enable}"
+COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"
 
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"

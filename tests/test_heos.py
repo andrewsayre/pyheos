@@ -101,7 +101,7 @@ async def test_player_now_playing_changed_event(mock_device, heos):
     heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
 
     # Write event through mock device
-    mock_device.register("player/get_now_playing_media", None,
+    mock_device.register(const.COMMAND_GET_NOW_PLAYING_MEDIA, None,
                          "player.get_now_playing_media_changed",
                          replace=True)
     event_to_raise = (await get_fixture("event.player_now_playing_changed")) \
@@ -267,7 +267,7 @@ async def test_sources_changed_event(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_music_sources(mock_device, heos):
     """Test the heos connect method."""
-    mock_device.register("browse/get_music_sources", None,
+    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
                          'browse.get_music_sources')
 
     sources = await heos.get_music_sources()
@@ -286,13 +286,13 @@ async def test_get_music_sources(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_input_sources(mock_device, heos):
     """Test the get input sources method."""
-    mock_device.register("browse/get_music_sources", None,
+    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
                          'browse.get_music_sources')
-    mock_device.register("browse/browse", {'sid': '1027'},
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1027'},
                          'browse.browse_aux_input')
-    mock_device.register("browse/browse", {'sid': '546978854'},
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '546978854'},
                          'browse.browse_theater_receiver')
-    mock_device.register("browse/browse", {'sid': '-263109739'},
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '-263109739'},
                          'browse.browse_heos_drive')
 
     sources = await heos.get_input_sources()
@@ -306,9 +306,9 @@ async def test_get_input_sources(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_favorites(mock_device, heos):
     """Test the get favorites method."""
-    mock_device.register("browse/get_music_sources", None,
+    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
                          'browse.get_music_sources')
-    mock_device.register("browse/browse", {'sid': '1028'},
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1028'},
                          'browse.browse_favorites')
 
     sources = await heos.get_favorites()

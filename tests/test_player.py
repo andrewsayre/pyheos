@@ -27,7 +27,7 @@ async def test_set_state(mock_device, heos):
     """Test the play, pause, and stop commands."""
     player = heos.get_player(1)
 
-    mock_device.register("player/set_play_state", None,
+    mock_device.register(const.COMMAND_SET_PLAY_STATE, None,
                          'player.set_play_state')
 
     assert await player.play()
@@ -43,11 +43,11 @@ async def test_set_volume_and_mute(mock_device, heos):
     """Test the volume commands."""
     player = heos.get_player(1)
 
-    mock_device.register("player/set_volume", None, 'player.set_volume')
-    mock_device.register("player/set_mute", None, 'player.set_mute')
-    mock_device.register("player/volume_up", None, 'player.volume_up')
-    mock_device.register("player/volume_down", None, 'player.volume_down')
-    mock_device.register("player/toggle_mute", None, 'player.toggle_mute')
+    mock_device.register(const.COMMAND_SET_VOLUME, None, 'player.set_volume')
+    mock_device.register(const.COMMAND_SET_MUTE, None, 'player.set_mute')
+    mock_device.register(const.COMMAND_VOLUME_UP, None, 'player.volume_up')
+    mock_device.register(const.COMMAND_VOLUME_DOWN, None, 'player.volume_down')
+    mock_device.register(const.COMMAND_TOGGLE_MUTE, None, 'player.toggle_mute')
 
     # Volume
     with pytest.raises(ValueError):
@@ -85,7 +85,8 @@ async def test_set_play_mode(mock_device, heos):
         'repeat': const.REPEAT_ON_ALL,
         'shuffle': 'on'
     }
-    mock_device.register("player/set_play_mode", args, 'player.set_play_mode')
+    mock_device.register(const.COMMAND_SET_PLAY_MODE, args,
+                         'player.set_play_mode')
 
     assert await player.set_play_mode(const.REPEAT_ON_ALL, True)
     # Assert invalid mode
@@ -98,8 +99,9 @@ async def test_play_next_previous(mock_device, heos):
     """Test the volume commands."""
     player = heos.get_player(1)
     args = {'pid': '1'}
-    mock_device.register("player/play_next", args, 'player.play_next')
-    mock_device.register("player/play_previous", args, 'player.play_previous')
+    mock_device.register(const.COMMAND_PLAY_NEXT, args, 'player.play_next')
+    mock_device.register(const.COMMAND_PLAY_PREVIOUS, args,
+                         'player.play_previous')
 
     assert await player.play_next()
     assert await player.play_previous()
@@ -110,12 +112,12 @@ async def test_clear_queue(mock_device, heos):
     """Test the volume commands."""
     player = heos.get_player(1)
     args = {'pid': '1'}
-    mock_device.register("player/clear_queue", args, 'player.clear_queue')
+    mock_device.register(const.COMMAND_CLEAR_QUEUE, args, 'player.clear_queue')
 
     assert await player.clear_queue()
 
     # Also test with a 'command under process' response
-    mock_device.register("player/clear_queue", args,
+    mock_device.register(const.COMMAND_CLEAR_QUEUE, args,
                          ['player.clear_queue',
                           'player.clear_queue_processing'], replace=True)
 
@@ -129,7 +131,8 @@ async def test_play_input_source(mock_device, heos):
     input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
     args = {'pid': '1', 'spid': str(input_source.player_id),
             'input': input_source.input_name}
-    mock_device.register("browse/play_input", args, 'browse.play_input')
+    mock_device.register(const.COMMAND_BROWSE_PLAY_INPUT, args,
+                         'browse.play_input')
 
     assert await player.play_input_source(input_source)
 
@@ -143,7 +146,8 @@ async def test_play_favorite(mock_device, heos):
     """Test the play favorite."""
     player = heos.get_player(1)
     args = {'pid': '1', 'preset': '1'}
-    mock_device.register("browse/play_preset", args, 'browse.play_preset')
+    mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args,
+                         'browse.play_preset')
 
     assert await player.play_favorite(1)
 
