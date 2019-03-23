@@ -121,6 +121,9 @@ async def test_player_now_playing_changed_event(mock_device, heos):
     assert now_playing.song_id == 1
     assert now_playing.song == "I've Been Waiting (feat. Fall Out Boy)"
     assert now_playing.station == "Today's Hits Radio"
+    assert now_playing.current_position is None
+    assert now_playing.current_position_updated is None
+    assert now_playing.duration is None
 
 
 @pytest.mark.asyncio
@@ -165,6 +168,7 @@ async def test_player_now_playing_progress_event(mock_device, heos):
     player = heos.get_player(1)
     assert player.now_playing_media.duration is None
     assert player.now_playing_media.current_position is None
+    assert player.now_playing_media.current_position_updated is None
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -187,8 +191,11 @@ async def test_player_now_playing_progress_event(mock_device, heos):
     # Assert state changed
     assert player.now_playing_media.duration == 210000
     assert player.now_playing_media.current_position == 113000
-    assert heos.get_player(2).now_playing_media.duration is None
-    assert heos.get_player(2).now_playing_media.current_position is None
+    assert player.now_playing_media.current_position_updated is not None
+    player2 = heos.get_player(2)
+    assert player2.now_playing_media.duration is None
+    assert player2.now_playing_media.current_position is None
+    assert player2.now_playing_media.current_position_updated is None
 
 
 @pytest.mark.asyncio

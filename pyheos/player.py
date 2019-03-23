@@ -1,8 +1,10 @@
 """Define the player module."""
 import asyncio
+from datetime import datetime
 from typing import Optional
 
 from . import const
+from .response import HeosResponse
 from .source import InputSource
 
 
@@ -22,6 +24,7 @@ class HeosNowPlayingMedia:
         self._queue_id = None  # type: int
         self._song_id = None  # type: int
         self._current_position = None  # type: int
+        self._current_position_updated = None  # type: datetime
         self._duration = None  # type: int
 
     def from_data(self, data: dict):
@@ -36,7 +39,19 @@ class HeosNowPlayingMedia:
         self._media_id = data['mid']
         self._queue_id = int(data['qid'])
         self._song_id = int(data['sid'])
+        self.clear_position()
+
+    def event_update_position(self, event: HeosResponse) -> bool:
+        """Update the position/duration from an event."""
+        self._current_position = int(event.get_message('cur_pos'))
+        self._current_position_updated = datetime.utcnow()
+        self._duration = int(event.get_message('duration'))
+        return True
+
+    def clear_position(self):
+        """Clear the current position."""
         self._current_position = None
+        self._current_position_updated = None
         self._duration = None
 
     @property
@@ -93,6 +108,11 @@ class HeosNowPlayingMedia:
     def current_position(self) -> int:
         """Get the current position within the playing media."""
         return self._current_position
+
+    @property
+    def current_position_updated(self) -> datetime:
+        """Get the datetime the position was last updated."""
+        return self._current_position_updated
 
     @property
     def duration(self):
@@ -250,6 +270,27 @@ class HeosPlayer:
     async def play_url(self, url: str) -> bool:
         """Play the specified URL."""
         return await self._commands.play_stream(self._player_id, url)
+
+    async def event_update(self, event: HeosResponse) -> bool:
+        """Handle a player update event."""
+        if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
+            return self._now_playing_media.event_update_position(event)
+
+        if event.command == const.EVENT_PLAYER_STATE_CHANGED:
+            self._state = event.get_message('state')
+            if self._state == const.PLAY_STATE_PLAY:
+                self._now_playing_media.clear_position()
+        elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
+            await self.refresh_now_playing_media()
+        elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
+            self._volume = int(event.get_message('level'))
+            self._is_muted = event.get_message('mute') == 'on'
+        elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
+            self._repeat = event.get_message('repeat')
+        elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
+            self._shuffle = event.get_message('shuffle') == 'on'
+
+        return True
 
     @property
     def name(self) -> str:

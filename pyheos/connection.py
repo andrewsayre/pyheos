@@ -192,100 +192,16 @@ class HeosEventHandler:
 
     async def handle_event(self, response: HeosResponse):
         """Handle a response event."""
-        if response.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
-            self._now_playing_progress(response)
-        elif response.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state_changed(response)
-        elif response.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
-            await self._now_playing_changed(response)
-        elif response.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._volume_changed(response)
-        elif response.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self._repeat_mode_changed(response)
-        elif response.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self._shuffle_mode_changed(response)
+        if response.command in const.PLAYER_EVENTS:
+            player_id = response.get_player_id()
+            player = self._heos.get_player(player_id)
+            if player and (await player.event_update(response)):
+                self._heos.dispatcher.send(
+                    const.SIGNAL_PLAYER_UPDATED, player_id, response.command)
+                _LOGGER.debug("%s event received: %s", player, response)
         elif response.command == const.EVENT_SOURCES_CHANGED:
             self._heos.dispatcher.send(
                 const.SIGNAL_HEOS_UPDATED,
                 const.EVENT_SOURCES_CHANGED)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
-
-    def _state_changed(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        state = response.get_message('state')
-        player = self._heos.get_player(player_id)
-        if player:
-            player._state = state  # pylint: disable=protected-access
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_PLAYER_STATE_CHANGED)
-            _LOGGER.debug("'%s' state changed to '%s'", player, state)
-
-    async def _now_playing_changed(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        player = self._heos.get_player(player_id)
-        if player:
-            await player.refresh_now_playing_media()
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_PLAYER_NOW_PLAYING_CHANGED)
-            _LOGGER.debug("'%s' now playing media changed", player)
-
-    def _volume_changed(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        level = int(response.get_message('level'))
-        mute = response.get_message('mute')
-        player = self._heos.get_player(player_id)
-        if player:
-            # pylint: disable=protected-access
-            player._volume = level
-            # pylint: disable=protected-access
-            player._is_muted = mute == 'on'
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_PLAYER_VOLUME_CHANGED)
-            _LOGGER.debug("'%s' volume changed to '%s', mute changed to '%s'",
-                          player, level, mute)
-
-    def _now_playing_progress(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        current_position = int(response.get_message('cur_pos'))
-        duration = int(response.get_message('duration'))
-        player = self._heos.get_player(player_id)
-        if player:
-            # pylint: disable=protected-access
-            player.now_playing_media._current_position = current_position
-            # pylint: disable=protected-access
-            player.now_playing_media._duration = duration
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_PLAYER_NOW_PLAYING_PROGRESS)
-            _LOGGER.debug("'%s' now playing progress changed: %s/%s",
-                          player, current_position, duration)
-
-    def _repeat_mode_changed(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        repeat = response.get_message('repeat')
-        player = self._heos.get_player(player_id)
-        if player:
-            # pylint: disable=protected-access
-            player._repeat = repeat
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_REPEAT_MODE_CHANGED)
-            _LOGGER.debug("'%s' repeat mode changed to '%s'",
-                          player, repeat)
-
-    def _shuffle_mode_changed(self, response: HeosResponse):
-        player_id = response.get_player_id()
-        shuffle = response.get_message('shuffle') == 'on'
-        player = self._heos.get_player(player_id)
-        if player:
-            # pylint: disable=protected-access
-            player._shuffle = shuffle
-            self._heos.dispatcher.send(
-                const.SIGNAL_PLAYER_UPDATED, player_id,
-                const.EVENT_SHUFFLE_MODE_CHANGED)
-            _LOGGER.debug("'%s' shuffle to '%s'",
-                          player, shuffle)
