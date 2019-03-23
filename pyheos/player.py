@@ -2,7 +2,8 @@
 import asyncio
 from typing import Optional
 
-from pyheos import const
+from . import const
+from .source import InputSource
 
 
 class HeosNowPlayingMedia:
@@ -230,6 +231,17 @@ class HeosPlayer:
     async def play_previous(self) -> bool:
         """Clear the queue of the player."""
         return await self._commands.play_previous(self._player_id)
+
+    async def play_input(
+            self, input_name: str, *, source_player_id: int = None) -> bool:
+        """Play the specified input."""
+        return await self._commands.play_input(
+            self._player_id, input_name, source_player_id=source_player_id)
+
+    async def play_input_source(self, input_source: InputSource) -> bool:
+        """Play the specified input source."""
+        return await self.play_input(
+            input_source.input_name, source_player_id=input_source.player_id)
 
     @property
     def name(self) -> str:

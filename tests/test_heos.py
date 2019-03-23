@@ -44,6 +44,7 @@ async def test_connect_loads_players_and_subscribes(mock_device, heos):
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_player_state_changed_event(mock_device, heos):
     """Test playing state updates when event is received."""
     # assert not playing
@@ -65,14 +66,15 @@ async def test_player_state_changed_event(mock_device, heos):
         .replace("{state}", const.PLAY_STATE_PLAY)
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal
+    await signal.wait()
     # Assert state changed
     assert player.state == const.PLAY_STATE_PLAY
     assert heos.get_player(2).state == const.PLAY_STATE_STOP
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_player_now_playing_changed_event(mock_device, heos):
     """Test now playing updates when event is received."""
     # assert current state
@@ -106,8 +108,8 @@ async def test_player_now_playing_changed_event(mock_device, heos):
         .replace("{player_id}", str(player.player_id))
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal is set
+    await signal.wait()
     # Assert state changed
     assert now_playing.album == "I've Been Waiting (Single) (Explicit)"
     assert now_playing.type == 'station'
@@ -122,6 +124,7 @@ async def test_player_now_playing_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_player_volume_changed_event(mock_device, heos):
     """Test volume state updates when event is received."""
     # assert not playing
@@ -145,8 +148,8 @@ async def test_player_volume_changed_event(mock_device, heos):
         .replace("{mute}", 'on')
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal is set
+    await signal.wait()
     # Assert state changed
     assert player.volume == 50
     assert player.is_muted
@@ -155,6 +158,7 @@ async def test_player_volume_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_player_now_playing_progress_event(mock_device, heos):
     """Test now playing progress updates when event received."""
     # assert not playing
@@ -179,7 +183,7 @@ async def test_player_now_playing_progress_event(mock_device, heos):
     await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    await signal.wait()
     # Assert state changed
     assert player.now_playing_media.duration == 210000
     assert player.now_playing_media.current_position == 113000
@@ -188,6 +192,7 @@ async def test_player_now_playing_progress_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_repeat_mode_changed_event(mock_device, heos):
     """Test repeat mode changes when event received."""
     # assert not playing
@@ -207,13 +212,14 @@ async def test_repeat_mode_changed_event(mock_device, heos):
     event_to_raise = await get_fixture("event.repeat_mode_changed")
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal is set
+    await signal.wait()
     # Assert state changed
     assert player.repeat == const.REPEAT_ON_ALL
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_shuffle_mode_changed_event(mock_device, heos):
     """Test shuffle mode changes when event received."""
     # assert not playing
@@ -233,13 +239,14 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
     event_to_raise = await get_fixture("event.shuffle_mode_changed")
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal is set
+    await signal.wait()
     # Assert state changed
     assert player.shuffle
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_sources_changed_event(mock_device, heos):
     """Test sources changed fires dispatcher."""
     signal = asyncio.Event()
@@ -253,8 +260,8 @@ async def test_sources_changed_event(mock_device, heos):
     event_to_raise = await get_fixture("event.sources_changed")
     await mock_device.write_event(event_to_raise)
 
-    # Wait until the signal is set or timeout
-    await asyncio.wait_for(signal.wait(), 1)
+    # Wait until the signal is set
+    await signal.wait()
 
 
 @pytest.mark.asyncio
@@ -292,5 +299,5 @@ async def test_get_input_sources(mock_device, heos):
     assert len(sources) == 18
     source = sources[0]
     assert source.name == 'Theater Receiver - CBL/SAT'
-    assert source.input_name == 'inputs/cable_sat'
+    assert source.input_name == const.INPUT_CABLE_SAT
     assert source.player_id == 546978854

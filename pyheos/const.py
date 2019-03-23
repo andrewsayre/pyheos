@@ -25,10 +25,62 @@ VALID_REPEAT_MODES = (
     REPEAT_OFF
 )
 
+# Music Source Types
 TYPE_MUSIC_SERVICE = 'music_service'
 
+# Music Sources
 SOURCE_AUX_INPUT = 'AUX Input'
 
+INPUT_AUX_IN_1 = "inputs/aux_in_1"
+INPUT_AUX_IN_2 = "inputs/aux_in_2"
+INPUT_AUX_IN_3 = "inputs/aux_in_3"
+INPUT_AUX_IN_4 = "inputs/aux_in_4"
+INPUT_AUX_IN_SINGLE = "inputs/aux_single"
+INPUT_AUX1 = "inputs/aux1"
+INPUT_AUX2 = "inputs/aux2"
+INPUT_AUX3 = "inputs/aux3"
+INPUT_AUX4 = "inputs/aux4"
+INPUT_AUX5 = "inputs/aux5"
+INPUT_AUX6 = "inputs/aux6"
+INPUT_AUX7 = "inputs/aux7"
+INPUT_LINE_IN_1 = "inputs/line_in_1"
+INPUT_LINE_IN_2 = "inputs/line_in_2"
+INPUT_LINE_IN_3 = "inputs/line_in_3"
+INPUT_LINE_IN_4 = "inputs/line_in_4"
+INPUT_COAX_IN_1 = "inputs/coax_in_1"
+INPUT_COAX_IN_2 = "inputs/coax_in_2"
+INPUT_OPTICAL_IN_1 = "inputs/optical_in_1"
+INPUT_OPTICAL_IN_2 = "inputs/optical_in_2"
+INPUT_HDMI_IN_1 = "inputs/hdmi_in_1"
+INPUT_HDMI_IN_2 = "inputs/hdmi_in_2"
+INPUT_HDMI_IN_3 = "inputs/hdmi_in_3"
+INPUT_HDMI_IN_4 = "inputs/hdmi_in_4"
+INPUT_HDMI_ARC_1 = "inputs/hdmi_arc_1"
+INPUT_CABLE_SAT = "inputs/cable_sat"
+INPUT_DVD = "inputs/dvd"
+INPUT_BLURAY = "inputs/bluray"
+INPUT_GAME = "inputs/game"
+INPUT_MEDIA_PLAYER = "inputs/mediaplayer"
+INPUT_CD = "inputs/cd"
+INPUT_TUNER = "inputs/tuner"
+INPUT_HD_RADIO = "inputs/hdradio"
+INPUT_TV_AUDIO = "inputs/tvaudio"
+INPUT_PHONO = "inputs/phono"
+INPUT_USB_AC = "inputs/usbdac"
+INPUT_ANALOG = "inputs/analog"
+
+VALID_INPUTS = (
+    INPUT_AUX_IN_1, INPUT_AUX_IN_2, INPUT_AUX_IN_3, INPUT_AUX_IN_4,
+    INPUT_AUX_IN_SINGLE, INPUT_AUX1, INPUT_AUX2, INPUT_AUX3, INPUT_AUX4,
+    INPUT_AUX5, INPUT_AUX6, INPUT_AUX7, INPUT_LINE_IN_1, INPUT_LINE_IN_2,
+    INPUT_LINE_IN_3, INPUT_LINE_IN_4, INPUT_COAX_IN_1, INPUT_COAX_IN_2,
+    INPUT_OPTICAL_IN_1, INPUT_OPTICAL_IN_2, INPUT_HDMI_IN_1, INPUT_HDMI_IN_2,
+    INPUT_HDMI_IN_3, INPUT_HDMI_IN_4, INPUT_HDMI_ARC_1, INPUT_CABLE_SAT,
+    INPUT_DVD, INPUT_BLURAY, INPUT_GAME, INPUT_MEDIA_PLAYER, INPUT_CD,
+    INPUT_TUNER, INPUT_HD_RADIO, INPUT_TV_AUDIO, INPUT_PHONO, INPUT_USB_AC,
+    INPUT_ANALOG)
+
+# Signals
 SIGNAL_PLAYER_UPDATED = "player_updated"
 SIGNAL_HEOS_UPDATED = "heos_updated"
 
@@ -37,6 +89,9 @@ BASE_URI = "heos://"
 # Browse commands
 COMMAND_BROWSE_GET_SOURCES = BASE_URI + "browse/get_music_sources"
 COMMAND_BROWSE_BROWSE = BASE_URI + "browse/browse?sid={source_id}"
+COMMAND_BROWSE_PLAY_INPUT = BASE_URI + "browse/play_input?pid={player_id}&" \
+                                       "spid={source_player_id}&" \
+                                       "input={input_name}"
 
 # Player commands
 COMMAND_GET_PLAYERS = BASE_URI + "player/get_players"

@@ -114,7 +114,7 @@ class HeosConnection:
         uri = list(urlparse(command))
         query = dict(parse_qsl(uri[4]))
         query['sequence'] = sequence
-        uri[4] = urlencode(query)
+        uri[4] = urlencode(query, safe='/')
         command = urlunparse(uri)
         # Add reservation
         event = ResponseEvent(sequence)
@@ -307,6 +307,18 @@ class HeosCommands:
         command = const.COMMAND_BROWSE_BROWSE.format(source_id=source_id)
         response = await self._connection.command(command)
         return response.payload
+
+    async def play_input(self, player_id: int, input_name: str, *,
+                         source_player_id: int = None) -> bool:
+        """Play the specified input source."""
+        if input_name not in const.VALID_INPUTS:
+            raise ValueError("Invalid input name: " + input_name)
+        source_player_id = source_player_id or player_id
+        command = const.COMMAND_BROWSE_PLAY_INPUT.format(
+            player_id=player_id, input_name=input_name,
+            source_player_id=source_player_id)
+        response = await self._connection.command(command)
+        return response.result
 
 
 class HeosEventHandler:

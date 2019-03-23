@@ -3,6 +3,7 @@ import pytest
 
 from pyheos import const
 from pyheos.player import HeosPlayer
+from pyheos.source import InputSource
 
 
 def test_str():
@@ -119,3 +120,19 @@ async def test_clear_queue(mock_device, heos):
                           'player.clear_queue_processing'], replace=True)
 
     assert await player.clear_queue()
+
+
+@pytest.mark.asyncio
+async def test_play_input_source(mock_device, heos):
+    """Test the play input source."""
+    player = heos.get_player(1)
+    input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
+    args = {'pid': '1', 'spid': str(input_source.player_id),
+            'input': input_source.input_name}
+    mock_device.register("browse/play_input", args, 'browse.play_input')
+
+    assert await player.play_input_source(input_source)
+
+    # Test invalid input_name
+    with pytest.raises(ValueError):
+        await player.play_input("Invalid")
