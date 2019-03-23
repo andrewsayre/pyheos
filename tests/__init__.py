@@ -1,10 +1,10 @@
 """Tests for the pyheos library."""
 import asyncio
-import pytest
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, List, Union
+from typing import List, Optional, Union
 from urllib.parse import parse_qsl, urlparse
+
+import pytest
 
 from pyheos import const
 from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
@@ -32,7 +32,6 @@ class MockHeosDevice:
         self._server = None  # type: asyncio.AbstractServer
         self._started = False
         self.connections = []  # type: List[ConnectionLog]
-        self._custom_handlers = defaultdict(list)
         self._matchers = []  # type: List[CommandMatcher]
 
     async def start(self):
@@ -40,6 +39,14 @@ class MockHeosDevice:
         self._started = True
         self._server = await asyncio.start_server(
             self._handle_connection, '127.0.0.1', const.CLI_PORT)
+
+        self.register('player/get_players', None, 'player.get_players')
+        self.register('player/get_play_state', None, 'player.get_play_state')
+        self.register('player/get_now_playing_media', None,
+                      'player.get_now_playing_media')
+        self.register('player/get_volume', None, 'player.get_volume')
+        self.register('player/get_mute', None, 'player.get_mute')
+        self.register('player/get_play_mode', None, 'player.get_play_mode')
 
     async def stop(self):
         """Stop the heos server."""
@@ -53,28 +60,13 @@ class MockHeosDevice:
                           if conn.is_registered_for_events)
         await connection.write(event)
 
-    def register_one_time(self, command: str, fixture: Union[str, Callable]):
-        """Register fixture to command to use one time."""
-        self._custom_handlers[command].append(fixture)
-
-    def register_command(self, fixture, player_id, target_args=None, *,
-                         command=None):
-        """Create a callback fixture."""
-        expected_command = command or fixture.replace(".", "/")
-
-        async def callback(command, args):
-            response = await get_fixture(fixture)
-            assert command == expected_command
-            assert args['pid'] == str(player_id)
-            if target_args:
-                for key, value in target_args.items():
-                    assert args.get(key) == value, key
-            return response
-
-        self._custom_handlers[expected_command].append(callback)
-
-    def register(self, command: str, args: dict, response: str):
+    def register(self, command: str, args: Optional[dict],
+                 response: Union[str, List[str]], *,
+                 replace: bool = False):
         """Register a matcher."""
+        if replace:
+            self._matchers = [m for m in self._matchers
+                              if m.command != command]
         self._matchers.append(CommandMatcher(command, args, response))
 
     async def _handle_connection(
@@ -98,58 +90,27 @@ class MockHeosDevice:
             command = url_parts.hostname + url_parts.path
             fixture_name = "{}.{}".format(url_parts.hostname,
                                           url_parts.path.lstrip('/'))
-            response = None
 
             # Try matchers
             matcher = next((matcher for matcher in self._matchers
                             if matcher.is_match(command, query)), None)
             if matcher:
-                test = await matcher.get_response()
-                writer.write((test + SEPARATOR).encode())
-                await writer.drain()
+                responses = await matcher.get_response(query)
+                for response in responses:
+                    writer.write((response + SEPARATOR).encode())
+                    await writer.drain()
                 continue
 
-            # See if we have any custom handlers registered
-            custom_fixtures = self._custom_handlers[command]
-            if custom_fixtures:
-                # use first one
-                fixture = custom_fixtures.pop(0)
-                if asyncio.iscoroutinefunction(fixture):
-                    response = await fixture(command, query)
-                elif isinstance(fixture, Callable):
-                    response = fixture(command, query)
-                else:
-                    response = await get_fixture(fixture)
-            elif command == 'system/register_for_change_events':
+            if command == 'system/register_for_change_events':
                 enable = query["enable"]
                 if enable == 'on':
                     log.is_registered_for_events = True
                 response = (await get_fixture(fixture_name)).replace(
                     "{enable}", enable)
-            elif command == 'player/get_players':
-                response = await get_fixture(fixture_name)
-
-            elif command in (
-                    'player/get_play_state',
-                    'player/get_now_playing_media',
-                    'player/get_volume',
-                    'player/get_mute',
-                    'player/get_play_mode'):
-                response = (await get_fixture(fixture_name)) \
-                    .replace('{player_id}', query['pid']) \
-                    .replace('{sequence}', query['sequence'])
-            else:
-                pytest.fail("Unrecognized command: " + result)
-
-            log.commands[command].append(result)
-
-            if isinstance(response, str):
                 writer.write((response + SEPARATOR).encode())
                 await writer.drain()
             else:
-                for resp in response:
-                    writer.write((resp + SEPARATOR).encode())
-                    await writer.drain()
+                pytest.fail("Unrecognized command: " + result)
 
         self.connections.remove(log)
 
@@ -157,10 +118,14 @@ class MockHeosDevice:
 class CommandMatcher:
     """Define a command match response."""
 
-    def __init__(self, command: str, args: dict, response: str):
+    def __init__(self, command: str, args: dict,
+                 response: Union[str, List[str]]):
         """Init the command response."""
         self.command = command
         self.args = args
+
+        if isinstance(response, str):
+            response = [response]
         self._response = response
 
     def is_match(self, command, args):
@@ -173,9 +138,26 @@ class CommandMatcher:
                     return False
         return True
 
-    async def get_response(self):
+    async def get_response(self, query: dict) -> List[str]:
         """Get the response body."""
-        return await get_fixture(self._response)
+        responses = []
+        for fixture in self._response:
+            responses.append(await self._get_response(fixture, query))
+        return responses
+
+    async def _get_response(self, response: str, query: dict) -> str:
+        response = await get_fixture(response)
+        keys = {
+            'pid': '{player_id}',
+            'sequence': '{sequence}',
+            'state': '{state}',
+            'level': '{level}'
+        }
+        for key, token in keys.items():
+            value = query.get(key)
+            if value is not None and token in response:
+                response = response.replace(token, value)
+        return response
 
 
 class ConnectionLog:
@@ -185,7 +167,6 @@ class ConnectionLog:
         """Initialize the connection log."""
         self._writer = writer
         self.is_registered_for_events = False
-        self.commands = defaultdict(list)
 
     async def write(self, payload: str):
         """Write the payload to the stream."""

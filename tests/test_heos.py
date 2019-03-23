@@ -99,9 +99,9 @@ async def test_player_now_playing_changed_event(mock_device, heos):
     heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
 
     # Write event through mock device
-    mock_device.register_one_time(
-        "player/get_now_playing_media",
-        "player.get_now_playing_media_changed")
+    mock_device.register("player/get_now_playing_media", None,
+                         "player.get_now_playing_media_changed",
+                         replace=True)
     event_to_raise = (await get_fixture("event.player_now_playing_changed")) \
         .replace("{player_id}", str(player.player_id))
     await mock_device.write_event(event_to_raise)
@@ -262,6 +262,7 @@ async def test_get_music_sources(mock_device, heos):
     """Test the heos connect method."""
     mock_device.register("browse/get_music_sources", None,
                          'browse.get_music_sources')
+
     sources = await heos.get_music_sources()
     assert len(sources) == 15
     pandora = next(source for source in sources if source.name == 'Pandora')
