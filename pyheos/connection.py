@@ -4,7 +4,7 @@ import asyncio
 from collections import defaultdict
 import json
 import logging
-from typing import DefaultDict, List, Optional, Sequence, Tuple, Dict, Any
+from typing import Any, DefaultDict, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import parse_qsl, urlparse, urlunparse
 
 from . import const
@@ -363,6 +363,7 @@ class HeosCommands:
         return response.result
 
     async def play_stream(self, player_id: int, url: str) -> bool:
+        """Play the specified URL."""
         params = {
             'pid': player_id,
             'url': url
