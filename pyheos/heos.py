@@ -26,7 +26,9 @@ class Heos:
         """Connect to the CLI."""
         await self._connection.connect()
         # get players and pull initial state
-        players = await self._connection.commands.get_players()
+        payload = await self._connection.commands.get_players()
+        players = [HeosPlayer(self._connection.commands, data)
+                   for data in payload]
         await asyncio.gather(*[player.refresh() for player in players])
         self._players = {player.player_id: player for player in players}
 
@@ -37,7 +39,9 @@ class Heos:
 
     async def get_music_sources(self) -> Sequence[HeosSource]:
         """Get available music sources."""
-        return await self._connection.commands.get_music_sources()
+        payload = await self._connection.commands.get_music_sources()
+        return [HeosSource(self._connection.commands, data)
+                for data in payload]
 
     async def get_input_sources(self) -> Sequence[InputSource]:
         """Get available input sources."""
