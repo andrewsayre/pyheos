@@ -167,13 +167,13 @@ class HeosConnection:
             if player and (await player.event_update(
                     response, self._all_progress_events)):
                 self._heos.dispatcher.send(
-                    const.SIGNAL_PLAYER_UPDATED, player_id, response.command)
+                    const.SIGNAL_PLAYER_EVENT, player_id, response.command)
                 _LOGGER.debug("Event received for player %s: %s",
                               player, response)
         elif response.command in const.GROUP_EVENTS:
             group_id = response.get_group_id()
             self._heos.dispatcher.send(
-                const.SIGNAL_GROUP_UPDATED, group_id, response.command)
+                const.SIGNAL_GROUP_EVENT, group_id, response.command)
             _LOGGER.debug("Event received for group %s: %s",
                           group_id, response)
         elif response.command in const.HEOS_EVENTS:
@@ -181,7 +181,7 @@ class HeosConnection:
             result = await self._heos._handle_event(response)
             if result:
                 self._heos.dispatcher.send(
-                    const.SIGNAL_HEOS_UPDATED, response.command)
+                    const.SIGNAL_CONTROLLER_EVENT, response.command)
             _LOGGER.debug("Event received: %s", response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)

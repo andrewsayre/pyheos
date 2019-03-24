@@ -62,7 +62,7 @@ async def test_player_state_changed_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_STATE_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = (await get_fixture("event.player_state_changed")) \
@@ -103,7 +103,7 @@ async def test_player_now_playing_changed_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_NOW_PLAYING_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     mock_device.register(const.COMMAND_GET_NOW_PLAYING_MEDIA, None,
@@ -148,7 +148,7 @@ async def test_player_volume_changed_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_VOLUME_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = (await get_fixture("event.player_volume_changed")) \
@@ -184,7 +184,7 @@ async def test_player_now_playing_progress_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = (await get_fixture("event.player_now_playing_progress")) \
@@ -223,7 +223,7 @@ async def test_limited_progress_event_updates(mock_device):
             signal.set()
         else:
             pytest.fail("Handler invoked more than once.")
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = (await get_fixture("event.player_now_playing_progress")) \
@@ -254,7 +254,7 @@ async def test_repeat_mode_changed_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_REPEAT_MODE_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.repeat_mode_changed")
@@ -282,7 +282,7 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
         assert player_id == player.player_id
         assert event == const.EVENT_SHUFFLE_MODE_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.shuffle_mode_changed")
@@ -307,7 +307,7 @@ async def test_players_changed_event(mock_device, heos):
     async def handler(event: str):
         assert event == const.EVENT_PLAYERS_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     mock_device.register(const.COMMAND_GET_PLAYERS, None,
@@ -339,7 +339,7 @@ async def test_sources_changed_event(mock_device, heos):
     async def handler(event: str):
         assert event == const.EVENT_SOURCES_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
@@ -361,7 +361,7 @@ async def test_groups_changed_event(mock_device, heos):
     async def handler(event: str):
         assert event == const.EVENT_GROUPS_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.groups_changed")
@@ -382,7 +382,7 @@ async def test_player_playback_error_event(mock_device, heos):
         assert player_id == 1
         assert event == const.EVENT_PLAYER_PLAYBACK_ERROR
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.player_playback_error")
@@ -404,7 +404,7 @@ async def test_player_queue_changed_event(mock_device, heos):
         assert player_id == 1
         assert event == const.EVENT_PLAYER_QUEUE_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.player_queue_changed")
@@ -424,7 +424,7 @@ async def test_group_volume_changed_event(mock_device, heos):
         assert group_id == 1
         assert event == const.EVENT_GROUP_VOLUME_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_GROUP_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_GROUP_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.group_volume_changed")
@@ -443,7 +443,7 @@ async def test_user_changed_event(mock_device, heos):
     async def handler(event: str):
         assert event == const.EVENT_USER_CHANGED
         signal.set()
-    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     event_to_raise = await get_fixture("event.user_changed")

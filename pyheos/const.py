@@ -103,9 +103,9 @@ VALID_INPUTS = (
     INPUT_ANALOG)
 
 # Signals
-SIGNAL_PLAYER_UPDATED = "player_updated"
-SIGNAL_GROUP_UPDATED = "group_updated"
-SIGNAL_HEOS_UPDATED = "heos_updated"
+SIGNAL_PLAYER_EVENT = "player_event"
+SIGNAL_GROUP_EVENT = "group_event"
+SIGNAL_CONTROLLER_EVENT = "controller_event"
 
 BASE_URI = "heos://"
 
