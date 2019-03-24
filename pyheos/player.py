@@ -164,6 +164,10 @@ class HeosPlayer:
         self._network = data['network']
         self._line_out = int(data['lineout'])
 
+    def set_removed(self):
+        """Mark player removed after a change event."""
+        self._commands = None
+
     async def refresh(self):
         """Pull current state."""
         await asyncio.gather(self.refresh_state(),
@@ -360,3 +364,8 @@ class HeosPlayer:
     def shuffle(self) -> bool:
         """Get if shuffle is active."""
         return self._shuffle
+
+    @property
+    def removed(self):
+        """Return True if this player has been removed."""
+        return self._commands is None

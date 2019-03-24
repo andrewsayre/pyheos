@@ -168,11 +168,15 @@ class HeosConnection:
                     response, self._all_progress_events)):
                 self._heos.dispatcher.send(
                     const.SIGNAL_PLAYER_UPDATED, player_id, response.command)
-                _LOGGER.debug("%s event received: %s", player, response)
-        elif response.command == const.EVENT_SOURCES_CHANGED:
-            self._heos.dispatcher.send(
-                const.SIGNAL_HEOS_UPDATED,
-                const.EVENT_SOURCES_CHANGED)
+                _LOGGER.debug("Event received for player %s: %s",
+                              player, response)
+        elif response.command in const.HEOS_EVENTS:
+            # pylint: disable=protected-access
+            result = await self._heos._handle_event(response)
+            if result:
+                self._heos.dispatcher.send(
+                    const.SIGNAL_HEOS_UPDATED, response.command)
+            _LOGGER.debug("Event received: %s", response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
 

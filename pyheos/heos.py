@@ -7,6 +7,7 @@ from . import const
 from .connection import HeosConnection
 from .dispatch import Dispatcher
 from .player import HeosPlayer
+from .response import HeosResponse
 from .source import HeosSource, InputSource
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,17 +27,42 @@ class Heos:
     async def connect(self):
         """Connect to the CLI."""
         await self._connection.connect()
-        # get players and pull initial state
-        payload = await self._connection.commands.get_players()
-        players = [HeosPlayer(self._connection.commands, data)
-                   for data in payload]
-        await asyncio.gather(*[player.refresh() for player in players])
-        self._players = {player.player_id: player for player in players}
 
     async def disconnect(self):
         """Disconnect from the CLI."""
         await self._connection.disconnect()
         self._players.clear()
+
+    async def _handle_event(self, event: HeosResponse) -> bool:
+        """Handle a heos event."""
+        if event.command == const.EVENT_PLAYERS_CHANGED:
+            await self.get_players(refresh=True)
+        return True
+
+    async def get_players(self, *, refresh=False) -> Sequence[HeosPlayer]:
+        """Get available players."""
+        # get players and pull initial state
+        if not self._players or refresh:
+            payload = await self._connection.commands.get_players()
+            players = {}
+            player_data = {}
+            for data in payload:
+                player = HeosPlayer(self._connection.commands, data)
+                players[player.player_id] = player
+                player_data[player.player_id] = data
+            # Match to existing
+            for player_id in self._players.copy():
+                if player_id in players:
+                    players.pop(player_id)
+                    self._players[player_id].from_data(player_data[player_id])
+                else:
+                    self._players.pop(player_id).set_removed()
+            self._players.update(players)
+            # Update all statuses
+            await asyncio.gather(*[player.refresh() for player in
+                                   self._players.values()])
+
+        return self._players
 
     async def get_music_sources(self) -> Sequence[HeosSource]:
         """Get available music sources."""

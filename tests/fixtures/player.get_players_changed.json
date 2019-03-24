@@ -1,0 +1,25 @@
+{
+	"heos": {
+		"command": "player/get_players",
+		"result": "success",
+		"message": ""
+	},
+	"payload": [{
+			"name": "Backyard",
+			"pid": 1,
+			"model": "HEOS Drive",
+			"version": "1.493.180",
+			"ip": "192.168.0.1",
+			"network": "wired",
+			"lineout": 1
+		}, {
+			"name": "Basement",
+			"pid": 3,
+			"model": "HEOS Drive",
+			"version": "1.493.180",
+			"ip": "192.168.0.3",
+			"network": "wireless",
+			"lineout": 1
+		}
+	]
+}

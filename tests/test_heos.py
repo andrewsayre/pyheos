@@ -14,18 +14,21 @@ def test_init():
     """Test init sets properties."""
     heos = Heos('127.0.0.1')
     assert isinstance(heos.dispatcher, Dispatcher)
-    assert not heos.players
-    assert heos.get_player(1) is None
 
 
 @pytest.mark.asyncio
-async def test_connect_loads_players_and_subscribes(mock_device, heos):
+async def test_connect_subscribes(mock_device, heos):
     """Test the heos connect method."""
     # Assert 1st connection is used for commands
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
 
+
+@pytest.mark.asyncio
+async def test_get_players(mock_device, heos):
+    """Test the get_players method load players."""
+    await heos.get_players()
     # Assert players loaded
     assert len(heos.players) == 2
     player = heos.get_player(1)
@@ -48,6 +51,7 @@ async def test_connect_loads_players_and_subscribes(mock_device, heos):
 async def test_player_state_changed_event(mock_device, heos):
     """Test playing state updates when event is received."""
     # assert not playing
+    await heos.get_players()
     player = heos.get_player(1)
     assert player.state == const.PLAY_STATE_STOP
 
@@ -78,6 +82,7 @@ async def test_player_state_changed_event(mock_device, heos):
 async def test_player_now_playing_changed_event(mock_device, heos):
     """Test now playing updates when event is received."""
     # assert current state
+    await heos.get_players()
     player = heos.get_player(1)
     now_playing = player.now_playing_media
     assert now_playing.album == ''
@@ -131,6 +136,7 @@ async def test_player_now_playing_changed_event(mock_device, heos):
 async def test_player_volume_changed_event(mock_device, heos):
     """Test volume state updates when event is received."""
     # assert not playing
+    await heos.get_players()
     player = heos.get_player(1)
     assert player.volume == 36
     assert not player.is_muted
@@ -165,6 +171,7 @@ async def test_player_volume_changed_event(mock_device, heos):
 async def test_player_now_playing_progress_event(mock_device, heos):
     """Test now playing progress updates when event received."""
     # assert not playing
+    await heos.get_players()
     player = heos.get_player(1)
     assert player.now_playing_media.duration is None
     assert player.now_playing_media.current_position is None
@@ -205,6 +212,7 @@ async def test_limited_progress_event_updates(mock_device):
     # assert not playing
     heos = Heos('127.0.0.1', all_progress_events=False)
     await heos.connect()
+    await heos.get_players()
     player = heos.get_player(1)
 
     # Attach dispatch handler
@@ -235,6 +243,7 @@ async def test_limited_progress_event_updates(mock_device):
 async def test_repeat_mode_changed_event(mock_device, heos):
     """Test repeat mode changes when event received."""
     # assert not playing
+    await heos.get_players()
     player = heos.get_player(1)
     assert player.repeat == const.REPEAT_OFF
 
@@ -262,6 +271,7 @@ async def test_repeat_mode_changed_event(mock_device, heos):
 async def test_shuffle_mode_changed_event(mock_device, heos):
     """Test shuffle mode changes when event received."""
     # assert not playing
+    await heos.get_players()
     player = heos.get_player(1)
     assert not player.shuffle
 
@@ -282,6 +292,39 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
     await signal.wait()
     # Assert state changed
     assert player.shuffle
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_players_changed_event(mock_device, heos):
+    """Test players are resynced when event received."""
+    # assert not playing
+    old_players = (await heos.get_players()).copy()
+
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(event: str):
+        assert event == const.EVENT_PLAYERS_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+
+    # Write event through mock device
+    mock_device.register(const.COMMAND_GET_PLAYERS, None,
+                         'player.get_players_changed', replace=True)
+    event_to_raise = await get_fixture("event.players_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+    assert len(heos.players) == 2
+    # Assert 2 (Front Porch) was removed
+    assert old_players[2].removed
+    assert 2 not in heos.players
+    # Assert 3 (Basement) was added
+    assert heos.get_player(3) is not None
+    # Assert 1 (Bachyard) was updated
+    assert heos.get_player(1).name == 'Backyard'
 
 
 @pytest.mark.asyncio
