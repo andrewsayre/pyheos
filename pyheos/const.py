@@ -31,8 +31,31 @@ TYPE_STATION = 'station'
 TYPE_HEOS_SERVICE = 'heos_service'
 
 # Music Sources
-SOURCE_AUX_INPUT = 'AUX Input'
-SOURCE_FAVORITES = 'Favorites'
+MUSIC_SOURCE_AUX_INPUT = 1027
+MUSIC_SOURCE_FAVORITES = 1028
+MUSIC_SOURCES = {
+    1: "Pandora",
+    2: "Rhapsody",
+    3: "TuneIn",
+    4: "Spotify",
+    5: "Deezer",
+    6: "Napster",
+    7: "iHeartRadio",
+    8: "SiriusXM",
+    9: "SoundCloud",
+    10: "Tidal",
+    12: "Rdio",
+    13: "Amazon",
+    15: "Moodmix",
+    16: "Juke",
+    18: "QQMusic",
+    1024: "Local Music",
+    1025: "Playlists",
+    1026: "History",
+    MUSIC_SOURCE_AUX_INPUT: "AUX Input",
+    MUSIC_SOURCE_FAVORITES: "Favorites"
+}
+
 
 INPUT_AUX_IN_1 = "inputs/aux_in_1"
 INPUT_AUX_IN_2 = "inputs/aux_in_2"

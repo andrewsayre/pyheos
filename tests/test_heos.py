@@ -293,8 +293,6 @@ async def test_get_music_sources(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_input_sources(mock_device, heos):
     """Test the get input sources method."""
-    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
-                         'browse.get_music_sources')
     mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1027'},
                          'browse.browse_aux_input')
     mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '546978854'},
@@ -313,8 +311,6 @@ async def test_get_input_sources(mock_device, heos):
 @pytest.mark.asyncio
 async def test_get_favorites(mock_device, heos):
     """Test the get favorites method."""
-    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
-                         'browse.get_music_sources')
     mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1028'},
                          'browse.browse_favorites')
 

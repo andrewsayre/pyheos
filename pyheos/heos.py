@@ -45,10 +45,10 @@ class Heos:
 
     async def get_input_sources(self) -> Sequence[InputSource]:
         """Get available input sources."""
-        sources = await self.get_music_sources()
-        aux_input = next(source for source in sources
-                         if source.name == const.SOURCE_AUX_INPUT)
-        sources = await aux_input.browse()
+        payload = await self._connection.commands.browse(
+            const.MUSIC_SOURCE_AUX_INPUT)
+        sources = [HeosSource(self._connection.commands, item)
+                   for item in payload]
         input_sources = []
         for source in sources:
             player_id = source.source_id
@@ -60,10 +60,10 @@ class Heos:
 
     async def get_favorites(self) -> Dict[int, HeosSource]:
         """Get available favorites."""
-        sources = await self.get_music_sources()
-        favorites = next(source for source in sources
-                         if source.name == const.SOURCE_FAVORITES)
-        sources = await favorites.browse()
+        payload = await self._connection.commands.browse(
+            const.MUSIC_SOURCE_FAVORITES)
+        sources = [HeosSource(self._connection.commands, item)
+                   for item in payload]
         return {index + 1: source for index, source in enumerate(sources)}
 
     @property
