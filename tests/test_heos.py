@@ -331,6 +331,9 @@ async def test_players_changed_event(mock_device, heos):
 @pytest.mark.timeout(2)
 async def test_sources_changed_event(mock_device, heos):
     """Test sources changed fires dispatcher."""
+    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
+                         'browse.get_music_sources')
+    await heos.get_music_sources()
     signal = asyncio.Event()
 
     async def handler(event: str):
@@ -339,11 +342,14 @@ async def test_sources_changed_event(mock_device, heos):
     heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
 
     # Write event through mock device
+    mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
+                         'browse.get_music_sources_changed', replace=True)
     event_to_raise = await get_fixture("event.sources_changed")
     await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set
     await signal.wait()
+    assert heos.music_sources[const.MUSIC_SOURCE_TUNEIN].available
 
 
 @pytest.mark.asyncio
@@ -354,7 +360,7 @@ async def test_get_music_sources(mock_device, heos):
 
     sources = await heos.get_music_sources()
     assert len(sources) == 15
-    pandora = next(source for source in sources if source.name == 'Pandora')
+    pandora = sources[const.MUSIC_SOURCE_PANDORA]
     assert pandora.source_id == 1
     assert pandora.image_url == 'https://production.ws.skyegloup.com:443/' \
                                 'media/images/service/logos/pandora.png'

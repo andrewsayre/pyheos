@@ -22,7 +22,10 @@ class Heos:
         self._connection = HeosConnection(
             self, host, timeout, all_progress_events)
         self._dispatcher = dispatcher or Dispatcher()
-        self._players = {}
+        self._players = {}  # type: Dict[int, HeosPlayer]
+        self._players_loaded = False
+        self._music_sources = {}  # type: Dict[int, HeosSource]
+        self._music_sources_loaded = False
 
     async def connect(self):
         """Connect to the CLI."""
@@ -31,15 +34,18 @@ class Heos:
     async def disconnect(self):
         """Disconnect from the CLI."""
         await self._connection.disconnect()
-        self._players.clear()
 
     async def _handle_event(self, event: HeosResponse) -> bool:
         """Handle a heos event."""
-        if event.command == const.EVENT_PLAYERS_CHANGED:
+        if event.command == const.EVENT_PLAYERS_CHANGED \
+                and self._players_loaded:
             await self.get_players(refresh=True)
+        if event.command == const.EVENT_SOURCES_CHANGED \
+                and self._music_sources_loaded:
+            await self.get_music_sources(refresh=True)
         return True
 
-    async def get_players(self, *, refresh=False) -> Sequence[HeosPlayer]:
+    async def get_players(self, *, refresh=False) -> Dict[int, HeosPlayer]:
         """Get available players."""
         # get players and pull initial state
         if not self._players or refresh:
@@ -61,14 +67,19 @@ class Heos:
             # Update all statuses
             await asyncio.gather(*[player.refresh() for player in
                                    self._players.values()])
-
+            self._players_loaded = True
         return self._players
 
-    async def get_music_sources(self) -> Sequence[HeosSource]:
+    async def get_music_sources(self, refresh=True) -> Dict[int, HeosSource]:
         """Get available music sources."""
-        payload = await self._connection.commands.get_music_sources()
-        return [HeosSource(self._connection.commands, data)
-                for data in payload]
+        if not self._music_sources or refresh:
+            payload = await self._connection.commands.get_music_sources()
+            self._music_sources.clear()
+            for data in payload:
+                source = HeosSource(self._connection.commands, data)
+                self._music_sources[source.source_id] = source
+            self._music_sources_loaded = True
+        return self._music_sources
 
     async def get_input_sources(self) -> Sequence[InputSource]:
         """Get available input sources."""
@@ -99,9 +110,14 @@ class Heos:
         return self._dispatcher
 
     @property
-    def players(self) -> Sequence[HeosPlayer]:
+    def players(self) -> Dict[int, HeosPlayer]:
         """Get the available players."""
-        return list(self._players.values())
+        return self._players
+
+    @property
+    def music_sources(self) -> Dict[int, HeosSource]:
+        """Get available music sources."""
+        return self._music_sources
 
     def get_player(self, player_id: int) -> Optional[HeosPlayer]:
         """Get the player with the specified id."""

@@ -31,32 +31,28 @@ TYPE_STATION = 'station'
 TYPE_HEOS_SERVICE = 'heos_service'
 
 # Music Sources
+MUSIC_SOURCE_PANDORA = 1
+MUSIC_SOURCE_RHAPSODY = 2
+MUSIC_SOURCE_TUNEIN = 3
+MUSIC_SOURCE_SPOTIFY = 4
+MUSIC_SOURCE_DEEZER = 5
+MUSIC_SOURCE_NAPSTER = 6
+MUSIC_SOURCE_IHEARTRADIO = 7
+MUSIC_SOURCE_SIRIUSXM = 8
+MUSIC_SOURCE_SOUNDCLOUD = 9
+MUSIC_SOURCE_TIDAL = 10
+MUSIC_SOURCE_RDIO = 12
+MUSIC_SOURCE_AMAZON = 13
+MUSIC_SOURCE_MOODMIX = 15
+MUSIC_SOURCE_JUKE = 16
+MUSIC_SOURCE_QQMUSIC = 18
+MUSIC_SOURCE_LOCAL_MUSIC = 1024
+MUSIC_SOURCE_PLAYLISTS = 1025
+MUSIC_SOURCE_HISTORY = 1026
 MUSIC_SOURCE_AUX_INPUT = 1027
 MUSIC_SOURCE_FAVORITES = 1028
-MUSIC_SOURCES = {
-    1: "Pandora",
-    2: "Rhapsody",
-    3: "TuneIn",
-    4: "Spotify",
-    5: "Deezer",
-    6: "Napster",
-    7: "iHeartRadio",
-    8: "SiriusXM",
-    9: "SoundCloud",
-    10: "Tidal",
-    12: "Rdio",
-    13: "Amazon",
-    15: "Moodmix",
-    16: "Juke",
-    18: "QQMusic",
-    1024: "Local Music",
-    1025: "Playlists",
-    1026: "History",
-    MUSIC_SOURCE_AUX_INPUT: "AUX Input",
-    MUSIC_SOURCE_FAVORITES: "Favorites"
-}
 
-
+# Inputs
 INPUT_AUX_IN_1 = "inputs/aux_in_1"
 INPUT_AUX_IN_2 = "inputs/aux_in_2"
 INPUT_AUX_IN_3 = "inputs/aux_in_3"
