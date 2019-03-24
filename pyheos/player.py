@@ -39,16 +39,19 @@ class HeosNowPlayingMedia:
         self._media_id = data['mid']
         self._queue_id = int(data['qid'])
         self._song_id = int(data['sid'])
-        self.clear_position()
+        self.clear_progress()
 
-    def event_update_position(self, event: HeosResponse) -> bool:
+    def event_update_progress(
+            self, event: HeosResponse, all_progress_events: bool) -> bool:
         """Update the position/duration from an event."""
-        self._current_position = int(event.get_message('cur_pos'))
-        self._current_position_updated = datetime.utcnow()
-        self._duration = int(event.get_message('duration'))
-        return True
+        if all_progress_events or self._current_position is None:
+            self._current_position = int(event.get_message('cur_pos'))
+            self._current_position_updated = datetime.utcnow()
+            self._duration = int(event.get_message('duration'))
+            return True
+        return False
 
-    def clear_position(self):
+    def clear_progress(self):
         """Clear the current position."""
         self._current_position = None
         self._current_position_updated = None
@@ -271,15 +274,16 @@ class HeosPlayer:
         """Play the specified URL."""
         return await self._commands.play_stream(self._player_id, url)
 
-    async def event_update(self, event: HeosResponse) -> bool:
+    async def event_update(self, event: HeosResponse,
+                           all_progress_events: bool) -> bool:
         """Handle a player update event."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
-            return self._now_playing_media.event_update_position(event)
-
+            return self._now_playing_media.event_update_progress(
+                event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
             self._state = event.get_message('state')
             if self._state == const.PLAY_STATE_PLAY:
-                self._now_playing_media.clear_position()
+                self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:

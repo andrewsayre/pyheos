@@ -16,9 +16,10 @@ class Heos:
     """The Heos class provides access to the CLI API."""
 
     def __init__(self, host: str, timeout: int = const.DEFAULT_TIMEOUT,
-                 *, dispatcher=None):
+                 *, dispatcher=None, all_progress_events=True):
         """Init a new instance of the Heos CLI API."""
-        self._connection = HeosConnection(self, host, timeout)
+        self._connection = HeosConnection(
+            self, host, timeout, all_progress_events)
         self._dispatcher = dispatcher or Dispatcher()
         self._players = {}
 

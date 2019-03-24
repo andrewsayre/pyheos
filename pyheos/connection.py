@@ -44,8 +44,11 @@ def _encode_query(items: dict) -> str:
 class HeosConnection:
     """Define a class that encapsulates read/write."""
 
-    def __init__(self, heos, host: str, timeout: int = const.DEFAULT_TIMEOUT):
+    def __init__(self, heos, host: str, timeout: int = const.DEFAULT_TIMEOUT,
+                 all_progress_events=True):
         """Init a new HeosConnection class."""
+        self._heos = heos
+        self._all_progress_events = all_progress_events
         self.host = host  # type: str
         self.commands = HeosCommands(self)
         self.timeout = timeout  # type: int
@@ -53,7 +56,6 @@ class HeosConnection:
         self._reader = None  # type: asyncio.StreamReader
         self._writer = None   # type: asyncio.StreamWriter
         self._response_handler_task = None  # type: asyncio.Task
-        self._handler = HeosEventHandler(heos)
         self._pending_commands = \
             defaultdict(list)  # type: DefaultDict[str, List[ResponseEvent]]
         self._sequence = 0
@@ -102,7 +104,7 @@ class HeosConnection:
                     continue
                 # Handle events
                 if response.is_event:
-                    asyncio.ensure_future(self._handler.handle_event(response))
+                    asyncio.ensure_future(self._handle_event(response))
                     continue
                 # Find pending command
                 commands = self._pending_commands[response.command]
@@ -157,6 +159,23 @@ class HeosConnection:
         _LOGGER.debug("Executed command '%s': '%s'", command, response)
         return response
 
+    async def _handle_event(self, response: HeosResponse):
+        """Handle a response event."""
+        if response.command in const.PLAYER_EVENTS:
+            player_id = response.get_player_id()
+            player = self._heos.get_player(player_id)
+            if player and (await player.event_update(
+                    response, self._all_progress_events)):
+                self._heos.dispatcher.send(
+                    const.SIGNAL_PLAYER_UPDATED, player_id, response.command)
+                _LOGGER.debug("%s event received: %s", player, response)
+        elif response.command == const.EVENT_SOURCES_CHANGED:
+            self._heos.dispatcher.send(
+                const.SIGNAL_HEOS_UPDATED,
+                const.EVENT_SOURCES_CHANGED)
+        else:
+            _LOGGER.debug("Unrecognized event: %s", response)
+
 
 class ResponseEvent:
     """Define an awaitable command event response."""
@@ -181,27 +200,3 @@ class ResponseEvent:
         """Set the response."""
         self._response = response
         self._event.set()
-
-
-class HeosEventHandler:
-    """Define a class that handles unsolicited events."""
-
-    def __init__(self, heos):
-        """Init the event handler class."""
-        self._heos = heos
-
-    async def handle_event(self, response: HeosResponse):
-        """Handle a response event."""
-        if response.command in const.PLAYER_EVENTS:
-            player_id = response.get_player_id()
-            player = self._heos.get_player(player_id)
-            if player and (await player.event_update(response)):
-                self._heos.dispatcher.send(
-                    const.SIGNAL_PLAYER_UPDATED, player_id, response.command)
-                _LOGGER.debug("%s event received: %s", player, response)
-        elif response.command == const.EVENT_SOURCES_CHANGED:
-            self._heos.dispatcher.send(
-                const.SIGNAL_HEOS_UPDATED,
-                const.EVENT_SOURCES_CHANGED)
-        else:
-            _LOGGER.debug("Unrecognized event: %s", response)

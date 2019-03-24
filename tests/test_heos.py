@@ -200,6 +200,38 @@ async def test_player_now_playing_progress_event(mock_device, heos):
 
 @pytest.mark.asyncio
 @pytest.mark.timeout(2)
+async def test_limited_progress_event_updates(mock_device):
+    """Test progress updates only once if no other events."""
+    # assert not playing
+    heos = Heos('127.0.0.1', all_progress_events=False)
+    await heos.connect()
+    player = heos.get_player(1)
+
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        if not signal.is_set():
+            signal.set()
+        else:
+            pytest.fail("Handler invoked more than once.")
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = (await get_fixture("event.player_now_playing_progress")) \
+        .replace("{player_id}", str(player.player_id)) \
+        .replace("{cur_pos}", '113000') \
+        .replace("{duration}", '210000')
+
+    # raise it multiple times.
+    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event(event_to_raise)
+    await signal.wait()
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
 async def test_repeat_mode_changed_event(mock_device, heos):
     """Test repeat mode changes when event received."""
     # assert not playing
