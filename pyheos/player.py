@@ -143,6 +143,7 @@ class HeosPlayer:
         self._is_muted = None  # type: bool
         self._repeat = None  # type: str
         self._shuffle = None  # type: bool
+        self._playback_error = None  # type: str
         self._now_playing_media = HeosNowPlayingMedia()
 
     def __str__(self):
@@ -297,7 +298,8 @@ class HeosPlayer:
             self._repeat = event.get_message('repeat')
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
             self._shuffle = event.get_message('shuffle') == 'on'
-
+        elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
+            self._playback_error = event.get_message('error')
         return True
 
     @property
@@ -366,6 +368,11 @@ class HeosPlayer:
         return self._shuffle
 
     @property
-    def removed(self):
+    def removed(self) -> bool:
         """Return True if this player has been removed."""
         return self._commands is None
+
+    @property
+    def playback_error(self) -> str:
+        """Get the last playback error."""
+        return self._playback_error

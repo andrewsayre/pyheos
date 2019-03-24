@@ -53,3 +53,7 @@ class HeosResponse:
     def get_player_id(self) -> int:
         """Get the player_id from the message."""
         return int(self.message['pid'])
+
+    def get_group_id(self) -> int:
+        """Get the group_id from the message."""
+        return int(self.message['gid'])

@@ -353,6 +353,107 @@ async def test_sources_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_groups_changed_event(mock_device, heos):
+    """Test groups changed fires dispatcher."""
+    signal = asyncio.Event()
+
+    async def handler(event: str):
+        assert event == const.EVENT_GROUPS_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.groups_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_player_playback_error_event(mock_device, heos):
+    """Test player playback error fires dispatcher."""
+    await heos.get_players()
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        assert player_id == 1
+        assert event == const.EVENT_PLAYER_PLAYBACK_ERROR
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.player_playback_error")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+    assert heos.players[1].playback_error == 'Could Not Download'
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_player_queue_changed_event(mock_device, heos):
+    """Test player queue changed fires dispatcher."""
+    await heos.get_players()
+    signal = asyncio.Event()
+
+    async def handler(player_id: int, event: str):
+        assert player_id == 1
+        assert event == const.EVENT_PLAYER_QUEUE_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_PLAYER_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.player_queue_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_group_volume_changed_event(mock_device, heos):
+    """Test group volume changed fires dispatcher."""
+    signal = asyncio.Event()
+
+    async def handler(group_id: int, event: str):
+        assert group_id == 1
+        assert event == const.EVENT_GROUP_VOLUME_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_GROUP_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.group_volume_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(2)
+async def test_user_changed_event(mock_device, heos):
+    """Test user changed fires dispatcher."""
+    signal = asyncio.Event()
+
+    async def handler(event: str):
+        assert event == const.EVENT_USER_CHANGED
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_HEOS_UPDATED, handler)
+
+    # Write event through mock device
+    event_to_raise = await get_fixture("event.user_changed")
+    await mock_device.write_event(event_to_raise)
+
+    # Wait until the signal is set
+    await signal.wait()
+
+
+@pytest.mark.asyncio
 async def test_get_music_sources(mock_device, heos):
     """Test the heos connect method."""
     mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
