@@ -6,6 +6,7 @@ __version__ = "0.0.1"
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 5.0
 DEFAULT_RECONNECT_DELAY = 5.0
+DEFAULT_HEART_BEAT = 60.0
 DEFAULT_STEP = 5
 
 STATE_CONNECTED = "connected"
@@ -112,10 +113,8 @@ SIGNAL_PLAYER_EVENT = "player_event"
 SIGNAL_GROUP_EVENT = "group_event"
 SIGNAL_CONTROLLER_EVENT = "controller_event"
 SIGNAL_HEOS_EVENT = "heos_event"
-
 EVENT_CONNECTED = "connected"
 EVENT_DISCONNECTED = "disconnected"
-
 
 BASE_URI = "heos://"
 
@@ -147,6 +146,7 @@ COMMAND_PLAY_PREVIOUS = "player/play_previous"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"
+COMMAND_HEART_BEAT = "system/heart_beat"
 
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"

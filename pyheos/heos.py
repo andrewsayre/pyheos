@@ -16,11 +16,15 @@ _LOGGER = logging.getLogger(__name__)
 class Heos:
     """The Heos class provides access to the CLI API."""
 
-    def __init__(self, host: str, timeout: float = const.DEFAULT_TIMEOUT,
-                 *, dispatcher=None, all_progress_events=True):
+    def __init__(self, host: str, *,
+                 timeout: float = const.DEFAULT_TIMEOUT,
+                 heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
+                 all_progress_events=True,
+                 dispatcher: Dispatcher = None):
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(
-            self, host, timeout, all_progress_events)
+            self, host, timeout=timeout, heart_beat=heart_beat,
+            all_progress_events=all_progress_events)
         self._dispatcher = dispatcher or Dispatcher()
         self._players = {}  # type: Dict[int, HeosPlayer]
         self._players_loaded = False

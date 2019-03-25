@@ -1,5 +1,6 @@
 """Tests for the pyheos library."""
 import asyncio
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional, Union
 from urllib.parse import parse_qsl, urlparse
@@ -40,6 +41,7 @@ class MockHeosDevice:
         self._server = await asyncio.start_server(
             self._handle_connection, '127.0.0.1', const.CLI_PORT)
 
+        self.register(const.COMMAND_HEART_BEAT, None, 'system.heart_beat')
         self.register(const.COMMAND_GET_PLAYERS, None, 'player.get_players')
         self.register(const.COMMAND_GET_PLAY_STATE, None,
                       'player.get_play_state')
@@ -97,6 +99,8 @@ class MockHeosDevice:
             command = url_parts.hostname + url_parts.path
             fixture_name = "{}.{}".format(url_parts.hostname,
                                           url_parts.path.lstrip('/'))
+
+            log.commands[command].append(result)
 
             # Try matchers
             matcher = next((matcher for matcher in self._matchers
@@ -176,6 +180,7 @@ class ConnectionLog:
         self._reader = reader
         self._writer = writer
         self.is_registered_for_events = False
+        self.commands = defaultdict(list)
 
     async def disconnect(self):
         """Close the connection."""

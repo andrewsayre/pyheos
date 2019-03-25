@@ -12,6 +12,11 @@ class HeosCommands:
         """Init the command wrapper."""
         self._connection = connection
 
+    async def heart_beat(self) -> bool:
+        """Perform heart beat command."""
+        response = await self._connection.command(const.COMMAND_HEART_BEAT)
+        return response.result
+
     async def register_for_change_events(self, enable=True) -> bool:
         """Enable or disable change event notifications."""
         params = {

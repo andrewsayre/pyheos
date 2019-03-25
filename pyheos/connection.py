@@ -2,6 +2,7 @@
 
 import asyncio
 from collections import defaultdict
+from datetime import datetime, timedelta
 import json
 import logging
 from typing import Any, DefaultDict, Dict, List, Optional
@@ -44,7 +45,9 @@ def _encode_query(items: dict) -> str:
 class HeosConnection:
     """Define a class that encapsulates read/write."""
 
-    def __init__(self, heos, host: str, timeout: int = const.DEFAULT_TIMEOUT,
+    def __init__(self, heos, host: str, *,
+                 timeout: float = const.DEFAULT_TIMEOUT,
+                 heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
                  all_progress_events=True):
         """Init a new HeosConnection class."""
         self._heos = heos
@@ -63,6 +66,9 @@ class HeosConnection:
         self._reconnect_delay = const.DEFAULT_RECONNECT_DELAY  # type: float
         self._reconnect_task = None  # type: asyncio.Task
         self._reconnected = asyncio.Event()
+        self._last_activity = None  # type: datetime
+        self._heart_beat_interval = heart_beat  # type: Optional[float]
+        self._heart_beat_task = None  # type: asyncio.Task
 
     async def connect(self, *, auto_reconnect: bool = False,
                       reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY):
@@ -81,12 +87,17 @@ class HeosConnection:
             self.host, const.CLI_PORT)
         self._reader, self._writer = await asyncio.wait_for(
             open_future, self.timeout)
-
+        # Start response handler
         self._response_handler_task = asyncio.ensure_future(
             self._response_handler())
         # Set state before calling command as it checks for handling
         self._state = const.STATE_CONNECTED
         await self.commands.register_for_change_events()
+        # Start heart beat if enabled.
+        if self._heart_beat_interval is not None \
+                and self._heart_beat_interval > 0:
+            self._heart_beat_task = asyncio.ensure_future(
+                self._heart_beat())
 
         _LOGGER.debug("Connected to %s", self.host)
         self._heos.dispatcher.send(
@@ -111,6 +122,9 @@ class HeosConnection:
 
     async def _disconnect(self):
         # Cancel response handler
+        if self._heart_beat_task:
+            self._heart_beat_task.cancel()
+            self._heart_beat_task = None
         if self._response_handler_task:
             self._response_handler_task.cancel()
             await self._response_handler_task
@@ -137,7 +151,7 @@ class HeosConnection:
         else:
             self._state = const.STATE_DISCONNECTED
 
-        _LOGGER.debug("Disconnected from %s", self.host, exec_info=error)
+        _LOGGER.debug("Disconnected from %s", self.host, exc_info=error)
         self._heos.dispatcher.send(
             const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
         return handled
@@ -148,10 +162,12 @@ class HeosConnection:
             try:
                 await self._connect()
                 self._reconnected.set()
+                self._reconnect_task = None
+                return
             except (ConnectionError, asyncio.TimeoutError):
                 # Occurs when we could not reconnect
                 _LOGGER.debug("Failed to reconnect to %s", self.host,
-                              exec_info=True)
+                              exc_info=True)
                 await self._disconnect()
                 await asyncio.sleep(self._reconnect_delay)
             except asyncio.CancelledError:
@@ -163,6 +179,7 @@ class HeosConnection:
             # Wait for response
             try:
                 result = await self._reader.readuntil(SEPARATOR_BYTES)
+                self._last_activity = datetime.utcnow()
                 data = json.loads(result.decode())
                 response = HeosResponse(data)
 
@@ -198,6 +215,20 @@ class HeosConnection:
                 # Occurs when the connection breaks
                 asyncio.ensure_future(self._handle_connection_error(error))
                 return
+
+    async def _heart_beat(self):
+        while self._state == const.STATE_CONNECTED:
+            try:
+                last_activity = datetime.utcnow() - self._last_activity
+                threshold = timedelta(seconds=self._heart_beat_interval)
+                if last_activity > threshold:
+                    await self.commands.heart_beat()
+                await asyncio.sleep(self._heart_beat_interval / 2)
+            except asyncio.CancelledError:
+                # Occurs when the task is being killed
+                return
+            except Exception:  # pylint: disable=broad-except
+                pass
 
     async def command(self, command: str,
                       params: Dict[str, Any] = None) -> Optional[HeosResponse]:

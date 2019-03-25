@@ -28,7 +28,7 @@ def test_init():
 
 
 @pytest.mark.asyncio
-async def test_connect_subscribes(mock_device):
+async def test_connect(mock_device):
     """Test connect updates state and fires signal."""
     heos = Heos('127.0.0.1')
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT,
@@ -40,6 +40,21 @@ async def test_connect_subscribes(mock_device):
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
+
+    await heos.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_heart_beat(mock_device):
+    """Test heart beat fires at interval."""
+    heos = Heos('127.0.0.1', heart_beat=0.5)
+    await heos.connect()
+    await asyncio.sleep(1.0)
+
+    connection = mock_device.connections[0]
+    assert len(connection.commands[const.COMMAND_HEART_BEAT]) == 1
+
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -129,6 +144,8 @@ async def test_reconnect_during_event(mock_device):
     await connect_signal.wait()
     assert heos.connection_state == const.STATE_CONNECTED
 
+    await heos.disconnect()
+
 
 @pytest.mark.asyncio
 async def test_reconnect_during_command(mock_device):
@@ -156,6 +173,8 @@ async def test_reconnect_during_command(mock_device):
     await connect_signal.wait()
     assert heos.connection_state == const.STATE_CONNECTED
     assert len(players) == 2
+
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio

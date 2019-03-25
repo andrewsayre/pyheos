@@ -25,7 +25,7 @@ def mock_device_fixture(event_loop):
 @pytest.fixture(name="heos")
 def heos_fixture(event_loop):
     """Fixture for a connected heos."""
-    heos = Heos('127.0.0.1', timeout=0.5)
+    heos = Heos('127.0.0.1', timeout=0.5, heart_beat=None)
     event_loop.run_until_complete(heos.connect())
     yield heos
     event_loop.run_until_complete(heos.disconnect())
