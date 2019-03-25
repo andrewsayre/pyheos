@@ -52,7 +52,12 @@ class MockHeosDevice:
 
     async def stop(self):
         """Stop the heos server."""
+        if not self._started:
+            return
         self._started = False
+        for connection in self.connections:
+            await connection.disconnect()
+        self.connections.clear()
         self._server.close()
         await self._server.wait_closed()
 
@@ -74,7 +79,7 @@ class MockHeosDevice:
     async def _handle_connection(
             self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
-        log = ConnectionLog(writer)
+        log = ConnectionLog(reader, writer)
         self.connections.append(log)
 
         while self._started:
@@ -165,10 +170,18 @@ class CommandMatcher:
 class ConnectionLog:
     """Define a connection log."""
 
-    def __init__(self, writer: asyncio.StreamWriter):
+    def __init__(self, reader: asyncio.StreamReader,
+                 writer: asyncio.StreamWriter):
         """Initialize the connection log."""
+        self._reader = reader
         self._writer = writer
         self.is_registered_for_events = False
+
+    async def disconnect(self):
+        """Close the connection."""
+        self._writer.write_eof()
+        await self._writer.drain()
+        self._writer.close()
 
     async def write(self, payload: str):
         """Write the payload to the stream."""

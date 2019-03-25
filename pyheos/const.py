@@ -4,8 +4,13 @@ __title__ = "pyheos"
 __version__ = "0.0.1"
 
 CLI_PORT = 1255
-DEFAULT_TIMEOUT = 5
+DEFAULT_TIMEOUT = 5.0
+DEFAULT_RECONNECT_DELAY = 5.0
 DEFAULT_STEP = 5
+
+STATE_CONNECTED = "connected"
+STATE_DISCONNECTED = "disconnected"
+STATE_RECONNECTING = "reconnecting"
 
 PLAY_STATE_PLAY = 'play'
 PLAY_STATE_PAUSE = 'pause'
@@ -106,6 +111,11 @@ VALID_INPUTS = (
 SIGNAL_PLAYER_EVENT = "player_event"
 SIGNAL_GROUP_EVENT = "group_event"
 SIGNAL_CONTROLLER_EVENT = "controller_event"
+SIGNAL_HEOS_EVENT = "heos_event"
+
+EVENT_CONNECTED = "connected"
+EVENT_DISCONNECTED = "disconnected"
+
 
 BASE_URI = "heos://"
 

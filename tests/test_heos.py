@@ -10,6 +10,17 @@ from pyheos.heos import Heos
 from . import get_fixture
 
 
+def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
+    """Connect a handler to the specific signal and assert event."""
+    trigger = asyncio.Event()
+
+    async def handler(target_event: str, *args):
+        assert target_event == event
+        trigger.set()
+    heos.dispatcher.connect(signal, handler)
+    return trigger
+
+
 def test_init():
     """Test init sets properties."""
     heos = Heos('127.0.0.1')
@@ -17,12 +28,160 @@ def test_init():
 
 
 @pytest.mark.asyncio
-async def test_connect_subscribes(mock_device, heos):
-    """Test the heos connect method."""
+async def test_connect_subscribes(mock_device):
+    """Test connect updates state and fires signal."""
+    heos = Heos('127.0.0.1')
+    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT,
+                             const.EVENT_CONNECTED)
+    await heos.connect()
+    await signal.wait()
     # Assert 1st connection is used for commands
+    assert heos.connection_state == const.STATE_CONNECTED
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
+
+
+@pytest.mark.asyncio
+async def test_connect_fails():
+    """Test connect fails when host not available."""
+    heos = Heos('127.0.0.1')
+    with pytest.raises(ConnectionRefusedError):
+        await heos.connect()
+    # Also fails for initial connection even with reconnect.
+    with pytest.raises(ConnectionRefusedError):
+        await heos.connect(auto_reconnect=True)
+
+
+@pytest.mark.asyncio
+async def test_connect_timeout():
+    """Test connect fails when host not available."""
+    heos = Heos('www.google.com', timeout=1)
+    with pytest.raises(asyncio.TimeoutError):
+        await heos.connect()
+    # Also fails for initial connection even with reconnect.
+    with pytest.raises(asyncio.TimeoutError):
+        await heos.connect(auto_reconnect=True)
+
+
+@pytest.mark.asyncio
+async def test_disconnect(mock_device, heos):
+    """Test disconnect updates state and fires signal."""
+    # Fixture automatically connects
+    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT,
+                             const.EVENT_DISCONNECTED)
+    await heos.disconnect()
+    await signal.wait()
+    assert heos.connection_state == const.STATE_DISCONNECTED
+
+
+@pytest.mark.asyncio
+async def test_connection_error_during_event(mock_device, heos):
+    """Test connection error during event results in disconnected."""
+    disconnect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    # Assert transitions to reconnecting and fires disconnect
+    await mock_device.stop()
+    await disconnect_signal.wait()
+    assert heos.connection_state == const.STATE_DISCONNECTED
+
+
+@pytest.mark.asyncio
+async def test_connection_error_during_command(mock_device, heos):
+    """Test connection error during command results in disconnected."""
+    disconnect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    # Assert transitions to reconnecting and fires disconnect
+    await mock_device.stop()
+    with pytest.raises(asyncio.TimeoutError):
+        await heos.get_players()
+
+    await disconnect_signal.wait()
+    assert heos.connection_state == const.STATE_DISCONNECTED
+
+
+@pytest.mark.asyncio
+async def test_reconnect_during_event(mock_device):
+    """Test reconnect while waiting for events/responses."""
+    heos = Heos('127.0.0.1', timeout=0.1)
+
+    connect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    disconnect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    # Assert open and fires connected
+    await heos.connect(auto_reconnect=True, reconnect_delay=0)
+    await connect_signal.wait()
+    assert heos.connection_state == const.STATE_CONNECTED
+    connect_signal.clear()
+
+    # Assert transitions to reconnecting and fires disconnect
+    await mock_device.stop()
+    await disconnect_signal.wait()
+    assert heos.connection_state == const.STATE_RECONNECTING
+
+    # Assert reconnects once server is back up and fires connected
+    await asyncio.sleep(0.5)  # Force reconnect timeout
+    await mock_device.start()
+    await connect_signal.wait()
+    assert heos.connection_state == const.STATE_CONNECTED
+
+
+@pytest.mark.asyncio
+async def test_reconnect_during_command(mock_device):
+    """Test reconnect while waiting for events/responses."""
+    heos = Heos('127.0.0.1', timeout=1.0)
+
+    connect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    disconnect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    # Assert open and fires connected
+    await heos.connect(auto_reconnect=True)
+    await connect_signal.wait()
+    assert heos.connection_state == const.STATE_CONNECTED
+    connect_signal.clear()
+
+    # Act
+    await mock_device.stop()
+    await mock_device.start()
+    players = await heos.get_players()
+
+    # Assert signals set
+    await disconnect_signal.wait()
+    await connect_signal.wait()
+    assert heos.connection_state == const.STATE_CONNECTED
+    assert len(players) == 2
+
+
+@pytest.mark.asyncio
+async def test_reconnect_cancelled(mock_device):
+    """Test reconnect is canceled by calling disconnect."""
+    heos = Heos('127.0.0.1')
+
+    connect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    disconnect_signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    # Assert open and fires connected
+    await heos.connect(auto_reconnect=True)
+    await connect_signal.wait()
+    assert heos.connection_state == const.STATE_CONNECTED
+    connect_signal.clear()
+
+    # Assert transitions to reconnecting and fires disconnect
+    await mock_device.stop()
+    await disconnect_signal.wait()
+    assert heos.connection_state == const.STATE_RECONNECTING
+
+    # Assert reconnects once server is back up and fires connected
+    await heos.disconnect()
+    assert heos.connection_state == const.STATE_DISCONNECTED
 
 
 @pytest.mark.asyncio
@@ -47,7 +206,6 @@ async def test_get_players(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_state_changed_event(mock_device, heos):
     """Test playing state updates when event is received."""
     # assert not playing
@@ -78,7 +236,6 @@ async def test_player_state_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_now_playing_changed_event(mock_device, heos):
     """Test now playing updates when event is received."""
     # assert current state
@@ -132,7 +289,6 @@ async def test_player_now_playing_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_volume_changed_event(mock_device, heos):
     """Test volume state updates when event is received."""
     # assert not playing
@@ -167,7 +323,6 @@ async def test_player_volume_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_now_playing_progress_event(mock_device, heos):
     """Test now playing progress updates when event received."""
     # assert not playing
@@ -206,7 +361,6 @@ async def test_player_now_playing_progress_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_limited_progress_event_updates(mock_device):
     """Test progress updates only once if no other events."""
     # assert not playing
@@ -239,7 +393,6 @@ async def test_limited_progress_event_updates(mock_device):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_repeat_mode_changed_event(mock_device, heos):
     """Test repeat mode changes when event received."""
     # assert not playing
@@ -267,7 +420,6 @@ async def test_repeat_mode_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_shuffle_mode_changed_event(mock_device, heos):
     """Test shuffle mode changes when event received."""
     # assert not playing
@@ -295,7 +447,6 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_players_changed_event(mock_device, heos):
     """Test players are resynced when event received."""
     # assert not playing
@@ -328,7 +479,6 @@ async def test_players_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_sources_changed_event(mock_device, heos):
     """Test sources changed fires dispatcher."""
     mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
@@ -353,7 +503,6 @@ async def test_sources_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_groups_changed_event(mock_device, heos):
     """Test groups changed fires dispatcher."""
     signal = asyncio.Event()
@@ -372,7 +521,6 @@ async def test_groups_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_playback_error_event(mock_device, heos):
     """Test player playback error fires dispatcher."""
     await heos.get_players()
@@ -394,7 +542,6 @@ async def test_player_playback_error_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_player_queue_changed_event(mock_device, heos):
     """Test player queue changed fires dispatcher."""
     await heos.get_players()
@@ -415,7 +562,6 @@ async def test_player_queue_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_group_volume_changed_event(mock_device, heos):
     """Test group volume changed fires dispatcher."""
     signal = asyncio.Event()
@@ -435,7 +581,6 @@ async def test_group_volume_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(2)
 async def test_user_changed_event(mock_device, heos):
     """Test user changed fires dispatcher."""
     signal = asyncio.Event()

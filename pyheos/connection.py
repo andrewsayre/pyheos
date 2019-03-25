@@ -52,45 +52,114 @@ class HeosConnection:
         self.host = host  # type: str
         self.commands = HeosCommands(self)
         self.timeout = timeout  # type: int
-        self._connected = False  # type: bool
         self._reader = None  # type: asyncio.StreamReader
         self._writer = None   # type: asyncio.StreamWriter
         self._response_handler_task = None  # type: asyncio.Task
         self._pending_commands = \
             defaultdict(list)  # type: DefaultDict[str, List[ResponseEvent]]
-        self._sequence = 0
+        self._sequence = 0  # type: int
+        self._state = const.STATE_DISCONNECTED  # type: str
+        self._auto_reconnect = False  # type: bool
+        self._reconnect_delay = const.DEFAULT_RECONNECT_DELAY  # type: float
+        self._reconnect_task = None  # type: asyncio.Task
+        self._reconnected = asyncio.Event()
 
-    async def connect(self):
+    async def connect(self, *, auto_reconnect: bool = False,
+                      reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY):
         """Invoke the connect operation."""
-        if self._connected:
+        if self._state == const.STATE_CONNECTED:
             return
-        self._reader, self._writer = await asyncio.open_connection(
+        # Ensure we don't try to reconnect during initial failures
+        self._auto_reconnect = False
+        await self._connect()
+        self._auto_reconnect = auto_reconnect
+        self._reconnect_delay = reconnect_delay
+
+    async def _connect(self):
+        """Perform core connection logic."""
+        open_future = asyncio.open_connection(
             self.host, const.CLI_PORT)
-        self._connected = True
+        self._reader, self._writer = await asyncio.wait_for(
+            open_future, self.timeout)
+
         self._response_handler_task = asyncio.ensure_future(
             self._response_handler())
+        # Set state before calling command as it checks for handling
+        self._state = const.STATE_CONNECTED
         await self.commands.register_for_change_events()
+
         _LOGGER.debug("Connected to %s", self.host)
+        self._heos.dispatcher.send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self):
         """Disconnect from the device."""
-        if not self._connected:
+        if self._state == const.STATE_DISCONNECTED:
             return
-        self._connected = False
+        # Cancel pending reconnect
+        if self._reconnect_task:
+            self._reconnect_task.cancel()
+            await self._reconnect_task
+            self._reconnect_task = None
+        # Core disconnect
+        await self._disconnect()
+        self._state = const.STATE_DISCONNECTED
+
+        _LOGGER.debug("Disconnected from %s", self.host)
+        self._heos.dispatcher.send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    async def _disconnect(self):
+        # Cancel response handler
         if self._response_handler_task:
             self._response_handler_task.cancel()
             await self._response_handler_task
             self._response_handler_task = None
+        # Close channel
         if self._writer:
             self._writer.close()
             self._writer = None
         self._reader = None
         self._sequence = 0
         self._pending_commands.clear()
-        _LOGGER.debug("Disconnected from %s", self.host)
+
+    async def _handle_connection_error(self, error: Exception):
+        """Handle connection failures and schedule reconnect."""
+        handled = False
+
+        await self._disconnect()
+
+        if self._auto_reconnect:
+            handled = True
+            self._state = const.STATE_RECONNECTING
+            self._reconnected.clear()
+            self._reconnect_task = asyncio.ensure_future(self._reconnect())
+        else:
+            self._state = const.STATE_DISCONNECTED
+
+        _LOGGER.debug("Disconnected from %s", self.host, exec_info=error)
+        self._heos.dispatcher.send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+        return handled
+
+    async def _reconnect(self):
+        """Perform core reconnection logic."""
+        while self._state != const.STATE_CONNECTED:
+            try:
+                await self._connect()
+                self._reconnected.set()
+            except (ConnectionError, asyncio.TimeoutError):
+                # Occurs when we could not reconnect
+                _LOGGER.debug("Failed to reconnect to %s", self.host,
+                              exec_info=True)
+                await self._disconnect()
+                await asyncio.sleep(self._reconnect_delay)
+            except asyncio.CancelledError:
+                # Occurs when reconnect is cancelled via disconnect
+                return
 
     async def _response_handler(self):
-        while self._connected:
+        while True:
             # Wait for response
             try:
                 result = await self._reader.readuntil(SEPARATOR_BYTES)
@@ -125,13 +194,19 @@ class HeosConnection:
             except asyncio.CancelledError:
                 # Occurs when the task is being killed
                 return
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Failed to handle response")
+            except (ConnectionError, asyncio.IncompleteReadError) as error:
+                # Occurs when the connection breaks
+                asyncio.ensure_future(self._handle_connection_error(error))
+                return
 
     async def command(self, command: str,
                       params: Dict[str, Any] = None) -> Optional[HeosResponse]:
         """Run a command and get it's response."""
-        if not self._connected:
+        # If reconnecting, wait for it to re-establish
+        if self._state == const.STATE_RECONNECTING:
+            await self._reconnected.wait()
+
+        if self._state != const.STATE_CONNECTED:
             raise ValueError
 
         # append sequence number
@@ -140,22 +215,24 @@ class HeosConnection:
         params = params or {}
         params['sequence'] = sequence
         command_name = command
-        command = const.BASE_URI + command + '?' + _encode_query(params)
+        uri = const.BASE_URI + command + '?' + _encode_query(params)
 
         # Add reservation
         event = ResponseEvent(sequence)
         pending_commands = self._pending_commands[command_name]
         pending_commands.append(event)
         # Send command
-        self._writer.write((command + SEPARATOR).encode())
+        self._writer.write((uri + SEPARATOR).encode())
         await self._writer.drain()
 
         try:
             response = await asyncio.wait_for(event.wait(), self.timeout)
-        except asyncio.TimeoutError:
-            if event in pending_commands:
-                pending_commands.remove(event)
+        except (ConnectionError, asyncio.TimeoutError) as error:
+            # Reconnect (if enabled) and then replay the command
+            if await self._handle_connection_error(error):
+                return await self.command(command, params)
             raise
+
         _LOGGER.debug("Executed command '%s': '%s'", command, response)
         return response
 
@@ -185,6 +262,11 @@ class HeosConnection:
             _LOGGER.debug("Event received: %s", response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
+
+    @property
+    def state(self) -> str:
+        """Get the current state of the connection."""
+        return self._state
 
 
 class ResponseEvent:

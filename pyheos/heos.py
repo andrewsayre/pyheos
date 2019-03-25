@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class Heos:
     """The Heos class provides access to the CLI API."""
 
-    def __init__(self, host: str, timeout: int = const.DEFAULT_TIMEOUT,
+    def __init__(self, host: str, timeout: float = const.DEFAULT_TIMEOUT,
                  *, dispatcher=None, all_progress_events=True):
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(
@@ -27,9 +27,11 @@ class Heos:
         self._music_sources = {}  # type: Dict[int, HeosSource]
         self._music_sources_loaded = False
 
-    async def connect(self):
+    async def connect(self, *, auto_reconnect=False,
+                      reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY):
         """Connect to the CLI."""
-        await self._connection.connect()
+        await self._connection.connect(auto_reconnect=auto_reconnect,
+                                       reconnect_delay=reconnect_delay)
 
     async def disconnect(self):
         """Disconnect from the CLI."""
@@ -118,6 +120,11 @@ class Heos:
     def music_sources(self) -> Dict[int, HeosSource]:
         """Get available music sources."""
         return self._music_sources
+
+    @property
+    def connection_state(self):
+        """Get the state of the connection."""
+        return self._connection.state
 
     def get_player(self, player_id: int) -> Optional[HeosPlayer]:
         """Get the player with the specified id."""

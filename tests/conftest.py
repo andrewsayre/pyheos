@@ -6,6 +6,13 @@ from pyheos.heos import Heos
 from . import MockHeosDevice
 
 
+def pytest_collection_modifyitems(items):
+    """Modify collected tests to add timeout."""
+    for item in items:
+        if item.get_closest_marker('timeout') is None:
+            item.add_marker(pytest.mark.timeout(10))
+
+
 @pytest.fixture(name="mock_device")
 def mock_device_fixture(event_loop):
     """Fixture for mocking a HEOS device connection."""
@@ -18,7 +25,7 @@ def mock_device_fixture(event_loop):
 @pytest.fixture(name="heos")
 def heos_fixture(event_loop):
     """Fixture for a connected heos."""
-    heos = Heos('127.0.0.1')
+    heos = Heos('127.0.0.1', timeout=0.5)
     event_loop.run_until_complete(heos.connect())
     yield heos
     event_loop.run_until_complete(heos.disconnect())
