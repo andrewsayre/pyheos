@@ -1,7 +1,7 @@
 """Define consts for the pyheos package."""
 
 __title__ = "pyheos"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 5.0

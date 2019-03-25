@@ -15,7 +15,7 @@ with open(os.path.join('pyheos', 'const.py'), 'r') as fp:
 
 setup(name=const['__title__'],
       version=const['__version__'],
-      description='A python library for interacting with HEOS devices using the CLI and asyncio.',
+      description='An async python library for controlling HEOS devices through the HEOS CLI Protocol',
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/andrewsayre/pyheos',
