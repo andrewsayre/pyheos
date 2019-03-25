@@ -184,8 +184,6 @@ class ConnectionLog:
 
     async def disconnect(self):
         """Close the connection."""
-        self._writer.write_eof()
-        await self._writer.drain()
         self._writer.close()
 
     async def write(self, payload: str):
