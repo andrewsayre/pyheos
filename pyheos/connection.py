@@ -235,7 +235,7 @@ class HeosConnection:
         """Run a command and get it's response."""
         # If reconnecting, wait for it to re-establish
         if self._state == const.STATE_RECONNECTING:
-            await self._reconnected.wait()
+            await asyncio.wait_for(self._reconnected.wait(), self.timeout)
 
         if self._state != const.STATE_CONNECTED:
             raise ValueError
