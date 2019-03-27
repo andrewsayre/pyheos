@@ -131,7 +131,3 @@ class Heos:
     def connection_state(self):
         """Get the state of the connection."""
         return self._connection.state
-
-    def get_player(self, player_id: int) -> Optional[HeosPlayer]:
-        """Get the player with the specified id."""
-        return self._players.get(player_id)

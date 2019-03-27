@@ -27,7 +27,7 @@ def test_str():
 async def test_set_state(mock_device, heos):
     """Test the play, pause, and stop commands."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
 
     mock_device.register(const.COMMAND_SET_PLAY_STATE, None,
                          'player.set_play_state')
@@ -44,7 +44,7 @@ async def test_set_state(mock_device, heos):
 async def test_set_volume_and_mute(mock_device, heos):
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
 
     mock_device.register(const.COMMAND_SET_VOLUME, None, 'player.set_volume')
     mock_device.register(const.COMMAND_SET_MUTE, None, 'player.set_mute')
@@ -83,7 +83,7 @@ async def test_set_volume_and_mute(mock_device, heos):
 async def test_set_play_mode(mock_device, heos):
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     args = {
         'pid': '1',
         'repeat': const.REPEAT_ON_ALL,
@@ -102,7 +102,7 @@ async def test_set_play_mode(mock_device, heos):
 async def test_play_next_previous(mock_device, heos):
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     args = {'pid': '1'}
     mock_device.register(const.COMMAND_PLAY_NEXT, args, 'player.play_next')
     mock_device.register(const.COMMAND_PLAY_PREVIOUS, args,
@@ -116,7 +116,7 @@ async def test_play_next_previous(mock_device, heos):
 async def test_clear_queue(mock_device, heos):
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     args = {'pid': '1'}
     mock_device.register(const.COMMAND_CLEAR_QUEUE, args, 'player.clear_queue')
 
@@ -134,7 +134,7 @@ async def test_clear_queue(mock_device, heos):
 async def test_play_input_source(mock_device, heos):
     """Test the play input source."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
     args = {'pid': '1', 'spid': str(input_source.player_id),
             'input': input_source.input_name}
@@ -152,7 +152,7 @@ async def test_play_input_source(mock_device, heos):
 async def test_play_favorite(mock_device, heos):
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     args = {'pid': '1', 'preset': '1'}
     mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args,
                          'browse.play_preset')
@@ -168,7 +168,7 @@ async def test_play_favorite(mock_device, heos):
 async def test_play_url(mock_device, heos):
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.get_player(1)
+    player = heos.players.get(1)
     url = "https://my.website.com/podcast.mp3"
     args = {'pid': '1', 'url': url}
     mock_device.register(const.COMMAND_BROWSE_PLAY_STREAM,

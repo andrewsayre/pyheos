@@ -271,7 +271,7 @@ class HeosConnection:
         """Handle a response event."""
         if response.command in const.PLAYER_EVENTS:
             player_id = response.get_player_id()
-            player = self._heos.get_player(player_id)
+            player = self._heos.players.get(player_id)
             if player and (await player.event_update(
                     response, self._all_progress_events)):
                 self._heos.dispatcher.send(
