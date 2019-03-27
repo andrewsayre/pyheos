@@ -240,6 +240,8 @@ async def test_get_players(mock_device, heos):
     assert not player.is_muted
     assert player.repeat == const.REPEAT_OFF
     assert not player.shuffle
+    assert player.available
+    assert player.heos == heos
 
 
 @pytest.mark.asyncio
@@ -505,13 +507,13 @@ async def test_players_changed_event(mock_device, heos):
 
     # Wait until the signal is set
     await signal.wait()
-    assert len(heos.players) == 2
-    # Assert 2 (Front Porch) was removed
-    assert old_players[2].removed
-    assert 2 not in heos.players
+    assert len(heos.players) == 3
+    # Assert 2 (Front Porch) was marked unavailable
+    assert not old_players[2].available
+    assert old_players[2] == heos.players[2]
     # Assert 3 (Basement) was added
     assert heos.get_player(3) is not None
-    # Assert 1 (Bachyard) was updated
+    # Assert 1 (Backyard) was updated
     assert heos.get_player(1).name == 'Backyard'
 
 

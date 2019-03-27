@@ -126,9 +126,11 @@ class HeosNowPlayingMedia:
 class HeosPlayer:
     """Define a HEOS player."""
 
-    def __init__(self, commands, data: Optional[dict] = None):
+    def __init__(self, heos, data: Optional[dict] = None):
         """Initialize a player with the data."""
-        self._commands = commands
+        self._heos = heos
+        # pylint: disable=protected-access
+        self._commands = heos._connection.commands
         self._name = None       # type: str
         self._player_id = None  # type: int
         self._model = None  # type: str
@@ -145,6 +147,7 @@ class HeosPlayer:
         self._shuffle = None  # type: bool
         self._playback_error = None  # type: str
         self._now_playing_media = HeosNowPlayingMedia()
+        self._available = True  # type: bool
 
     def __str__(self):
         """Get a user-readable representation of the player."""
@@ -165,9 +168,9 @@ class HeosPlayer:
         self._network = data['network']
         self._line_out = int(data['lineout'])
 
-    def set_removed(self):
+    def set_available(self, available):
         """Mark player removed after a change event."""
-        self._commands = None
+        self._available = available
 
     async def refresh(self):
         """Pull current state."""
@@ -368,11 +371,17 @@ class HeosPlayer:
         return self._shuffle
 
     @property
-    def removed(self) -> bool:
-        """Return True if this player has been removed."""
-        return self._commands is None
+    def available(self) -> bool:
+        """Return True if this player is available."""
+        return self._available \
+            and self._heos.connection_state == const.STATE_CONNECTED
 
     @property
     def playback_error(self) -> str:
         """Get the last playback error."""
         return self._playback_error
+
+    @property
+    def heos(self):
+        """Get the heos instance attached to this player."""
+        return self._heos

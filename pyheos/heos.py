@@ -59,20 +59,22 @@ class Heos:
             players = {}
             player_data = {}
             for data in payload:
-                player = HeosPlayer(self._connection.commands, data)
+                player = HeosPlayer(self, data)
                 players[player.player_id] = player
                 player_data[player.player_id] = data
             # Match to existing
-            for player_id in self._players.copy():
+            for player_id, player in self._players.items():
                 if player_id in players:
                     players.pop(player_id)
-                    self._players[player_id].from_data(player_data[player_id])
+                    player.set_available(True)
+                    player.from_data(player_data[player_id])
                 else:
-                    self._players.pop(player_id).set_removed()
+                    player.set_available(False)
+
             self._players.update(players)
             # Update all statuses
             await asyncio.gather(*[player.refresh() for player in
-                                   self._players.values()])
+                                   self._players.values() if player.available])
             self._players_loaded = True
         return self._players
 

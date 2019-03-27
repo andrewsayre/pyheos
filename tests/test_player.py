@@ -2,6 +2,7 @@
 import pytest
 
 from pyheos import const
+from pyheos.heos import Heos
 from pyheos.player import HeosPlayer
 from pyheos.source import InputSource
 
@@ -17,7 +18,7 @@ def test_str():
         "network": "wired",
         "lineout": 1
     }
-    player = HeosPlayer(None, data)
+    player = HeosPlayer(Heos('None'), data)
     assert str(player) == '{Back Patio (HEOS Drive)}'
     assert repr(player) == '{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}'
 
