@@ -134,7 +134,10 @@ class MockHeosDevice:
             else:
                 pytest.fail("Unrecognized command: " + result)
 
-        self.connections.remove(log)
+        try:
+            self.connections.remove(log)
+        except ValueError:
+            pass
 
 
 class CommandMatcher:

@@ -172,7 +172,7 @@ async def test_reconnect_during_command(mock_device):
 @pytest.mark.asyncio
 async def test_reconnect_during_command_timeout(mock_device):
     """Test command times out while waiting for reconnect."""
-    heos = Heos('127.0.0.1', timeout=0.5)
+    heos = Heos('127.0.0.1', timeout=1)
     disconnect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
