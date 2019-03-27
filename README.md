@@ -25,8 +25,8 @@ The `Heos` class is the implementation providing control to all HEOS compatible 
 - `host: str`: The IP Address or hostname of a HEOS device on the local network. This parameter is required.
 - `timeout: float`: Number of seconds to wait during connection and issuing commands. Default is `pyheos.const.DEFAULT_TIMEOUT = 5.0`.  This parameter is required.
 - `heart_beat: Optional[float]`: Number of seconds since last activity to issue a heart-beat command. Default is `pyheos.const.DEFAULT_HEART_BEAT = 60.0`.  Set this parameter to `None` to disable heart-beat.
-- `all_progress_events`: Set to `True` to receive signals for each media play-back progression or `False` to only receive a signal when media state transitions to playing or changes.  Defualt is `True`.  This parameter is required.
-- `dispatcher: Optional[pyheos.Dispatcher]`: An instance of dispatcher to use for raising signals.  The default is `None` which results in use of he default dispatcher implementation.
+- `all_progress_events`: Set to `True` to receive signals for each media play-back progression or `False` to only receive a signal when media state transitions to playing or changes.  Default is `True`.  This parameter is required.
+- `dispatcher: Optional[pyheos.Dispatcher]`: An instance of dispatcher to use for raising signals.  The default is `None` which results in use of the default dispatcher implementation.
 
 #### `pyheos.Heos.connect(*, auto_reconnect, reconnect_delay)`
 
@@ -38,6 +38,11 @@ Connect to the specified host.  This method is a coroutine.
 
 Disconnect from the specified host.  This method is a coroutine.
 
+#### `pyheos.Heos.get_players(*, refresh)`
+
+Retrieve the available players as a `Dict[int, pyheos.Heos.HeosPlayer]` where the key represents the `player_id` and the value the `HeosPlayer` instance.  This method is a coroutine.  This method will populate the `players` property and will begin tracking changes to the players.
+- `refresh`: Set to `True` to retrieve the latest available players from the CLI. The default is `False` and will return the previous loaded players.
+
 ##### Example:
 ```python
 import pyheos
@@ -45,6 +50,7 @@ import pyheos
 heos = Heos('172.16.0.1')
 
 await heos.connect(auto_reconnect=True)
+players = await heos.get_players()
 ...
 await heos.disconnect()
 ```

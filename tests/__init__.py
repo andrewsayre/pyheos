@@ -7,7 +7,7 @@ from urllib.parse import parse_qsl, urlparse
 
 import pytest
 
-from pyheos import const
+from pyheos import Heos, const
 from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
@@ -23,6 +23,17 @@ async def get_fixture(file: str):
 
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(FILE_IO_POOL, read_file)
+
+
+def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
+    """Connect a handler to the specific signal and assert event."""
+    trigger = asyncio.Event()
+
+    async def handler(target_event: str, *args):
+        assert target_event == event
+        trigger.set()
+    heos.dispatcher.connect(signal, handler)
+    return trigger
 
 
 class MockHeosDevice:
@@ -123,7 +134,10 @@ class MockHeosDevice:
             else:
                 pytest.fail("Unrecognized command: " + result)
 
-        self.connections.remove(log)
+        try:
+            self.connections.remove(log)
+        except ValueError:
+            pass
 
 
 class CommandMatcher:
