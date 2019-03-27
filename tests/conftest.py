@@ -6,11 +6,11 @@ from pyheos.heos import Heos
 from . import MockHeosDevice
 
 
-def pytest_collection_modifyitems(items):
-    """Modify collected tests to add timeout."""
-    for item in items:
-        if item.get_closest_marker('timeout') is None:
-            item.add_marker(pytest.mark.timeout(10))
+# def pytest_collection_modifyitems(items):
+#     """Modify collected tests to add timeout."""
+#     for item in items:
+#         if item.get_closest_marker('timeout') is None:
+#             item.add_marker(pytest.mark.timeout(10))
 
 
 @pytest.fixture(name="mock_device")
