@@ -158,28 +158,13 @@ async def test_reconnect_during_command(mock_device):
     # Act
     await mock_device.stop()
     await mock_device.start()
-    players = await heos.get_players()
+    with pytest.raises(asyncio.TimeoutError):
+        await heos.get_players()
 
     # Assert signals set
     await disconnect_signal.wait()
     await connect_signal.wait()
     assert heos.connection_state == const.STATE_CONNECTED
-    assert len(players) == 2
-
-    await heos.disconnect()
-
-
-@pytest.mark.asyncio
-async def test_reconnect_during_command_timeout(mock_device):
-    """Test command times out while waiting for reconnect."""
-    heos = Heos('127.0.0.1', timeout=1.0)
-
-    await heos.connect(auto_reconnect=True)
-    await mock_device.stop()
-
-    with pytest.raises(asyncio.TimeoutError):
-        await heos.get_players()
-    assert heos.connection_state == const.STATE_RECONNECTING
 
     await heos.disconnect()
 

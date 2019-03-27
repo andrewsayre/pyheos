@@ -65,7 +65,6 @@ class HeosConnection:
         self._auto_reconnect = False  # type: bool
         self._reconnect_delay = const.DEFAULT_RECONNECT_DELAY  # type: float
         self._reconnect_task = None  # type: asyncio.Task
-        self._reconnected = asyncio.Event()
         self._last_activity = None  # type: datetime
         self._heart_beat_interval = heart_beat  # type: Optional[float]
         self._heart_beat_task = None  # type: asyncio.Task
@@ -139,14 +138,10 @@ class HeosConnection:
 
     async def _handle_connection_error(self, error: Exception):
         """Handle connection failures and schedule reconnect."""
-        handled = False
-
         await self._disconnect()
 
         if self._auto_reconnect:
-            handled = True
             self._state = const.STATE_RECONNECTING
-            self._reconnected.clear()
             self._reconnect_task = asyncio.ensure_future(self._reconnect())
         else:
             self._state = const.STATE_DISCONNECTED
@@ -154,14 +149,12 @@ class HeosConnection:
         _LOGGER.debug("Disconnected from %s", self.host, exc_info=error)
         self._heos.dispatcher.send(
             const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
-        return handled
 
     async def _reconnect(self):
         """Perform core reconnection logic."""
         while self._state != const.STATE_CONNECTED:
             try:
                 await self._connect()
-                self._reconnected.set()
                 self._reconnect_task = None
                 return
             except (ConnectionError, asyncio.TimeoutError):
@@ -222,7 +215,7 @@ class HeosConnection:
                 last_activity = datetime.utcnow() - self._last_activity
                 threshold = timedelta(seconds=self._heart_beat_interval)
                 if last_activity > threshold:
-                    await self.commands.heart_beat()
+                    asyncio.ensure_future(self.commands.heart_beat())
                 await asyncio.sleep(self._heart_beat_interval / 2)
             except asyncio.CancelledError:
                 # Occurs when the task is being killed
@@ -233,10 +226,6 @@ class HeosConnection:
     async def command(self, command: str,
                       params: Dict[str, Any] = None) -> Optional[HeosResponse]:
         """Run a command and get it's response."""
-        # If reconnecting, wait for it to re-establish
-        if self._state == const.STATE_RECONNECTING:
-            await asyncio.wait_for(self._reconnected.wait(), self.timeout)
-
         if self._state != const.STATE_CONNECTED:
             raise ValueError
 
@@ -259,9 +248,8 @@ class HeosConnection:
         try:
             response = await asyncio.wait_for(event.wait(), self.timeout)
         except (ConnectionError, asyncio.TimeoutError) as error:
-            # Reconnect (if enabled) and then replay the command
-            if await self._handle_connection_error(error):
-                return await self.command(command, params)
+            # Occurs when the connection breaks
+            asyncio.ensure_future(self._handle_connection_error(error))
             raise
 
         _LOGGER.debug("Executed command '%s': '%s'", command, response)
