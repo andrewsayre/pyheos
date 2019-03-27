@@ -7,7 +7,7 @@ from urllib.parse import parse_qsl, urlparse
 
 import pytest
 
-from pyheos import const, Heos
+from pyheos import Heos, const
 from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
