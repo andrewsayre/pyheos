@@ -123,6 +123,10 @@ class HeosConnection:
         # Cancel response handler
         if self._heart_beat_task:
             self._heart_beat_task.cancel()
+            try:
+                await self._heart_beat_task
+            except asyncio.CancelledError:
+                pass
             self._heart_beat_task = None
         if self._response_handler_task:
             self._response_handler_task.cancel()
@@ -211,17 +215,14 @@ class HeosConnection:
 
     async def _heart_beat(self):
         while self._state == const.STATE_CONNECTED:
-            try:
-                last_activity = datetime.utcnow() - self._last_activity
-                threshold = timedelta(seconds=self._heart_beat_interval)
-                if last_activity > threshold:
-                    asyncio.ensure_future(self.commands.heart_beat())
-                await asyncio.sleep(self._heart_beat_interval / 2)
-            except asyncio.CancelledError:
-                # Occurs when the task is being killed
-                return
-            except Exception:  # pylint: disable=broad-except
-                pass
+            last_activity = datetime.utcnow() - self._last_activity
+            threshold = timedelta(seconds=self._heart_beat_interval)
+            if last_activity > threshold:
+                try:
+                    await self.commands.heart_beat()
+                except (ConnectionError, asyncio.IncompleteReadError):
+                    pass
+            await asyncio.sleep(self._heart_beat_interval / 2)
 
     async def command(self, command: str,
                       params: Dict[str, Any] = None) -> Optional[HeosResponse]:
