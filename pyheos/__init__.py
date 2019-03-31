@@ -6,6 +6,7 @@ from .heos import Heos
 from .player import HeosNowPlayingMedia, HeosPlayer
 from .response import CommandError
 from .source import HeosSource, InputSource
+from .response import CommandError
 
 __all__ = [
     'const',
