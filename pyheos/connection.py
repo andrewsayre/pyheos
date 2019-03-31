@@ -142,6 +142,9 @@ class HeosConnection:
 
     async def _handle_connection_error(self, error: Exception):
         """Handle connection failures and schedule reconnect."""
+        if self._reconnect_task:
+            return
+
         await self._disconnect()
 
         if self._auto_reconnect:
@@ -208,7 +211,8 @@ class HeosConnection:
             except asyncio.CancelledError:
                 # Occurs when the task is being killed
                 return
-            except (ConnectionError, asyncio.IncompleteReadError) as error:
+            except (ConnectionError, asyncio.IncompleteReadError,
+                    RuntimeError) as error:
                 # Occurs when the connection breaks
                 asyncio.ensure_future(self._handle_connection_error(error))
                 return
