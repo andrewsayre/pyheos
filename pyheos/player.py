@@ -176,7 +176,7 @@ class HeosPlayer:
         self._name = data['name']
         self._player_id = int(data['pid'])
         self._model = data['model']
-        self._version = data['version']
+        self._version = data.get('version')
         self._ip_address = data['ip']
         self._network = data['network']
         self._line_out = int(data['lineout'])
