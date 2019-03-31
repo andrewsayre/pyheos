@@ -6,6 +6,7 @@ import pytest
 from pyheos import const
 from pyheos.dispatch import Dispatcher
 from pyheos.heos import Heos
+from pyheos.response import CommandError
 
 from . import connect_handler, get_fixture
 
@@ -216,6 +217,20 @@ async def test_get_players(mock_device, heos):
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
+
+
+@pytest.mark.asyncio
+async def test_get_players_error(mock_device, heos):
+    """Test the get_players method load players."""
+    mock_device.register(const.COMMAND_GET_PLAYERS, None,
+                         "player.get_players_error", replace=True)
+
+    with pytest.raises(CommandError) as e_info:
+        await heos.get_players()
+    assert str(e_info.value) == "System error -519 (12)"
+    assert e_info.value.command == const.COMMAND_GET_PLAYERS
+    assert e_info.value.error_id == 12
+    assert e_info.value.error_text == "System error -519"
 
 
 @pytest.mark.asyncio

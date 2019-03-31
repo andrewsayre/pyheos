@@ -229,7 +229,8 @@ class HeosConnection:
             await asyncio.sleep(self._heart_beat_interval / 2)
 
     async def command(self, command: str,
-                      params: Dict[str, Any] = None) -> Optional[HeosResponse]:
+                      params: Dict[str, Any] = None,
+                      raise_for_result: bool = False) -> HeosResponse:
         """Run a command and get it's response."""
         if self._state != const.STATE_CONNECTED:
             raise ValueError
@@ -258,6 +259,8 @@ class HeosConnection:
             raise
 
         _LOGGER.debug("Executed command '%s': '%s'", command, response)
+        if raise_for_result:
+            response.raise_for_result()
         return response
 
     async def _handle_event(self, response: HeosResponse):

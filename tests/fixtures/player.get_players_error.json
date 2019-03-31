@@ -1,0 +1,7 @@
+{
+	"heos": {
+		"command": "player/get_players",
+		"result": "fail",
+		"message": "eid=12&text=System error&syserrno=-519"
+	}
+}
