@@ -678,3 +678,17 @@ async def test_get_favorites(mock_device, heos):
     assert fav.playable
     assert fav.name == 'Thumbprint Radio'
     assert fav.type == const.TYPE_STATION
+
+
+@pytest.mark.asyncio
+async def test_get_logged_in_account(mock_device, heos):
+    """Test the get_logged_in_account method."""
+    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
+                         'system.check_account')
+    user_name = await heos.get_logged_in_account()
+    assert user_name == "example@example.com"
+
+    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
+                         'system.check_account_logged_out', replace=True)
+    user_name = await heos.get_logged_in_account()
+    assert user_name is None

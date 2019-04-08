@@ -65,6 +65,10 @@ class HeosResponse:
         if self._message:
             return self._message.get(key)
 
+    def has_message(self, key: str) -> bool:
+        """Determine if the key within the message."""
+        return self._message and key in self._message
+
     def get_player_id(self) -> int:
         """Get the player_id from the message."""
         return int(self._message['pid'])

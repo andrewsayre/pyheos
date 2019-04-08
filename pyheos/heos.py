@@ -51,6 +51,10 @@ class Heos:
             await self.get_music_sources(refresh=True)
         return True
 
+    async def get_logged_in_account(self) -> Optional[str]:
+        """Return username is logged in."""
+        return await self._connection.commands.check_account()
+
     async def get_players(self, *, refresh=False) -> Dict[int, HeosPlayer]:
         """Get available players."""
         # get players and pull initial state

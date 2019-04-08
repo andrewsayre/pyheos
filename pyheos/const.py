@@ -208,6 +208,7 @@ COMMAND_PLAY_PREVIOUS = "player/play_previous"
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"
 COMMAND_HEART_BEAT = "system/heart_beat"
+COMMAND_ACCOUNT_CHECK = "system/check_account"
 
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"
