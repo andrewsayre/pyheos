@@ -1,14 +1,8 @@
 """pyheos - a library for interacting with HEOS devices."""
-
 from . import const
 from .dispatch import Dispatcher
 from .heos import Heos
 from .player import HeosNowPlayingMedia, HeosPlayer
-<<<<<<< HEAD
-from .response import CommandError
-from .source import HeosSource, InputSource
-=======
->>>>>>> Lint
 from .response import CommandError
 from .source import HeosSource, InputSource
 
