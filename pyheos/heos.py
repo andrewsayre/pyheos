@@ -52,6 +52,9 @@ class Heos:
         if event.command == const.EVENT_SOURCES_CHANGED \
                 and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
+        if event.command == const.EVENT_USER_CHANGED:
+            self._signed_in_username = event.get_message('un') \
+                if event.has_message("signed_in") else None
         return True
 
     async def sign_in(self, username: str, password: str):

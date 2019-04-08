@@ -624,7 +624,7 @@ async def test_group_volume_changed_event(mock_device, heos):
 
 @pytest.mark.asyncio
 async def test_user_changed_event(mock_device, heos):
-    """Test user changed fires dispatcher."""
+    """Test user changed fires dispatcher and updates logged in user."""
     signal = asyncio.Event()
 
     async def handler(event: str):
@@ -632,12 +632,20 @@ async def test_user_changed_event(mock_device, heos):
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
-    # Write event through mock device
-    event_to_raise = await get_fixture("event.user_changed")
+    # Test signed out event
+    event_to_raise = await get_fixture("event.user_changed_signed_out")
     await mock_device.write_event(event_to_raise)
-
-    # Wait until the signal is set
     await signal.wait()
+    assert not heos.is_signed_in
+    assert not heos.signed_in_username
+
+    # Test signed in event
+    signal.clear()
+    event_to_raise = await get_fixture("event.user_changed_signed_in")
+    await mock_device.write_event(event_to_raise)
+    await signal.wait()
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
 
 
 @pytest.mark.asyncio
