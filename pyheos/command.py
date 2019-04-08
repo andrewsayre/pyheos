@@ -77,7 +77,7 @@ class HeosCommands:
         }
         response = await self._connection.command(
             const.COMMAND_GET_VOLUME, params, raise_for_result=True)
-        return int(response.get_message('level'))
+        return int(float(response.get_message('level')))
 
     async def set_volume(self, player_id: int, level: int,
                          *, raise_for_result=False) -> bool:
