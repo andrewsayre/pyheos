@@ -33,8 +33,20 @@ async def test_connect(mock_device):
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
-
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
     await heos.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_connect_not_logged_in(mock_device, heos):
+    """Test signed-in status shows correctly when logged out."""
+    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
+                         'system.check_account_logged_out', replace=True)
+    heos = Heos('127.0.0.1')
+    await heos.connect()
+    assert not heos.is_signed_in
+    assert not heos.signed_in_username
 
 
 @pytest.mark.asyncio
@@ -339,7 +351,7 @@ async def test_player_volume_changed_event(mock_device, heos):
     # Write event through mock device
     event_to_raise = (await get_fixture("event.player_volume_changed")) \
         .replace("{player_id}", str(player.player_id)) \
-        .replace("{level}", '50') \
+        .replace("{level}", '50.0') \
         .replace("{mute}", 'on')
     await mock_device.write_event(event_to_raise)
 
@@ -612,7 +624,7 @@ async def test_group_volume_changed_event(mock_device, heos):
 
 @pytest.mark.asyncio
 async def test_user_changed_event(mock_device, heos):
-    """Test user changed fires dispatcher."""
+    """Test user changed fires dispatcher and updates logged in user."""
     signal = asyncio.Event()
 
     async def handler(event: str):
@@ -620,12 +632,20 @@ async def test_user_changed_event(mock_device, heos):
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
-    # Write event through mock device
-    event_to_raise = await get_fixture("event.user_changed")
+    # Test signed out event
+    event_to_raise = await get_fixture("event.user_changed_signed_out")
     await mock_device.write_event(event_to_raise)
-
-    # Wait until the signal is set
     await signal.wait()
+    assert not heos.is_signed_in
+    assert not heos.signed_in_username
+
+    # Test signed in event
+    signal.clear()
+    event_to_raise = await get_fixture("event.user_changed_signed_in")
+    await mock_device.write_event(event_to_raise)
+    await signal.wait()
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
 
 
 @pytest.mark.asyncio
@@ -678,3 +698,23 @@ async def test_get_favorites(mock_device, heos):
     assert fav.playable
     assert fav.name == 'Thumbprint Radio'
     assert fav.type == const.TYPE_STATION
+
+
+@pytest.mark.asyncio
+async def test_sign_in_and_out(mock_device, heos):
+    """Test the sign in and sign out methods."""
+    data = {'un': "example@example.com", 'pw': 'example'}
+    # Test sign-in failure
+    mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in_failure')
+    with pytest.raises(CommandError) as e_info:
+        await heos.sign_in("example@example.com", "example")
+    assert str(e_info.value.error_text) == "User not found"
+
+    # Test sign-in success
+    mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in',
+                         replace=True)
+    await heos.sign_in("example@example.com", "example")
+
+    # Test sign-out
+    mock_device.register(const.COMMAND_SIGN_OUT, None, 'system.sign_out')
+    await heos.sign_out()

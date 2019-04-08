@@ -1,5 +1,4 @@
 """pyheos - a library for interacting with HEOS devices."""
-
 from . import const
 from .dispatch import Dispatcher
 from .heos import Heos

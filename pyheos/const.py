@@ -1,7 +1,7 @@
 """Define consts for the pyheos package."""
 
 __title__ = "pyheos"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 10.0
@@ -208,6 +208,9 @@ COMMAND_PLAY_PREVIOUS = "player/play_previous"
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"
 COMMAND_HEART_BEAT = "system/heart_beat"
+COMMAND_ACCOUNT_CHECK = "system/check_account"
+COMMAND_SIGN_IN = "system/sign_in"
+COMMAND_SIGN_OUT = "system/sign_out"
 
 # Events
 EVENT_PLAYER_STATE_CHANGED = "event/player_state_changed"

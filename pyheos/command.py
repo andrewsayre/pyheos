@@ -1,5 +1,5 @@
 """Define the HEOS command module."""
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from . import const
 from .player import HeosNowPlayingMedia
@@ -15,9 +15,29 @@ class HeosCommands:
     async def heart_beat(self, *, raise_for_result=False) -> bool:
         """Perform heart beat command."""
         response = await self._connection.command(
-            const.COMMAND_HEART_BEAT, raise_for_result,
+            const.COMMAND_HEART_BEAT, None,
             raise_for_result=raise_for_result)
         return response.result
+
+    async def check_account(self) -> Optional[str]:
+        """Return the logged in username."""
+        response = await self._connection.command(
+            const.COMMAND_ACCOUNT_CHECK, None, True)
+        if response.has_message('signed_in'):
+            return response.get_message('un')
+        return None
+
+    async def sign_in(self, username: str, password: str):
+        """Sign in to the HEOS account using the provided credential."""
+        params = {
+            'un': username,
+            'pw': password
+        }
+        await self._connection.command(const.COMMAND_SIGN_IN, params, True)
+
+    async def sign_out(self):
+        """Sign out of the HEOS account."""
+        await self._connection.command(const.COMMAND_SIGN_OUT, None, True)
 
     async def register_for_change_events(
             self, enable=True, *, raise_for_result=False) -> bool:
@@ -77,7 +97,7 @@ class HeosCommands:
         }
         response = await self._connection.command(
             const.COMMAND_GET_VOLUME, params, raise_for_result=True)
-        return int(response.get_message('level'))
+        return int(float(response.get_message('level')))
 
     async def set_volume(self, player_id: int, level: int,
                          *, raise_for_result=False) -> bool:
