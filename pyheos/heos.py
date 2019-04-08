@@ -51,6 +51,14 @@ class Heos:
             await self.get_music_sources(refresh=True)
         return True
 
+    async def sign_in(self, username: str, password: str):
+        """Sign-in to the HEOS account on the device directly connected."""
+        await self._connection.commands.sign_in(username, password)
+
+    async def sign_out(self):
+        """Sign-out of the HEOS account on the device directly connected."""
+        await self._connection.commands.sign_out()
+
     async def get_logged_in_account(self) -> Optional[str]:
         """Return username is logged in."""
         return await self._connection.commands.check_account()

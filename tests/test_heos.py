@@ -692,3 +692,23 @@ async def test_get_logged_in_account(mock_device, heos):
                          'system.check_account_logged_out', replace=True)
     user_name = await heos.get_logged_in_account()
     assert user_name is None
+
+
+@pytest.mark.asyncio
+async def test_sign_in_and_out(mock_device, heos):
+    """Test the sign in and sign out methods."""
+    data = {'un': "example@example.com", 'pw': 'example'}
+    # Test sign-in failure
+    mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in_failure')
+    with pytest.raises(CommandError) as e_info:
+        await heos.sign_in("example@example.com", "example")
+    assert str(e_info.value.error_text) == "User not found"
+
+    # Test sign-in success
+    mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in',
+                         replace=True)
+    await heos.sign_in("example@example.com", "example")
+
+    # Test sign-out
+    mock_device.register(const.COMMAND_SIGN_OUT, None, 'system.sign_out')
+    await heos.sign_out()

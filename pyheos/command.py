@@ -27,6 +27,18 @@ class HeosCommands:
             return response.get_message('un')
         return None
 
+    async def sign_in(self, username: str, password: str):
+        """Sign in to the HEOS account using the provided credential."""
+        params = {
+            'un': username,
+            'pw': password
+        }
+        await self._connection.command(const.COMMAND_SIGN_IN, params, True)
+
+    async def sign_out(self):
+        """Sign out of the HEOS account."""
+        await self._connection.command(const.COMMAND_SIGN_OUT, None, True)
+
     async def register_for_change_events(
             self, enable=True, *, raise_for_result=False) -> bool:
         """Enable or disable change event notifications."""
