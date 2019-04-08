@@ -33,8 +33,20 @@ async def test_connect(mock_device):
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
-
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
     await heos.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_connect_not_logged_in(mock_device, heos):
+    """Test signed-in status shows correctly when logged out."""
+    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
+                         'system.check_account_logged_out', replace=True)
+    heos = Heos('127.0.0.1')
+    await heos.connect()
+    assert not heos.is_signed_in
+    assert not heos.signed_in_username
 
 
 @pytest.mark.asyncio
@@ -678,20 +690,6 @@ async def test_get_favorites(mock_device, heos):
     assert fav.playable
     assert fav.name == 'Thumbprint Radio'
     assert fav.type == const.TYPE_STATION
-
-
-@pytest.mark.asyncio
-async def test_get_logged_in_account(mock_device, heos):
-    """Test the get_logged_in_account method."""
-    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
-                         'system.check_account')
-    user_name = await heos.get_logged_in_account()
-    assert user_name == "example@example.com"
-
-    mock_device.register(const.COMMAND_ACCOUNT_CHECK, None,
-                         'system.check_account_logged_out', replace=True)
-    user_name = await heos.get_logged_in_account()
-    assert user_name is None
 
 
 @pytest.mark.asyncio

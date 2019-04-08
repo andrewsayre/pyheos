@@ -30,12 +30,15 @@ class Heos:
         self._players_loaded = False
         self._music_sources = {}  # type: Dict[int, HeosSource]
         self._music_sources_loaded = False
+        self._signed_in_username = None  # type: str
 
     async def connect(self, *, auto_reconnect=False,
                       reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY):
         """Connect to the CLI."""
         await self._connection.connect(auto_reconnect=auto_reconnect,
                                        reconnect_delay=reconnect_delay)
+        self._signed_in_username = \
+            await self._connection.commands.check_account()
 
     async def disconnect(self):
         """Disconnect from the CLI."""
@@ -58,10 +61,6 @@ class Heos:
     async def sign_out(self):
         """Sign-out of the HEOS account on the device directly connected."""
         await self._connection.commands.sign_out()
-
-    async def get_logged_in_account(self) -> Optional[str]:
-        """Return username is logged in."""
-        return await self._connection.commands.check_account()
 
     async def get_players(self, *, refresh=False) -> Dict[int, HeosPlayer]:
         """Get available players."""
@@ -143,3 +142,13 @@ class Heos:
     def connection_state(self):
         """Get the state of the connection."""
         return self._connection.state
+
+    @property
+    def is_signed_in(self) -> bool:
+        """Return True if the HEOS accuont is signed in."""
+        return bool(self._signed_in_username)
+
+    @property
+    def signed_in_username(self) -> Optional[str]:
+        """Return the signed-in username."""
+        return self._signed_in_username

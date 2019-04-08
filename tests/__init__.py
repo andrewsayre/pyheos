@@ -53,6 +53,8 @@ class MockHeosDevice:
             self._handle_connection, '127.0.0.1', const.CLI_PORT)
 
         self.register(const.COMMAND_HEART_BEAT, None, 'system.heart_beat')
+        self.register(const.COMMAND_ACCOUNT_CHECK, None,
+                      'system.check_account')
         self.register(const.COMMAND_GET_PLAYERS, None, 'player.get_players')
         self.register(const.COMMAND_GET_PLAY_STATE, None,
                       'player.get_play_state')
