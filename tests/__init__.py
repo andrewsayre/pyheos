@@ -64,6 +64,7 @@ class MockHeosDevice:
         self.register(const.COMMAND_GET_MUTE, None, 'player.get_mute')
         self.register(const.COMMAND_GET_PLAY_MODE, None,
                       'player.get_play_mode')
+        self.register(const.COMMAND_GET_GROUPS, None, 'group.get_groups')
 
     async def stop(self):
         """Stop the heos server."""

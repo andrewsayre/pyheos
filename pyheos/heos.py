@@ -6,6 +6,7 @@ from typing import Dict, Optional, Sequence
 from . import const
 from .connection import HeosConnection
 from .dispatch import Dispatcher
+from .group import HeosGroup, create_group
 from .player import HeosPlayer
 from .response import HeosResponse
 from .source import HeosSource, InputSource
@@ -31,6 +32,8 @@ class Heos:
         self._music_sources = {}  # type: Dict[int, HeosSource]
         self._music_sources_loaded = False
         self._signed_in_username = None  # type: str
+        self._groups = {}  # type: Dict[int, HeosGroup]
+        self._groups_loaded = False
 
     async def connect(self, *, auto_reconnect=False,
                       reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY):
@@ -49,12 +52,15 @@ class Heos:
         if event.command == const.EVENT_PLAYERS_CHANGED \
                 and self._players_loaded:
             await self.get_players(refresh=True)
-        if event.command == const.EVENT_SOURCES_CHANGED \
+        elif event.command == const.EVENT_SOURCES_CHANGED \
                 and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
-        if event.command == const.EVENT_USER_CHANGED:
+        elif event.command == const.EVENT_USER_CHANGED:
             self._signed_in_username = event.get_message('un') \
                 if event.has_message("signed_in") else None
+        elif event.command == const.EVENT_GROUPS_CHANGED \
+                and self._groups_loaded:
+            await self.get_groups(refresh=True)
         return True
 
     async def sign_in(self, username: str, password: str):
@@ -91,6 +97,19 @@ class Heos:
                                    self._players.values() if player.available])
             self._players_loaded = True
         return self._players
+
+    async def get_groups(self, *, refresh=False) -> Dict[int, HeosGroup]:
+        """Get available groups."""
+        if not self._groups_loaded or refresh:
+            players = await self.get_players()
+            groups = {}
+            payload = await self._connection.commands.get_groups()
+            for data in payload:
+                group = create_group(data, players)
+                groups[group.group_id] = group
+            self._groups = groups
+            self._groups_loaded = True
+        return self._groups
 
     async def get_music_sources(self, refresh=True) -> Dict[int, HeosSource]:
         """Get available music sources."""

@@ -204,6 +204,8 @@ COMMAND_CLEAR_QUEUE = "player/clear_queue"
 COMMAND_PLAY_NEXT = "player/play_next"
 COMMAND_PLAY_PREVIOUS = "player/play_previous"
 
+# Group commands
+COMMAND_GET_GROUPS = "group/get_groups"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"

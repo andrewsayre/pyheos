@@ -290,3 +290,9 @@ class HeosCommands:
             const.COMMAND_BROWSE_PLAY_STREAM, params,
             raise_for_result=raise_for_result)
         return response.result
+
+    async def get_groups(self) -> Sequence[dict]:
+        """Get groups."""
+        response = await self._connection.command(
+            const.COMMAND_GET_GROUPS, raise_for_result=True)
+        return response.payload

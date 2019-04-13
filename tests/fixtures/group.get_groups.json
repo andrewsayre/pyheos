@@ -1,0 +1,1 @@
+{"heos": {"command": "group/get_groups", "result": "success", "message": ""}, "payload": [{"name": "Back Patio + Front Porch", "gid": 1, "players": [{"name": "Back Patio", "pid": 1, "role": "leader"}, {"name": "Front Porch", "pid": 2, "role": "member"}]}]}
