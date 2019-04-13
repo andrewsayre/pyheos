@@ -25,7 +25,7 @@ class HeosGroup:
         """Init the group class."""
         self._name = name  # type: str
         self._group_id = group_id  # type: int
-        self._leader = leader  #  type: HeosPlayer
+        self._leader = leader  # type: HeosPlayer
         self._members = members  # type: Sequence[HeosPlayer]
 
     @property
