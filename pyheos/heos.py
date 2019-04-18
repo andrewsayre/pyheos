@@ -105,9 +105,12 @@ class Heos:
             groups = {}
             payload = await self._connection.commands.get_groups()
             for data in payload:
-                group = create_group(data, players)
+                group = create_group(self, data, players)
                 groups[group.group_id] = group
             self._groups = groups
+            # Update all statuses
+            await asyncio.gather(*[group.refresh() for group in
+                                   self._groups.values()])
             self._groups_loaded = True
         return self._groups
 
@@ -152,8 +155,13 @@ class Heos:
 
     @property
     def players(self) -> Dict[int, HeosPlayer]:
-        """Get the available players."""
+        """Get the loaded players."""
         return self._players
+
+    @property
+    def groups(self) -> Dict[int, HeosGroup]:
+        """Get the loaded groups."""
+        return self._groups
 
     @property
     def music_sources(self) -> Dict[int, HeosSource]:

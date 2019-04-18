@@ -276,10 +276,13 @@ class HeosConnection:
                               player, response)
         elif response.command in const.GROUP_EVENTS:
             group_id = response.get_group_id()
-            self._heos.dispatcher.send(
-                const.SIGNAL_GROUP_EVENT, group_id, response.command)
-            _LOGGER.debug("Event received for group %s: %s",
-                          group_id, response)
+            group = self._heos.groups.get(group_id)
+            if group:
+                await group.event_update(response)
+                self._heos.dispatcher.send(
+                    const.SIGNAL_GROUP_EVENT, group_id, response.command)
+                _LOGGER.debug("Event received for group %s: %s",
+                              group_id, response)
         elif response.command in const.HEOS_EVENTS:
             # pylint: disable=protected-access
             result = await self._heos._handle_event(response)

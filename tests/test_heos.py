@@ -611,6 +611,11 @@ async def test_player_queue_changed_event(mock_device, heos):
 @pytest.mark.asyncio
 async def test_group_volume_changed_event(mock_device, heos):
     """Test group volume changed fires dispatcher."""
+    await heos.get_groups()
+    group = heos.groups.get(1)
+    assert group.volume == 42
+    assert not group.is_muted
+
     signal = asyncio.Event()
 
     async def handler(group_id: int, event: str):
@@ -625,6 +630,8 @@ async def test_group_volume_changed_event(mock_device, heos):
 
     # Wait until the signal is set
     await signal.wait()
+    assert group.volume == 50
+    assert group.is_muted
 
 
 @pytest.mark.asyncio
@@ -736,3 +743,5 @@ async def test_get_groups(mock_device, heos):
     assert group.leader.player_id == 1
     assert len(group.members) == 1
     assert group.members[0].player_id == 2
+    assert group.volume == 42
+    assert not group.is_muted

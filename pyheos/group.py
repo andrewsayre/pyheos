@@ -1,10 +1,14 @@
 """Define the heos group module."""
+import asyncio
 from typing import Dict, Sequence
 
+from . import const
 from .player import HeosPlayer
+from .response import HeosResponse
 
 
-def create_group(data: dict, players: Dict[int, HeosPlayer]) -> 'HeosGroup':
+def create_group(heos, data: dict,
+                 players: Dict[int, HeosPlayer]) -> 'HeosGroup':
     """Create a group from the data."""
     leader = None
     members = []
@@ -14,19 +18,43 @@ def create_group(data: dict, players: Dict[int, HeosPlayer]) -> 'HeosGroup':
             leader = player
         else:
             members.append(player)
-    return HeosGroup(data['name'], int(data['gid']), leader, members)
+    return HeosGroup(heos, data['name'], int(data['gid']), leader, members)
 
 
 class HeosGroup:
     """A group of players."""
 
-    def __init__(self, name: str, group_id: int, leader: HeosPlayer,
-                 members: Sequence[HeosPlayer]):
+    def __init__(self, heos, name: str, group_id: int,
+                 leader: HeosPlayer, members: Sequence[HeosPlayer]):
         """Init the group class."""
+        self._heos = heos
+        # pylint: disable=protected-access
+        self._commands = heos._connection.commands
         self._name = name  # type: str
         self._group_id = group_id  # type: int
         self._leader = leader  # type: HeosPlayer
         self._members = members  # type: Sequence[HeosPlayer]
+        self._volume = None  # type: int
+        self._is_muted = None  # type: bool
+
+    async def refresh(self):
+        """Pull current state."""
+        await asyncio.gather(self.refresh_volume(), self.refresh_mute())
+
+    async def refresh_volume(self):
+        """Pull the latest volume."""
+        self._volume = await self._commands.get_group_volume(self._group_id)
+
+    async def refresh_mute(self):
+        """Pull the latest mute status."""
+        self._is_muted = await self._commands.get_group_mute(self._group_id)
+
+    async def event_update(self, event: HeosResponse) -> bool:
+        """Handle a group update event."""
+        if event.command == const.EVENT_GROUP_VOLUME_CHANGED:
+            self._volume = int(float(event.get_message('level')))
+            self._is_muted = event.get_message('mute') == 'on'
+        return True
 
     @property
     def name(self) -> str:
@@ -47,3 +75,13 @@ class HeosGroup:
     def members(self) -> Sequence[HeosPlayer]:
         """Get the members of the group."""
         return self._members
+
+    @property
+    def volume(self) -> int:
+        """Get the volume of the group."""
+        return self._volume
+
+    @property
+    def is_muted(self) -> bool:
+        """Return True if the group is muted."""
+        return self._is_muted

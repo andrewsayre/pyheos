@@ -296,3 +296,21 @@ class HeosCommands:
         response = await self._connection.command(
             const.COMMAND_GET_GROUPS, raise_for_result=True)
         return response.payload
+
+    async def get_group_volume(self, group_id: int) -> int:
+        """Get the volume of a group."""
+        params = {
+            'gid': group_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_GROUP_VOLUME, params, raise_for_result=True)
+        return int(float(response.get_message('level')))
+
+    async def get_group_mute(self, group_id: int) -> bool:
+        """Get the mute status of the group."""
+        params = {
+            'gid': group_id
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_GROUP_MUTE, params, raise_for_result=True)
+        return response.get_message('state') == 'on'

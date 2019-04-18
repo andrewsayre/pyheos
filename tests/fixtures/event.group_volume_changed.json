@@ -1,1 +1,1 @@
-{"heos": {"command": "event/group_volume_changed", "message": "gid=1&level=50&mute=off"}}
+{"heos": {"command": "event/group_volume_changed", "message": "gid=1&level=50&mute=on"}}
