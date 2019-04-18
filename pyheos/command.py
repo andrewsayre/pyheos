@@ -349,3 +349,20 @@ class HeosCommands:
         }
         await self._connection.command(
             const.COMMAND_GROUP_VOLUME_DOWN, params, raise_for_result=True)
+
+    async def group_set_mute(self, group_id: str, state: bool):
+        """Set the mute state of the group."""
+        params = {
+            'gid': group_id,
+            'state': "on" if state else "off"
+        }
+        await self._connection.command(
+            const.COMMAND_SET_GROUP_MUTE, params, raise_for_result=True)
+
+    async def group_toggle_mute(self, group_id: int):
+        """Toggle the mute state."""
+        params = {
+            'gid': group_id
+        }
+        await self._connection.command(
+            const.COMMAND_GROUP_TOGGLE_MUTE, params, raise_for_result=True)

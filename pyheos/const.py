@@ -209,6 +209,8 @@ COMMAND_GET_GROUPS = "group/get_groups"
 COMMAND_GET_GROUP_VOLUME = "group/get_volume"
 COMMAND_SET_GROUP_VOLUME = "group/set_volume"
 COMMAND_GET_GROUP_MUTE = "group/get_mute"
+COMMAND_SET_GROUP_MUTE = "group/set_mute"
+COMMAND_GROUP_TOGGLE_MUTE = "group/toggle_mute"
 COMMAND_GROUP_VOLUME_UP = "group/volume_up"
 COMMAND_GROUP_VOLUME_DOWN = "group/volume_down"
 
