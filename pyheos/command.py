@@ -325,3 +325,27 @@ class HeosCommands:
         }
         await self._connection.command(const.COMMAND_SET_GROUP_VOLUME, params,
                                        raise_for_result=True)
+
+    async def group_volume_up(
+            self, group_id: int, step: int = const.DEFAULT_STEP):
+        """Increase the volume level."""
+        if step < 1 or step > 10:
+            raise ValueError("'step' must be in the range 1-10")
+        params = {
+            'gid': group_id,
+            'step': step
+        }
+        await self._connection.command(
+            const.COMMAND_GROUP_VOLUME_UP, params, raise_for_result=True)
+
+    async def group_volume_down(
+            self, group_id: int, step: int = const.DEFAULT_STEP):
+        """Increase the volume level."""
+        if step < 1 or step > 10:
+            raise ValueError("'step' must be in the range 1-10")
+        params = {
+            'gid': group_id,
+            'step': step
+        }
+        await self._connection.command(
+            const.COMMAND_GROUP_VOLUME_DOWN, params, raise_for_result=True)

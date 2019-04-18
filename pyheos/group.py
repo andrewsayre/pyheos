@@ -60,6 +60,14 @@ class HeosGroup:
         """Set the volume level."""
         return await self._commands.set_group_volume(self._group_id, level)
 
+    async def volume_up(self, step: int = const.DEFAULT_STEP) -> bool:
+        """Raise the volume."""
+        return await self._commands.group_volume_up(self._group_id, step)
+
+    async def volume_down(self, step: int = const.DEFAULT_STEP) -> bool:
+        """Raise the volume."""
+        return await self._commands.group_volume_down(self._group_id, step)
+
     @property
     def name(self) -> str:
         """Get the name of the group."""
