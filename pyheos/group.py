@@ -56,6 +56,10 @@ class HeosGroup:
             self._is_muted = event.get_message('mute') == 'on'
         return True
 
+    async def set_volume(self, level: int) -> bool:
+        """Set the volume level."""
+        return await self._commands.set_group_volume(self._group_id, level)
+
     @property
     def name(self) -> str:
         """Get the name of the group."""

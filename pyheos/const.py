@@ -208,6 +208,7 @@ COMMAND_PLAY_PREVIOUS = "player/play_previous"
 COMMAND_GET_GROUPS = "group/get_groups"
 COMMAND_GET_GROUP_VOLUME = "group/get_volume"
 COMMAND_GET_GROUP_MUTE = "group/get_mute"
+COMMAND_SET_GROUP_VOLUME = "group/set_volume"
 
 # System commands
 COMMAND_REGISTER_FOR_CHANGE_EVENTS = "system/register_for_change_events"
