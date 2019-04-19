@@ -71,6 +71,7 @@ async def test_connect_fails():
     # Also fails for initial connection even with reconnect.
     with pytest.raises(ConnectionRefusedError):
         await heos.connect(auto_reconnect=True)
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -82,6 +83,7 @@ async def test_connect_timeout():
     # Also fails for initial connection even with reconnect.
     with pytest.raises(asyncio.TimeoutError):
         await heos.connect(auto_reconnect=True)
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -432,6 +434,7 @@ async def test_limited_progress_event_updates(mock_device):
     await mock_device.write_event(event_to_raise)
     await mock_device.write_event(event_to_raise)
     await signal.wait()
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
