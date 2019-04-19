@@ -71,6 +71,7 @@ async def test_connect_fails():
     # Also fails for initial connection even with reconnect.
     with pytest.raises(ConnectionRefusedError):
         await heos.connect(auto_reconnect=True)
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -82,6 +83,7 @@ async def test_connect_timeout():
     # Also fails for initial connection even with reconnect.
     with pytest.raises(asyncio.TimeoutError):
         await heos.connect(auto_reconnect=True)
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -432,6 +434,7 @@ async def test_limited_progress_event_updates(mock_device):
     await mock_device.write_event(event_to_raise)
     await mock_device.write_event(event_to_raise)
     await signal.wait()
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio
@@ -547,6 +550,8 @@ async def test_sources_changed_event(mock_device, heos):
 @pytest.mark.asyncio
 async def test_groups_changed_event(mock_device, heos):
     """Test groups changed fires dispatcher."""
+    groups = await heos.get_groups()
+    assert len(groups) == 1
     signal = asyncio.Event()
 
     async def handler(event: str):
@@ -555,11 +560,14 @@ async def test_groups_changed_event(mock_device, heos):
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
+    mock_device.register(const.COMMAND_GET_GROUPS, None,
+                         'group.get_groups_changed', replace=True)
     event_to_raise = await get_fixture("event.groups_changed")
     await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set
     await signal.wait()
+    assert not await heos.get_groups()
 
 
 @pytest.mark.asyncio
@@ -606,6 +614,11 @@ async def test_player_queue_changed_event(mock_device, heos):
 @pytest.mark.asyncio
 async def test_group_volume_changed_event(mock_device, heos):
     """Test group volume changed fires dispatcher."""
+    await heos.get_groups()
+    group = heos.groups.get(1)
+    assert group.volume == 42
+    assert not group.is_muted
+
     signal = asyncio.Event()
 
     async def handler(group_id: int, event: str):
@@ -620,6 +633,8 @@ async def test_group_volume_changed_event(mock_device, heos):
 
     # Wait until the signal is set
     await signal.wait()
+    assert group.volume == 50
+    assert group.is_muted
 
 
 @pytest.mark.asyncio
@@ -718,3 +733,18 @@ async def test_sign_in_and_out(mock_device, heos):
     # Test sign-out
     mock_device.register(const.COMMAND_SIGN_OUT, None, 'system.sign_out')
     await heos.sign_out()
+
+
+@pytest.mark.asyncio
+async def test_get_groups(mock_device, heos):
+    """Test the get gruops method."""
+    groups = await heos.get_groups()
+    assert len(groups) == 1
+    group = groups[1]
+    assert group.name == 'Back Patio + Front Porch'
+    assert group.group_id == 1
+    assert group.leader.player_id == 1
+    assert len(group.members) == 1
+    assert group.members[0].player_id == 2
+    assert group.volume == 42
+    assert not group.is_muted

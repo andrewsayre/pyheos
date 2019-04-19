@@ -199,8 +199,8 @@ class HeosPlayer:
 
     async def refresh_now_playing_media(self):
         """Pull the latest now playing media."""
-        await self._commands.get_now_playing_state(
-            self._player_id, self._now_playing_media)
+        payload = await self._commands.get_now_playing_state(self._player_id)
+        self._now_playing_media.from_data(payload)
 
     async def refresh_volume(self):
         """Pull the latest volume."""
@@ -215,89 +215,89 @@ class HeosPlayer:
         self._repeat, self._shuffle = \
             await self._commands.get_play_mode(self._player_id)
 
-    async def set_state(self, state: str) -> bool:
+    async def set_state(self, state: str):
         """Set the state of the player."""
-        return await self._commands.set_player_state(self._player_id, state)
+        await self._commands.set_player_state(self._player_id, state)
 
-    async def play(self) -> bool:
+    async def play(self):
         """Set the start to play."""
-        return await self.set_state(const.PLAY_STATE_PLAY)
+        await self.set_state(const.PLAY_STATE_PLAY)
 
-    async def pause(self) -> bool:
+    async def pause(self):
         """Set the start to pause."""
-        return await self.set_state(const.PLAY_STATE_PAUSE)
+        await self.set_state(const.PLAY_STATE_PAUSE)
 
-    async def stop(self) -> bool:
+    async def stop(self):
         """Set the start to stop."""
-        return await self.set_state(const.PLAY_STATE_STOP)
+        await self.set_state(const.PLAY_STATE_STOP)
 
-    async def set_volume(self, level: int) -> bool:
+    async def set_volume(self, level: int):
         """Set the volume level."""
-        return await self._commands.set_volume(self._player_id, level)
+        await self._commands.set_volume(self._player_id, level)
 
-    async def set_mute(self, state: bool) -> bool:
+    async def set_mute(self, state: bool):
         """Set the mute state."""
-        return await self._commands.set_mute(self._player_id, state)
+        await self._commands.set_mute(self._player_id, state)
 
-    async def mute(self) -> bool:
+    async def mute(self):
         """Set mute state."""
-        return await self.set_mute(True)
+        await self.set_mute(True)
 
-    async def unmute(self) -> bool:
+    async def unmute(self):
         """Clear mute state."""
-        return await self.set_mute(False)
+        await self.set_mute(False)
 
-    async def volume_up(self, step: int = const.DEFAULT_STEP) -> bool:
+    async def volume_up(self, step: int = const.DEFAULT_STEP):
         """Raise the volume."""
-        return await self._commands.volume_up(self._player_id, step)
+        await self._commands.volume_up(self._player_id, step)
 
-    async def volume_down(self, step: int = const.DEFAULT_STEP) -> bool:
+    async def volume_down(self, step: int = const.DEFAULT_STEP):
         """Raise the volume."""
-        return await self._commands.volume_down(self._player_id, step)
+        await self._commands.volume_down(self._player_id, step)
 
-    async def toggle_mute(self) -> bool:
+    async def toggle_mute(self):
         """Toggle mute state."""
-        return await self._commands.toggle_mute(self._player_id)
+        await self._commands.toggle_mute(self._player_id)
 
-    async def set_play_mode(self, repeat: str, shuffle: bool) -> bool:
+    async def set_play_mode(self, repeat: str, shuffle: bool):
         """Set the play mode of the player."""
-        return await self._commands.set_play_mode(
+        await self._commands.set_play_mode(
             self._player_id, repeat, shuffle)
 
-    async def clear_queue(self) -> bool:
+    async def clear_queue(self):
         """Clear the queue of the player."""
-        return await self._commands.clear_queue(self._player_id)
+        await self._commands.clear_queue(self._player_id)
 
-    async def play_next(self) -> bool:
+    async def play_next(self):
         """Clear the queue of the player."""
-        return await self._commands.play_next(self._player_id)
+        await self._commands.play_next(self._player_id)
 
-    async def play_previous(self) -> bool:
+    async def play_previous(self):
         """Clear the queue of the player."""
-        return await self._commands.play_previous(self._player_id)
+        await self._commands.play_previous(self._player_id)
 
     async def play_input(
-            self, input_name: str, *, source_player_id: int = None) -> bool:
+            self, input_name: str, *, source_player_id: int = None):
         """Play the specified input."""
-        return await self._commands.play_input(
+        await self._commands.play_input(
             self._player_id, input_name, source_player_id=source_player_id)
 
-    async def play_input_source(self, input_source: InputSource) -> bool:
+    async def play_input_source(self, input_source: InputSource):
         """Play the specified input source."""
-        return await self.play_input(
+        await self.play_input(
             input_source.input_name, source_player_id=input_source.player_id)
 
-    async def play_favorite(self, preset: int) -> bool:
+    async def play_favorite(self, preset: int):
         """Play the favorite by 1-based index."""
-        return await self._commands.play_preset(self._player_id, preset)
+        await self._commands.play_preset(self._player_id, preset)
 
-    async def play_url(self, url: str) -> bool:
+    async def play_url(self, url: str):
         """Play the specified URL."""
-        return await self._commands.play_stream(self._player_id, url)
+        await self._commands.play_stream(self._player_id, url)
 
     async def event_update(self, event: HeosResponse,
                            all_progress_events: bool) -> bool:
-        """Handle a player update event."""
+        """Return True if player update event changed state."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self._now_playing_media.event_update_progress(
                 event, all_progress_events)
