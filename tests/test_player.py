@@ -28,66 +28,97 @@ async def test_set_state(mock_device, heos):
     """Test the play, pause, and stop commands."""
     await heos.get_players()
     player = heos.players.get(1)
-
+    # Invalid
+    with pytest.raises(ValueError):
+        await player.set_state("invalid")
     # Play
     mock_device.register(const.COMMAND_SET_PLAY_STATE,
                          {"pid": "1", "state": "play"},
                          'player.set_play_state')
     await player.play()
-
     # Pause
     mock_device.register(const.COMMAND_SET_PLAY_STATE,
                          {"pid": "1", "state": "pause"},
                          'player.set_play_state', replace=True)
     await player.pause()
-
     # Stop
     mock_device.register(const.COMMAND_SET_PLAY_STATE,
                          {"pid": "1", "state": "stop"},
                          'player.set_play_state', replace=True)
     await player.stop()
 
-    with pytest.raises(ValueError):
-        await player.set_state("invalid")
-
 
 @pytest.mark.asyncio
-async def test_set_volume_and_mute(mock_device, heos):
-    """Test the volume commands."""
+async def test_set_volume(mock_device, heos):
+    """Test the set_volume command."""
     await heos.get_players()
     player = heos.players.get(1)
 
-    mock_device.register(const.COMMAND_SET_VOLUME, None, 'player.set_volume')
-    mock_device.register(const.COMMAND_SET_MUTE, None, 'player.set_mute')
-    mock_device.register(const.COMMAND_VOLUME_UP, None, 'player.volume_up')
-    mock_device.register(const.COMMAND_VOLUME_DOWN, None, 'player.volume_down')
-    mock_device.register(const.COMMAND_TOGGLE_MUTE, None, 'player.toggle_mute')
-
-    # Volume
     with pytest.raises(ValueError):
         await player.set_volume(-1)
     with pytest.raises(ValueError):
         await player.set_volume(101)
+
+    mock_device.register(const.COMMAND_SET_VOLUME,
+                         {"pid": "1", "level": "100"},
+                         'player.set_volume')
     await player.set_volume(100)
 
+
+@pytest.mark.asyncio
+async def test_set_mute(mock_device, heos):
+    """Test the set_mute command."""
+    await heos.get_players()
+    player = heos.players.get(1)
     # Mute
+    mock_device.register(const.COMMAND_SET_MUTE,
+                         {"pid": "1", "state": "on"},
+                         'player.set_mute')
     await player.mute()
+    # Unmute
+    mock_device.register(const.COMMAND_SET_MUTE,
+                         {"pid": "1", "state": "off"},
+                         'player.set_mute', replace=True)
     await player.unmute()
+
+
+@pytest.mark.asyncio
+async def test_toggle_mute(mock_device, heos):
+    """Test the toggle_mute command."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    mock_device.register(
+        const.COMMAND_TOGGLE_MUTE, {"pid": "1"}, 'player.toggle_mute')
     await player.toggle_mute()
 
-    # Up
-    await player.volume_up(6)
+
+@pytest.mark.asyncio
+async def test_volume_up(mock_device, heos):
+    """Test the volume_up command."""
+    await heos.get_players()
+    player = heos.players.get(1)
     with pytest.raises(ValueError):
         await player.volume_up(0)
     with pytest.raises(ValueError):
         await player.volume_up(11)
+    mock_device.register(
+        const.COMMAND_VOLUME_UP, {"pid": "1", "step": "6"}, 'player.volume_up')
+    await player.volume_up(6)
 
-    # Down
-    await player.volume_down(6)
+
+@pytest.mark.asyncio
+async def test_volume_down(mock_device, heos):
+    """Test the volume_down command."""
+    await heos.get_players()
+    player = heos.players.get(1)
     with pytest.raises(ValueError):
         await player.volume_down(0)
     with pytest.raises(ValueError):
         await player.volume_down(11)
+    mock_device.register(
+        const.COMMAND_VOLUME_DOWN, {"pid": "1", "step": "6"},
+        'player.volume_down')
+    await player.volume_down(6)
 
 
 @pytest.mark.asyncio
@@ -115,11 +146,12 @@ async def test_play_next_previous(mock_device, heos):
     await heos.get_players()
     player = heos.players.get(1)
     args = {'pid': '1'}
+    # Next
     mock_device.register(const.COMMAND_PLAY_NEXT, args, 'player.play_next')
+    await player.play_next()
+    # Previous
     mock_device.register(const.COMMAND_PLAY_PREVIOUS, args,
                          'player.play_previous')
-
-    await player.play_next()
     await player.play_previous()
 
 
@@ -144,6 +176,11 @@ async def test_play_input_source(mock_device, heos):
     """Test the play input source."""
     await heos.get_players()
     player = heos.players.get(1)
+
+    # Test invalid input_name
+    with pytest.raises(ValueError):
+        await player.play_input("Invalid")
+
     input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
     args = {'pid': '1', 'spid': str(input_source.player_id),
             'input': input_source.input_name}
@@ -151,25 +188,22 @@ async def test_play_input_source(mock_device, heos):
                          'browse.play_input')
     await player.play_input_source(input_source)
 
-    # Test invalid input_name
-    with pytest.raises(ValueError):
-        await player.play_input("Invalid")
-
 
 @pytest.mark.asyncio
 async def test_play_favorite(mock_device, heos):
     """Test the play favorite."""
     await heos.get_players()
     player = heos.players.get(1)
+
+    # Test invalid starting index
+    with pytest.raises(ValueError):
+        await player.play_favorite(0)
+
     args = {'pid': '1', 'preset': '1'}
     mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args,
                          'browse.play_preset')
 
     await player.play_favorite(1)
-
-    # Test invalid starting index
-    with pytest.raises(ValueError):
-        await player.play_favorite(0)
 
 
 @pytest.mark.asyncio
