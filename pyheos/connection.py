@@ -224,7 +224,8 @@ class HeosConnection:
             if last_activity > threshold:
                 try:
                     await self.commands.heart_beat()
-                except (ConnectionError, asyncio.IncompleteReadError):
+                except (ConnectionError, asyncio.IncompleteReadError,
+                        asyncio.TimeoutError):
                     pass
             await asyncio.sleep(self._heart_beat_interval / 2)
 
@@ -247,10 +248,9 @@ class HeosConnection:
         pending_commands = self._pending_commands[command_name]
         pending_commands.append(event)
         # Send command
-        self._writer.write((uri + SEPARATOR).encode())
-        await self._writer.drain()
-
         try:
+            self._writer.write((uri + SEPARATOR).encode())
+            await self._writer.drain()
             response = await asyncio.wait_for(event.wait(), self.timeout)
         except (ConnectionError, asyncio.TimeoutError) as error:
             # Occurs when the connection breaks
