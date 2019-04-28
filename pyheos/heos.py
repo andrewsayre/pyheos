@@ -1,6 +1,5 @@
 """Define the heos manager module."""
 import asyncio
-import logging
 from typing import Dict, Optional, Sequence
 
 from . import const
@@ -11,8 +10,6 @@ from .player import (
     HeosPlayer, parse_player_id, parse_player_name, parse_player_version)
 from .response import HeosResponse
 from .source import HeosSource, InputSource
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class Heos:
