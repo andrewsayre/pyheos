@@ -5,7 +5,7 @@ from typing import Dict, Optional, Sequence
 
 from . import const
 from .response import HeosResponse
-from .source import InputSource
+from .source import HeosSource, InputSource
 
 
 class HeosNowPlayingMedia:
@@ -299,6 +299,14 @@ class HeosPlayer:
         """Play the specified quick select."""
         await self._commands.play_quick_select(
             self._player_id, quick_select_id)
+
+    async def add_to_queue(self, source: HeosSource, add_queue_option: int):
+        """Add the specified source to the queue."""
+        if not source.playable:
+            raise ValueError("Source '{}' is not playable".format(source))
+        await self._commands.add_to_queue(
+            self._player_id, source.source_id, source.container_id,
+            add_queue_option, source.media_id)
 
     async def set_quick_select(self, quick_select_id: int):
         """Set the specified quick select to the current source."""

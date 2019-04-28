@@ -232,6 +232,23 @@ class HeosCommands:
         await self._connection.command(
             const.COMMAND_BROWSE_PLAY_STREAM, params)
 
+    async def add_to_queue(self, player_id: int, source_id: int,
+                           container_id: str, add_queue_option: int,
+                           media_id: str = None):
+        """Add the container or track to the queue."""
+        if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:
+            raise ValueError("Invalid queue options: " + add_queue_option)
+        params = {
+            'pid': player_id,
+            'sid': source_id,
+            'cid': container_id,
+            'aid': add_queue_option
+        }
+        if media_id is not None:
+            params['mid'] = media_id
+        await self._connection.command(
+            const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""
         response = await self._connection.command(const.COMMAND_GET_GROUPS)

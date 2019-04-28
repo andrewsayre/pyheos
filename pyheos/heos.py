@@ -165,6 +165,13 @@ class Heos:
                    for item in payload]
         return {index + 1: source for index, source in enumerate(sources)}
 
+    async def get_playlists(self) -> Sequence[HeosSource]:
+        """Get available playlists."""
+        payload = await self._connection.commands.browse(
+            const.MUSIC_SOURCE_PLAYLISTS)
+        return [HeosSource(self._connection.commands, item)
+                for item in payload]
+
     @property
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""

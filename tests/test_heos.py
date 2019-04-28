@@ -716,6 +716,21 @@ async def test_get_favorites(mock_device, heos):
 
 
 @pytest.mark.asyncio
+async def test_get_playlists(mock_device, heos):
+    """Test the get playlists method."""
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1025'},
+                         'browse.browse_playlists')
+    sources = await heos.get_playlists()
+    assert len(sources) == 1
+    playlist = sources[0]
+    assert playlist.playable
+    assert playlist.container
+    assert playlist.container_id == "171566"
+    assert playlist.name == "Rockin Songs"
+    assert playlist.type == const.TYPE_PLAYLIST
+
+
+@pytest.mark.asyncio
 async def test_sign_in_and_out(mock_device, heos):
     """Test the sign in and sign out methods."""
     data = {'un': "example@example.com", 'pw': 'example'}
