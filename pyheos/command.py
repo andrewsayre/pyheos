@@ -237,6 +237,13 @@ class HeosCommands:
         response = await self._connection.command(const.COMMAND_GET_GROUPS)
         return response.payload
 
+    async def set_group(self, player_ids: Sequence[int]):
+        """Create, modify, or ungroup players."""
+        params = {
+            'pid': ','.join(map(str, player_ids))
+        }
+        await self._connection.command(const.COMMAND_SET_GROUP, params)
+
     async def get_group_volume(self, group_id: int) -> int:
         """Get the volume of a group."""
         params = {

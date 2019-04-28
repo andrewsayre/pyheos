@@ -114,6 +114,23 @@ class Heos:
             self._groups_loaded = True
         return self._groups
 
+    async def create_group(
+            self, leader_id: int, member_ids: Sequence[int]):
+        """Create a HEOS group."""
+        ids = [leader_id]
+        ids.extend(member_ids)
+        await self._connection.commands.set_group(ids)
+
+    async def remove_group(self, group_id: int):
+        """Ungroup the specifid group."""
+        await self._connection.commands.set_group([group_id])
+
+    async def update_group(self, group_id: int, member_ids: Sequence[int]):
+        """Update the membership of a group."""
+        ids = [group_id]
+        ids.extend(member_ids)
+        await self._connection.commands.set_group(ids)
+
     async def get_music_sources(self, refresh=True) -> Dict[int, HeosSource]:
         """Get available music sources."""
         if not self._music_sources or refresh:

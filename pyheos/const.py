@@ -209,6 +209,7 @@ COMMAND_GET_QUICK_SELECTS = "player/get_quickselects"
 
 # Group commands
 COMMAND_GET_GROUPS = "group/get_groups"
+COMMAND_SET_GROUP = "group/set_group"
 COMMAND_GET_GROUP_VOLUME = "group/get_volume"
 COMMAND_SET_GROUP_VOLUME = "group/set_volume"
 COMMAND_GET_GROUP_MUTE = "group/get_mute"

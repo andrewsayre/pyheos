@@ -748,3 +748,30 @@ async def test_get_groups(mock_device, heos):
     assert group.members[0].player_id == 2
     assert group.volume == 42
     assert not group.is_muted
+
+
+@pytest.mark.asyncio
+async def test_create_group(mock_device, heos):
+    """Test creating a group."""
+    data = {'pid': '1,2,3'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_create')
+    await heos.create_group(1, [2, 3])
+
+
+@pytest.mark.asyncio
+async def test_remove_group(mock_device, heos):
+    """Test removing a group."""
+    data = {'pid': '1'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_remove')
+    await heos.remove_group(1)
+
+
+@pytest.mark.asyncio
+async def test_update_group(mock_device, heos):
+    """Test removing a group."""
+    data = {'pid': '1,2'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_update')
+    await heos.update_group(1, [2])
