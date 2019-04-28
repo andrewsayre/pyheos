@@ -1,7 +1,7 @@
 """Define consts for the pyheos package."""
 
 __title__ = "pyheos"
-__version__ = "0.4.1"
+__version__ = "0.5.0"
 
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 10.0
@@ -12,6 +12,9 @@ DEFAULT_STEP = 5
 STATE_CONNECTED = "connected"
 STATE_DISCONNECTED = "disconnected"
 STATE_RECONNECTING = "reconnecting"
+
+DATA_NEW = "new"
+DATA_MAPPED_IDS = "mapped_ids"
 
 PLAY_STATE_PLAY = 'play'
 PLAY_STATE_PAUSE = 'pause'
@@ -36,6 +39,7 @@ TYPE_MUSIC_SERVICE = 'music_service'
 TYPE_STATION = 'station'
 TYPE_SONG = 'song'
 TYPE_HEOS_SERVICE = 'heos_service'
+TYPE_PLAYLIST = 'playlist'
 
 # Music Sources
 MUSIC_SOURCE_PANDORA = 1
@@ -169,6 +173,16 @@ VALID_INPUTS = (
     INPUT_TUNER, INPUT_HD_RADIO, INPUT_TV_AUDIO, INPUT_PHONO, INPUT_USB_AC,
     INPUT_ANALOG)
 
+# Add to Queue Options
+ADD_QUEUE_PLAY_NOW = 1
+ADD_QUEUE_PLAY_NEXT = 2
+ADD_QUEUE_ADD_TO_END = 3
+ADD_QUEUE_REPLACE_AND_PLAY = 4
+
+VALID_ADD_QUEUE_OPTIONS = (
+    ADD_QUEUE_PLAY_NOW, ADD_QUEUE_PLAY_NEXT, ADD_QUEUE_ADD_TO_END,
+    ADD_QUEUE_REPLACE_AND_PLAY)
+
 # Signals
 SIGNAL_PLAYER_EVENT = "player_event"
 SIGNAL_GROUP_EVENT = "group_event"
@@ -185,6 +199,7 @@ COMMAND_BROWSE_BROWSE = "browse/browse"
 COMMAND_BROWSE_PLAY_INPUT = "browse/play_input"
 COMMAND_BROWSE_PLAY_PRESET = "browse/play_preset"
 COMMAND_BROWSE_PLAY_STREAM = "browse/play_stream"
+COMMAND_BROWSE_ADD_TO_QUEUE = "browse/add_to_queue"
 
 # Player commands
 COMMAND_GET_PLAYERS = "player/get_players"
@@ -203,9 +218,13 @@ COMMAND_SET_PLAY_MODE = "player/set_play_mode"
 COMMAND_CLEAR_QUEUE = "player/clear_queue"
 COMMAND_PLAY_NEXT = "player/play_next"
 COMMAND_PLAY_PREVIOUS = "player/play_previous"
+COMMAND_PLAY_QUICK_SELECT = "player/play_quickselect"
+COMMAND_SET_QUICK_SELECT = "player/set_quickselect"
+COMMAND_GET_QUICK_SELECTS = "player/get_quickselects"
 
 # Group commands
 COMMAND_GET_GROUPS = "group/get_groups"
+COMMAND_SET_GROUP = "group/set_group"
 COMMAND_GET_GROUP_VOLUME = "group/get_volume"
 COMMAND_SET_GROUP_VOLUME = "group/set_volume"
 COMMAND_GET_GROUP_MUTE = "group/get_mute"

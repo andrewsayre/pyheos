@@ -500,8 +500,12 @@ async def test_players_changed_event(mock_device, heos):
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str):
+    async def handler(event: str, data):
         assert event == const.EVENT_PLAYERS_CHANGED
+        assert data == {
+            const.DATA_NEW: [3],
+            const.DATA_MAPPED_IDS: {}
+        }
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
@@ -524,6 +528,41 @@ async def test_players_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
+async def test_players_changed_event_new_ids(mock_device, heos):
+    """Test players are resynced when event received after firmware update."""
+    # assert not playing
+    old_players = (await heos.get_players()).copy()
+    # Attach dispatch handler
+    signal = asyncio.Event()
+
+    async def handler(event: str, data):
+        assert event == const.EVENT_PLAYERS_CHANGED
+        assert data == {
+            const.DATA_NEW: [],
+            const.DATA_MAPPED_IDS: {
+                101: 1,
+                102: 2
+            }
+        }
+        signal.set()
+    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+
+    # Write event through mock device
+    mock_device.register(const.COMMAND_GET_PLAYERS, None,
+                         'player.get_players_firmware_update', replace=True)
+    await mock_device.write_event(await get_fixture("event.players_changed"))
+    await signal.wait()
+    # Assert players are the same as before just updated.
+    assert len(heos.players) == 2
+    assert heos.players[101] == old_players[1]
+    assert heos.players[101].available
+    assert heos.players[101].name == "Back Patio"
+    assert heos.players[102] == old_players[2]
+    assert heos.players[102].available
+    assert heos.players[102].name == "Front Porch"
+
+
+@pytest.mark.asyncio
 async def test_sources_changed_event(mock_device, heos):
     """Test sources changed fires dispatcher."""
     mock_device.register(const.COMMAND_BROWSE_GET_SOURCES, None,
@@ -531,7 +570,7 @@ async def test_sources_changed_event(mock_device, heos):
     await heos.get_music_sources()
     signal = asyncio.Event()
 
-    async def handler(event: str):
+    async def handler(event: str, data):
         assert event == const.EVENT_SOURCES_CHANGED
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
@@ -554,7 +593,7 @@ async def test_groups_changed_event(mock_device, heos):
     assert len(groups) == 1
     signal = asyncio.Event()
 
-    async def handler(event: str):
+    async def handler(event: str, data):
         assert event == const.EVENT_GROUPS_CHANGED
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
@@ -642,7 +681,7 @@ async def test_user_changed_event(mock_device, heos):
     """Test user changed fires dispatcher and updates logged in user."""
     signal = asyncio.Event()
 
-    async def handler(event: str):
+    async def handler(event: str, data):
         assert event == const.EVENT_USER_CHANGED
         signal.set()
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
@@ -716,6 +755,21 @@ async def test_get_favorites(mock_device, heos):
 
 
 @pytest.mark.asyncio
+async def test_get_playlists(mock_device, heos):
+    """Test the get playlists method."""
+    mock_device.register(const.COMMAND_BROWSE_BROWSE, {'sid': '1025'},
+                         'browse.browse_playlists')
+    sources = await heos.get_playlists()
+    assert len(sources) == 1
+    playlist = sources[0]
+    assert playlist.playable
+    assert playlist.container
+    assert playlist.container_id == "171566"
+    assert playlist.name == "Rockin Songs"
+    assert playlist.type == const.TYPE_PLAYLIST
+
+
+@pytest.mark.asyncio
 async def test_sign_in_and_out(mock_device, heos):
     """Test the sign in and sign out methods."""
     data = {'un': "example@example.com", 'pw': 'example'}
@@ -748,3 +802,30 @@ async def test_get_groups(mock_device, heos):
     assert group.members[0].player_id == 2
     assert group.volume == 42
     assert not group.is_muted
+
+
+@pytest.mark.asyncio
+async def test_create_group(mock_device, heos):
+    """Test creating a group."""
+    data = {'pid': '1,2,3'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_create')
+    await heos.create_group(1, [2, 3])
+
+
+@pytest.mark.asyncio
+async def test_remove_group(mock_device, heos):
+    """Test removing a group."""
+    data = {'pid': '1'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_remove')
+    await heos.remove_group(1)
+
+
+@pytest.mark.asyncio
+async def test_update_group(mock_device, heos):
+    """Test removing a group."""
+    data = {'pid': '1,2'}
+    mock_device.register(const.COMMAND_SET_GROUP, data,
+                         'group.set_group_update')
+    await heos.update_group(1, [2])

@@ -153,7 +153,7 @@ class HeosConnection:
         else:
             self._state = const.STATE_DISCONNECTED
 
-        _LOGGER.debug("Disconnected from %s", self.host, exc_info=error)
+        _LOGGER.debug("Disconnected from %s: %s", self.host, error)
         self._heos.dispatcher.send(
             const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
@@ -164,10 +164,9 @@ class HeosConnection:
                 await self._connect()
                 self._reconnect_task = None
                 return
-            except (ConnectionError, asyncio.TimeoutError):
+            except (ConnectionError, asyncio.TimeoutError) as err:
                 # Occurs when we could not reconnect
-                _LOGGER.debug("Failed to reconnect to %s", self.host,
-                              exc_info=True)
+                _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()
                 await asyncio.sleep(self._reconnect_delay)
             except asyncio.CancelledError:
@@ -284,9 +283,8 @@ class HeosConnection:
         elif response.command in const.HEOS_EVENTS:
             # pylint: disable=protected-access
             result = await self._heos._handle_event(response)
-            if result:
-                self._heos.dispatcher.send(
-                    const.SIGNAL_CONTROLLER_EVENT, response.command)
+            self._heos.dispatcher.send(
+                const.SIGNAL_CONTROLLER_EVENT, response.command, result)
             _LOGGER.debug("Event received: %s", response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)

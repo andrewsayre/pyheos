@@ -1,11 +1,26 @@
 """Define the player module."""
 import asyncio
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from . import const
 from .response import HeosResponse
-from .source import InputSource
+from .source import HeosSource, InputSource
+
+
+def parse_player_id(data: dict) -> int:
+    """Parse the player ID from the data payload."""
+    return int(data['pid'])
+
+
+def parse_player_name(data: dict) -> str:
+    """Parse the player name from the data payload."""
+    return data['name']
+
+
+def parse_player_version(data: dict) -> str:
+    """Parse the player version from the data payload."""
+    return data.get('version')
 
 
 class HeosNowPlayingMedia:
@@ -173,13 +188,14 @@ class HeosPlayer:
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
-        self._name = data['name']
-        self._player_id = int(data['pid'])
+        self._name = parse_player_name(data)
+        self._player_id = parse_player_id(data)
         self._model = data['model']
-        self._version = data.get('version')
+        self._version = parse_player_version(data)
         self._ip_address = data['ip']
         self._network = data['network']
         self._line_out = int(data['lineout'])
+        self._available = True
 
     def set_available(self, available):
         """Mark player removed after a change event."""
@@ -294,6 +310,28 @@ class HeosPlayer:
     async def play_url(self, url: str):
         """Play the specified URL."""
         await self._commands.play_stream(self._player_id, url)
+
+    async def play_quick_select(self, quick_select_id: int):
+        """Play the specified quick select."""
+        await self._commands.play_quick_select(
+            self._player_id, quick_select_id)
+
+    async def add_to_queue(self, source: HeosSource, add_queue_option: int):
+        """Add the specified source to the queue."""
+        if not source.playable:
+            raise ValueError("Source '{}' is not playable".format(source))
+        await self._commands.add_to_queue(
+            self._player_id, source.source_id, source.container_id,
+            add_queue_option, source.media_id)
+
+    async def set_quick_select(self, quick_select_id: int):
+        """Set the specified quick select to the current source."""
+        await self._commands.set_quick_select(self._player_id, quick_select_id)
+
+    async def get_quick_selects(self) -> Dict[int, str]:
+        """Get a list of quick selects."""
+        payload = await self._commands.get_quick_selects(self._player_id)
+        return {int(data['id']): data['name'] for data in payload}
 
     async def event_update(self, event: HeosResponse,
                            all_progress_events: bool) -> bool:

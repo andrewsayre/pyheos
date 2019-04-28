@@ -49,6 +49,7 @@ class HeosSource:
         self._available = None  # type: bool
         self._service_username = None  # type: str
         self._container = None  # type: bool
+        self._container_id = None  # type: str
         self._media_id = None  # type: str
         self._playable = None  # type: bool
         if data:
@@ -66,6 +67,7 @@ class HeosSource:
         self._available = data.get('available') == 'true'
         self._service_username = data.get('service_username')
         self._container = data.get('container') == 'yes'
+        self._container_id = data.get('cid')
         self._media_id = data.get('mid')
         self._playable = data.get('playable') == 'yes'
 
@@ -121,6 +123,11 @@ class HeosSource:
     def container(self) -> bool:
         """Return True if the source is a container."""
         return self._container
+
+    @property
+    def container_id(self) -> str:
+        """Get the ID of the container."""
+        return self._container_id
 
     @property
     def playable(self) -> bool:

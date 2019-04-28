@@ -232,10 +232,34 @@ class HeosCommands:
         await self._connection.command(
             const.COMMAND_BROWSE_PLAY_STREAM, params)
 
+    async def add_to_queue(self, player_id: int, source_id: int,
+                           container_id: str, add_queue_option: int,
+                           media_id: str = None):
+        """Add the container or track to the queue."""
+        if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:
+            raise ValueError("Invalid queue options: " + add_queue_option)
+        params = {
+            'pid': player_id,
+            'sid': source_id,
+            'cid': container_id,
+            'aid': add_queue_option
+        }
+        if media_id is not None:
+            params['mid'] = media_id
+        await self._connection.command(
+            const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""
         response = await self._connection.command(const.COMMAND_GET_GROUPS)
         return response.payload
+
+    async def set_group(self, player_ids: Sequence[int]):
+        """Create, modify, or ungroup players."""
+        params = {
+            'pid': ','.join(map(str, player_ids))
+        }
+        await self._connection.command(const.COMMAND_SET_GROUP, params)
 
     async def get_group_volume(self, group_id: int) -> int:
         """Get the volume of a group."""
@@ -301,3 +325,32 @@ class HeosCommands:
             'gid': group_id
         }
         await self._connection.command(const.COMMAND_GROUP_TOGGLE_MUTE, params)
+
+    async def play_quick_select(self, player_id: int, quick_select_id: int):
+        """Play a quick select."""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        params = {
+            'pid': player_id,
+            'id': quick_select_id
+        }
+        await self._connection.command(const.COMMAND_PLAY_QUICK_SELECT, params)
+
+    async def set_quick_select(self, player_id: int, quick_select_id: int):
+        """Play a quick select."""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        params = {
+            'pid': player_id,
+            'id': quick_select_id
+        }
+        await self._connection.command(const.COMMAND_SET_QUICK_SELECT, params)
+
+    async def get_quick_selects(self, player_id: int) -> Sequence[dict]:
+        """Play a quick select."""
+        params = {
+            'pid': player_id,
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_QUICK_SELECTS, params)
+        return response.payload

@@ -4,7 +4,7 @@ import pytest
 from pyheos import const
 from pyheos.heos import Heos
 from pyheos.player import HeosPlayer
-from pyheos.source import InputSource
+from pyheos.source import HeosSource, InputSource
 
 
 def test_str():
@@ -217,3 +217,140 @@ async def test_play_url(mock_device, heos):
                          args, 'browse.play_stream')
 
     await player.play_url(url)
+
+
+@pytest.mark.asyncio
+async def test_play_quick_select(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+
+    with pytest.raises(ValueError):
+        await player.play_quick_select(0)
+    with pytest.raises(ValueError):
+        await player.play_quick_select(7)
+
+    args = {'pid': '1', 'id': '2'}
+    mock_device.register(const.COMMAND_PLAY_QUICK_SELECT,
+                         args, 'player.play_quickselect')
+    await player.play_quick_select(2)
+
+
+@pytest.mark.asyncio
+async def test_set_quick_select(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+
+    with pytest.raises(ValueError):
+        await player.set_quick_select(0)
+    with pytest.raises(ValueError):
+        await player.set_quick_select(7)
+
+    args = {'pid': '1', 'id': '2'}
+    mock_device.register(const.COMMAND_SET_QUICK_SELECT,
+                         args, 'player.set_quickselect')
+    await player.set_quick_select(2)
+
+
+@pytest.mark.asyncio
+async def test_get_quick_selects(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    args = {'pid': '1'}
+    mock_device.register(const.COMMAND_GET_QUICK_SELECTS,
+                         args, 'player.get_quickselects')
+    selects = await player.get_quick_selects()
+    assert selects == {
+        1: "Quick Select 1",
+        2: "Quick Select 2",
+        3: "Quick Select 3",
+        4: "Quick Select 4",
+        5: "Quick Select 5",
+        6: "Quick Select 6"
+    }
+
+
+@pytest.mark.asyncio
+async def test_add_to_queue_unplayable_source(mock_device, heos):
+    """Test add to queue with unplayable source raises."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    source = HeosSource(None, {
+        "name": "Unplayable",
+        "type": const.TYPE_PLAYLIST,
+        'image_url': '',
+        "playable": "no"
+    })
+    with pytest.raises(ValueError) as excinfo:
+        await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+    assert str(excinfo.value) == "Source '{}' is not playable".format(source)
+
+
+@pytest.mark.asyncio
+async def test_add_to_queue_invalid_queue_option(mock_device, heos):
+    """Test add to queue with invalid option raises."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    source = HeosSource(None, {
+        "name": "Unplayable",
+        "type": const.TYPE_PLAYLIST,
+        'image_url': '',
+        "playable": "yes"
+    })
+    with pytest.raises(ValueError) as excinfo:
+        await player.add_to_queue(source, "invalid")
+    assert str(excinfo.value) == 'Invalid queue options: invalid'
+
+
+@pytest.mark.asyncio
+async def test_add_to_queue_container(mock_device, heos):
+    """Test adding a container to the queue."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    source = HeosSource(None, {
+        "name": "My Playlist",
+        "type": const.TYPE_PLAYLIST,
+        'image_url': '',
+        "playable": "yes",
+        "container": "yes",
+        "cid": "123",
+        "sid": const.MUSIC_SOURCE_PLAYLISTS
+    })
+    args = {
+        'pid': '1',
+        'sid': str(const.MUSIC_SOURCE_PLAYLISTS),
+        'cid': '123',
+        'aid': str(const.ADD_QUEUE_PLAY_NOW)
+    }
+    mock_device.register(const.COMMAND_BROWSE_ADD_TO_QUEUE, args,
+                         'browse.add_to_queue_container')
+    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+
+
+@pytest.mark.asyncio
+async def test_add_to_queue_track(mock_device, heos):
+    """Test adding a track to the queue."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    source = HeosSource(None, {
+        "name": "My Track",
+        "type": const.TYPE_SONG,
+        'image_url': '',
+        "playable": "yes",
+        "container": "no",
+        "cid": "123",
+        "sid": const.MUSIC_SOURCE_PLAYLISTS,
+        "mid": "456"
+    })
+    args = {
+        'pid': '1',
+        'sid': str(const.MUSIC_SOURCE_PLAYLISTS),
+        'cid': '123',
+        'aid': str(const.ADD_QUEUE_PLAY_NOW),
+        'mid': '456'
+    }
+    mock_device.register(const.COMMAND_BROWSE_ADD_TO_QUEUE, args,
+                         'browse.add_to_queue_track')
+    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
