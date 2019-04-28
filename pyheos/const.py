@@ -203,6 +203,9 @@ COMMAND_SET_PLAY_MODE = "player/set_play_mode"
 COMMAND_CLEAR_QUEUE = "player/clear_queue"
 COMMAND_PLAY_NEXT = "player/play_next"
 COMMAND_PLAY_PREVIOUS = "player/play_previous"
+COMMAND_PLAY_QUICK_SELECT = "player/play_quickselect"
+COMMAND_SET_QUICK_SELECT = "player/set_quickselect"
+COMMAND_GET_QUICK_SELECTS = "player/get_quickselects"
 
 # Group commands
 COMMAND_GET_GROUPS = "group/get_groups"

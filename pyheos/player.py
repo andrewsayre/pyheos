@@ -1,7 +1,7 @@
 """Define the player module."""
 import asyncio
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 from . import const
 from .response import HeosResponse
@@ -294,6 +294,20 @@ class HeosPlayer:
     async def play_url(self, url: str):
         """Play the specified URL."""
         await self._commands.play_stream(self._player_id, url)
+
+    async def play_quick_select(self, quick_select_id: int):
+        """Play the specified quick select."""
+        await self._commands.play_quick_select(
+            self._player_id, quick_select_id)
+
+    async def set_quick_select(self, quick_select_id: int):
+        """Set the specified quick select to the current source."""
+        await self._commands.set_quick_select(self._player_id, quick_select_id)
+
+    async def get_quick_selects(self) -> Dict[int, str]:
+        """Get a list of quick selects."""
+        payload = await self._commands.get_quick_selects(self._player_id)
+        return {int(data['id']): data['name'] for data in payload}
 
     async def event_update(self, event: HeosResponse,
                            all_progress_events: bool) -> bool:

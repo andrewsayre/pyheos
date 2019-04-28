@@ -301,3 +301,32 @@ class HeosCommands:
             'gid': group_id
         }
         await self._connection.command(const.COMMAND_GROUP_TOGGLE_MUTE, params)
+
+    async def play_quick_select(self, player_id: int, quick_select_id: int):
+        """Play a quick select."""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        params = {
+            'pid': player_id,
+            'id': quick_select_id
+        }
+        await self._connection.command(const.COMMAND_PLAY_QUICK_SELECT, params)
+
+    async def set_quick_select(self, player_id: int, quick_select_id: int):
+        """Play a quick select."""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        params = {
+            'pid': player_id,
+            'id': quick_select_id
+        }
+        await self._connection.command(const.COMMAND_SET_QUICK_SELECT, params)
+
+    async def get_quick_selects(self, player_id: int) -> Sequence[dict]:
+        """Play a quick select."""
+        params = {
+            'pid': player_id,
+        }
+        response = await self._connection.command(
+            const.COMMAND_GET_QUICK_SELECTS, params)
+        return response.payload

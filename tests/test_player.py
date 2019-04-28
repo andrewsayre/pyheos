@@ -217,3 +217,56 @@ async def test_play_url(mock_device, heos):
                          args, 'browse.play_stream')
 
     await player.play_url(url)
+
+
+@pytest.mark.asyncio
+async def test_play_quick_select(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+
+    with pytest.raises(ValueError):
+        await player.play_quick_select(0)
+    with pytest.raises(ValueError):
+        await player.play_quick_select(7)
+
+    args = {'pid': '1', 'id': '2'}
+    mock_device.register(const.COMMAND_PLAY_QUICK_SELECT,
+                         args, 'player.play_quickselect')
+    await player.play_quick_select(2)
+
+
+@pytest.mark.asyncio
+async def test_set_quick_select(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+
+    with pytest.raises(ValueError):
+        await player.set_quick_select(0)
+    with pytest.raises(ValueError):
+        await player.set_quick_select(7)
+
+    args = {'pid': '1', 'id': '2'}
+    mock_device.register(const.COMMAND_SET_QUICK_SELECT,
+                         args, 'player.set_quickselect')
+    await player.set_quick_select(2)
+
+
+@pytest.mark.asyncio
+async def test_get_quick_selects(mock_device, heos):
+    """Test the play favorite."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    args = {'pid': '1'}
+    mock_device.register(const.COMMAND_GET_QUICK_SELECTS,
+                         args, 'player.get_quickselects')
+    selects = await player.get_quick_selects()
+    assert selects == {
+        1: "Quick Select 1",
+        2: "Quick Select 2",
+        3: "Quick Select 3",
+        4: "Quick Select 4",
+        5: "Quick Select 5",
+        6: "Quick Select 6"
+    }
