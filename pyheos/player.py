@@ -8,6 +8,21 @@ from .response import HeosResponse
 from .source import HeosSource, InputSource
 
 
+def parse_player_id(data: dict) -> int:
+    """Parse the player ID from the data payload."""
+    return int(data['pid'])
+
+
+def parse_player_name(data: dict) -> str:
+    """Parse the player name from the data payload."""
+    return data['name']
+
+
+def parse_player_version(data: dict) -> str:
+    """Parse the player version from the data payload."""
+    return data.get('version')
+
+
 class HeosNowPlayingMedia:
     """Define now playing media information."""
 
@@ -173,13 +188,14 @@ class HeosPlayer:
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
-        self._name = data['name']
-        self._player_id = int(data['pid'])
+        self._name = parse_player_name(data)
+        self._player_id = parse_player_id(data)
         self._model = data['model']
-        self._version = data.get('version')
+        self._version = parse_player_version(data)
         self._ip_address = data['ip']
         self._network = data['network']
         self._line_out = int(data['lineout'])
+        self._available = True
 
     def set_available(self, available):
         """Mark player removed after a change event."""

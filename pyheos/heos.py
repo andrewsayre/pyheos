@@ -7,7 +7,8 @@ from . import const
 from .connection import HeosConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
-from .player import HeosPlayer
+from .player import (
+    HeosPlayer, parse_player_id, parse_player_name, parse_player_version)
 from .response import HeosResponse
 from .source import HeosSource, InputSource
 
@@ -47,12 +48,12 @@ class Heos:
         """Disconnect from the CLI."""
         await self._connection.disconnect()
 
-    async def _handle_event(self, event: HeosResponse) -> bool:
+    async def _handle_event(self, event: HeosResponse):
         """Handle a heos event."""
         if event.command == const.EVENT_PLAYERS_CHANGED \
                 and self._players_loaded:
-            await self.get_players(refresh=True)
-        elif event.command == const.EVENT_SOURCES_CHANGED \
+            return await self.load_players()
+        if event.command == const.EVENT_SOURCES_CHANGED \
                 and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
@@ -71,31 +72,55 @@ class Heos:
         """Sign-out of the HEOS account on the device directly connected."""
         await self._connection.commands.sign_out()
 
+    async def load_players(self):
+        """Refresh the players."""
+        changes = {
+            const.DATA_NEW: [],
+            const.DATA_MAPPED_IDS: {}
+        }
+        players = {}
+        payload = await self._connection.commands.get_players()
+        existing = list(self._players.values())
+        for player_data in payload:
+            player_id = parse_player_id(player_data)
+            name = parse_player_name(player_data)
+            version = parse_player_version(player_data)
+            # Try finding existing player by id or match name when firmware
+            # verion is different because IDs change after a firmware upgrade
+            player = next((
+                player for player in existing
+                if player.player_id == player_id
+                or (player.name == name and player.version != version)), None)
+            if player:
+                # Existing player matched - update
+                if player.player_id != player_id:
+                    changes[const.DATA_MAPPED_IDS][player_id] = \
+                        player.player_id
+                player.from_data(player_data)
+                players[player_id] = player
+                existing.remove(player)
+            else:
+                # New player
+                player = HeosPlayer(self, player_data)
+                changes[const.DATA_NEW].append(player_id)
+                players[player_id] = player
+        # For any item remaining in existing, mark unavailalbe, add to updated
+        for player in existing:
+            player.set_available(False)
+            players[player.player_id] = player
+
+        # Update all statuses
+        await asyncio.gather(*[player.refresh() for player in
+                               players.values() if player.available])
+        self._players = players
+        self._players_loaded = True
+        return changes
+
     async def get_players(self, *, refresh=False) -> Dict[int, HeosPlayer]:
         """Get available players."""
         # get players and pull initial state
-        if not self._players or refresh:
-            payload = await self._connection.commands.get_players()
-            players = {}
-            player_data = {}
-            for data in payload:
-                player = HeosPlayer(self, data)
-                players[player.player_id] = player
-                player_data[player.player_id] = data
-            # Match to existing
-            for player_id, player in self._players.items():
-                if player_id in players:
-                    players.pop(player_id)
-                    player.set_available(True)
-                    player.from_data(player_data[player_id])
-                else:
-                    player.set_available(False)
-
-            self._players.update(players)
-            # Update all statuses
-            await asyncio.gather(*[player.refresh() for player in
-                                   self._players.values() if player.available])
-            self._players_loaded = True
+        if not self._players_loaded or refresh:
+            await self.load_players()
         return self._players
 
     async def get_groups(self, *, refresh=False) -> Dict[int, HeosGroup]:

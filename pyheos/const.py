@@ -13,6 +13,9 @@ STATE_CONNECTED = "connected"
 STATE_DISCONNECTED = "disconnected"
 STATE_RECONNECTING = "reconnecting"
 
+DATA_NEW = "new"
+DATA_MAPPED_IDS = "mapped_ids"
+
 PLAY_STATE_PLAY = 'play'
 PLAY_STATE_PAUSE = 'pause'
 PLAY_STATE_STOP = 'stop'

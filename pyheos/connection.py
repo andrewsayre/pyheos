@@ -284,9 +284,8 @@ class HeosConnection:
         elif response.command in const.HEOS_EVENTS:
             # pylint: disable=protected-access
             result = await self._heos._handle_event(response)
-            if result:
-                self._heos.dispatcher.send(
-                    const.SIGNAL_CONTROLLER_EVENT, response.command)
+            self._heos.dispatcher.send(
+                const.SIGNAL_CONTROLLER_EVENT, response.command, result)
             _LOGGER.debug("Event received: %s", response)
         else:
             _LOGGER.debug("Unrecognized event: %s", response)
