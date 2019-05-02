@@ -192,9 +192,12 @@ class HeosPlayer:
         self._player_id = parse_player_id(data)
         self._model = data['model']
         self._version = parse_player_version(data)
-        self._ip_address = data['ip']
-        self._network = data['network']
-        self._line_out = int(data['lineout'])
+        self._ip_address = data.get('ip')
+        self._network = data.get('network')
+        try:
+            self._line_out = int(data.get('lineout'))
+        except (TypeError, ValueError):
+            pass
         self._available = True
 
     def set_available(self, available):

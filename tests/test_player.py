@@ -23,6 +23,18 @@ def test_str():
     assert repr(player) == '{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}'
 
 
+def test_init_minimal_data():
+    """Test the init function."""
+    data = {
+        "name": "Back Patio",
+        "pid": 1,
+        "model": "HEOS Drive"
+    }
+    player = HeosPlayer(Heos('None'), data)
+    assert str(player) == '{Back Patio (HEOS Drive)}'
+    assert repr(player) == '{Back Patio (HEOS Drive) with id 1 at None}'
+
+
 @pytest.mark.asyncio
 async def test_set_state(mock_device, heos):
     """Test the play, pause, and stop commands."""
