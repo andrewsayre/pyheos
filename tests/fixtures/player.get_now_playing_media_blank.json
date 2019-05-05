@@ -1,0 +1,9 @@
+{
+	"heos": {
+		"command": "player/get_now_playing_media",
+		"result": "success",
+		"message": "pid=1"
+	},
+	"payload": {},
+	"options": []
+}

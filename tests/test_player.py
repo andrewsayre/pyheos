@@ -366,3 +366,22 @@ async def test_add_to_queue_track(mock_device, heos):
     mock_device.register(const.COMMAND_BROWSE_ADD_TO_QUEUE, args,
                          'browse.add_to_queue_track')
     await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+
+
+@pytest.mark.asyncio
+async def test_now_playing_media_unavailable(mock_device, heos):
+    """Test edge where now_playing_media returns an empty payload."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    mock_device.register(const.COMMAND_GET_NOW_PLAYING_MEDIA, None,
+                         'player.get_now_playing_media_blank', replace=True)
+    await player.refresh_now_playing_media()
+    assert player.now_playing_media.supported_controls == []
+    assert player.now_playing_media.type is None
+    assert player.now_playing_media.song is None
+    assert player.now_playing_media.station is None
+    assert player.now_playing_media.album is None
+    assert player.now_playing_media.artist is None
+    assert player.now_playing_media.image_url is None
+    assert player.now_playing_media.album_id is None
+    assert player.now_playing_media.media_id is None
