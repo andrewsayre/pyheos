@@ -45,18 +45,24 @@ class HeosNowPlayingMedia:
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
-        self._type = data['type']
-        self._song = data['song']
+        self._type = data.get('type')
+        self._song = data.get('song')
         self._station = data.get('station')
-        self._album = data['album']
-        self._artist = data['artist']
-        self._image_url = data['image_url']
-        self._album_id = data['album_id']
-        self._media_id = data['mid']
-        self._queue_id = int(data['qid'])
-        self._source_id = int(data['sid'])
+        self._album = data.get('album')
+        self._artist = data.get('artist')
+        self._image_url = data.get('image_url')
+        self._album_id = data.get('album_id')
+        self._media_id = data.get('mid')
+        try:
+            self._queue_id = int(data.get('qid'))
+        except (TypeError, ValueError):
+            self._queue_id = None
+        try:
+            self._source_id = int(data.get('sid'))
+        except (TypeError, ValueError):
+            self._source_id = None
 
-        supported_controls = const.CONTROLS_ALL
+        supported_controls = const.CONTROLS_ALL if self._source_id else []
         controls = const.SOURCE_CONTROLS.get(self._source_id)
         if controls:
             supported_controls = controls.get(self._type, supported_controls)
