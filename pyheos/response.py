@@ -2,6 +2,8 @@
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qsl
 
+from .error import CommandFailedError
+
 
 class HeosResponse:
     """Define a HEOS response representation."""
@@ -87,30 +89,4 @@ class HeosResponse:
             text += " " + system_error_number
         error_id = self.get_message('eid')
         error_id = int(error_id) if error_id else error_id
-        raise CommandError(self._command, text, error_id)
-
-
-class CommandError(Exception):
-    """Define an error command response."""
-
-    def __init__(self, command: str, text: str, error_id: int):
-        """Create a new instance of the error."""
-        self._command = command
-        self._error_text = text
-        self._error_id = error_id
-        super().__init__("{} ({})".format(text, error_id))
-
-    @property
-    def command(self) -> str:
-        """Get the command that raised the error."""
-        return self._command
-
-    @property
-    def error_text(self) -> str:
-        """Get the error text from the response."""
-        return self._error_text
-
-    @property
-    def error_id(self) -> int:
-        """Return the error id."""
-        return self._error_id
+        raise CommandFailedError(self._command, text, error_id)

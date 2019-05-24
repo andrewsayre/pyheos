@@ -5,8 +5,8 @@ import pytest
 
 from pyheos import const
 from pyheos.dispatch import Dispatcher
+from pyheos.error import CommandError, CommandFailedError
 from pyheos.heos import Heos
-from pyheos.response import CommandError
 
 from . import connect_handler, get_fixture
 
@@ -98,6 +98,21 @@ async def test_disconnect(mock_device, heos):
 
 
 @pytest.mark.asyncio
+async def test_commands_fail_when_disconnected(mock_device, heos, caplog):
+    """Test calling commands fail when disconnected."""
+    # Fixture automatically connects
+    await heos.disconnect()
+    assert heos.connection_state == const.STATE_DISCONNECTED
+
+    with pytest.raises(CommandError) as e_info:
+        await heos.load_players()
+    assert str(e_info.value) == "Not connected to device"
+    assert e_info.value.command == const.COMMAND_GET_PLAYERS
+    assert "Command failed 'heos://player/get_players?sequence=0': " \
+           "Not connected to device" in caplog.text
+
+
+@pytest.mark.asyncio
 async def test_connection_error_during_event(mock_device, heos):
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(
@@ -117,8 +132,10 @@ async def test_connection_error_during_command(mock_device, heos):
 
     # Assert transitions to reconnecting and fires disconnect
     await mock_device.stop()
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(CommandError) as e_info:
         await heos.get_players()
+    assert str(e_info.value) == "Command timed out"
+    assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
 
     await disconnect_signal.wait()
     assert heos.connection_state == const.STATE_DISCONNECTED
@@ -173,8 +190,10 @@ async def test_reconnect_during_command(mock_device):
     # Act
     await mock_device.stop()
     await mock_device.start()
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(CommandError) as e_info:
         await heos.get_players()
+    assert str(e_info.value) == "Command timed out"
+    assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
 
     # Assert signals set
     await disconnect_signal.wait()
@@ -239,7 +258,7 @@ async def test_get_players_error(mock_device, heos):
     mock_device.register(const.COMMAND_GET_PLAYERS, None,
                          "player.get_players_error", replace=True)
 
-    with pytest.raises(CommandError) as e_info:
+    with pytest.raises(CommandFailedError) as e_info:
         await heos.get_players()
     assert str(e_info.value) == "System error -519 (12)"
     assert e_info.value.command == const.COMMAND_GET_PLAYERS
@@ -770,19 +789,24 @@ async def test_get_playlists(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_sign_in_and_out(mock_device, heos):
-    """Test the sign in and sign out methods."""
+async def test_sign_in_and_out(mock_device, heos, caplog):
+    """Test the sign in and sign out methods and ensure log is masked."""
     data = {'un': "example@example.com", 'pw': 'example'}
+
     # Test sign-in failure
     mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in_failure')
-    with pytest.raises(CommandError) as e_info:
+    with pytest.raises(CommandFailedError) as e_info:
         await heos.sign_in("example@example.com", "example")
     assert str(e_info.value.error_text) == "User not found"
+    assert "Command failed 'heos://system/sign_in" \
+           "?un=example@example.com&sequence=2&pw=********':" in caplog.text
 
     # Test sign-in success
     mock_device.register(const.COMMAND_SIGN_IN, data, 'system.sign_in',
                          replace=True)
     await heos.sign_in("example@example.com", "example")
+    assert "Command executed 'heos://system/sign_in" \
+           "?un=example@example.com&sequence=3&pw=********':" in caplog.text
 
     # Test sign-out
     mock_device.register(const.COMMAND_SIGN_OUT, None, 'system.sign_out')
