@@ -786,6 +786,7 @@ async def test_get_playlists(mock_device, heos):
     assert playlist.container_id == "171566"
     assert playlist.name == "Rockin Songs"
     assert playlist.type == const.TYPE_PLAYLIST
+    assert playlist.source_id == const.MUSIC_SOURCE_PLAYLISTS
 
 
 @pytest.mark.asyncio

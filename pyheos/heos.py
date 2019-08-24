@@ -191,8 +191,11 @@ class Heos:
         """Get available playlists."""
         payload = await self._connection.commands.browse(
             const.MUSIC_SOURCE_PLAYLISTS)
-        return [HeosSource(self._connection.commands, item)
-                for item in payload]
+        playlists = []
+        for item in payload:
+            item['sid'] = const.MUSIC_SOURCE_PLAYLISTS
+            playlists.append(HeosSource(self._connection.commands, item))
+        return playlists
 
     @property
     def dispatcher(self) -> Dispatcher:
