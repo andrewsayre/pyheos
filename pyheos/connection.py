@@ -172,7 +172,7 @@ class HeosConnection:
                 await self._connect()
                 self._reconnect_task = None
                 return
-            except (ConnectionError, asyncio.TimeoutError) as err:
+            except (ConnectionError, asyncio.TimeoutError, OSError) as err:
                 # Occurs when we could not reconnect
                 _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()
@@ -219,7 +219,7 @@ class HeosConnection:
                 # Occurs when the task is being killed
                 return
             except (ConnectionError, asyncio.IncompleteReadError,
-                    RuntimeError) as error:
+                    RuntimeError, OSError) as error:
                 # Occurs when the connection breaks
                 asyncio.ensure_future(self._handle_connection_error(error))
                 return
@@ -260,7 +260,7 @@ class HeosConnection:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
             response = await asyncio.wait_for(event.wait(), self.timeout)
-        except (ConnectionError, asyncio.TimeoutError) as error:
+        except (ConnectionError, asyncio.TimeoutError, OSError) as error:
             # Occurs when the connection breaks
             asyncio.ensure_future(self._handle_connection_error(error))
             message = format_error_message(error)

@@ -7,7 +7,8 @@ DEFAULT_ERROR_MESSAGES = {
     BrokenPipeError: "Broken pipe",
     ConnectionAbortedError: "Connection aborted",
     ConnectionRefusedError: "Connection refused",
-    ConnectionResetError: "Connection reset"
+    ConnectionResetError: "Connection reset",
+    OSError: "OS I/O error"
 }
 
 
