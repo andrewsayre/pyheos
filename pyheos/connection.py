@@ -9,7 +9,7 @@ from typing import Any, DefaultDict, Dict, List, Optional
 
 from . import const
 from .command import HeosCommands
-from .error import CommandError, format_error_message
+from .error import CommandError, HeosError, format_error_message
 from .response import HeosResponse
 
 SEPARATOR = '\r\n'
@@ -90,10 +90,13 @@ class HeosConnection:
 
     async def _connect(self):
         """Perform core connection logic."""
-        open_future = asyncio.open_connection(
-            self.host, const.CLI_PORT)
-        self._reader, self._writer = await asyncio.wait_for(
-            open_future, self.timeout)
+        try:
+            open_future = asyncio.open_connection(
+                self.host, const.CLI_PORT)
+            self._reader, self._writer = await asyncio.wait_for(
+                open_future, self.timeout)
+        except (OSError, ConnectionError, asyncio.TimeoutError) as err:
+            raise HeosError(format_error_message(err)) from err
         # Start response handler
         self._response_handler_task = asyncio.ensure_future(
             self._response_handler())
@@ -172,7 +175,7 @@ class HeosConnection:
                 await self._connect()
                 self._reconnect_task = None
                 return
-            except (ConnectionError, asyncio.TimeoutError, OSError) as err:
+            except HeosError as err:
                 # Occurs when we could not reconnect
                 _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()

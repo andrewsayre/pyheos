@@ -5,7 +5,7 @@ import pytest
 
 from pyheos import const
 from pyheos.dispatch import Dispatcher
-from pyheos.error import CommandError, CommandFailedError
+from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos
 
 from . import connect_handler, get_fixture
@@ -66,11 +66,13 @@ async def test_heart_beat(mock_device):
 async def test_connect_fails():
     """Test connect fails when host not available."""
     heos = Heos('127.0.0.1')
-    with pytest.raises(ConnectionRefusedError):
+    with pytest.raises(HeosError) as e_info:
         await heos.connect()
+    assert isinstance(e_info.value.__cause__, ConnectionRefusedError)
     # Also fails for initial connection even with reconnect.
-    with pytest.raises(ConnectionRefusedError):
+    with pytest.raises(HeosError) as e_info:
         await heos.connect(auto_reconnect=True)
+    assert isinstance(e_info.value.__cause__, ConnectionRefusedError)
     await heos.disconnect()
 
 
@@ -78,11 +80,13 @@ async def test_connect_fails():
 async def test_connect_timeout():
     """Test connect fails when host not available."""
     heos = Heos('www.google.com', timeout=1)
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(HeosError) as e_info:
         await heos.connect()
+    assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
     # Also fails for initial connection even with reconnect.
-    with pytest.raises(asyncio.TimeoutError):
+    with pytest.raises(HeosError) as e_info:
         await heos.connect(auto_reconnect=True)
+    assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
     await heos.disconnect()
 
 
