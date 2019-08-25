@@ -9,6 +9,7 @@ from typing import Any, DefaultDict, Dict, List, Optional
 
 from . import const
 from .command import HeosCommands
+from .error import CommandError, HeosError, format_error_message
 from .response import HeosResponse
 
 SEPARATOR = '\r\n'
@@ -23,17 +24,24 @@ _QUOTE_MAP = {
     '%': '%25'
 }
 
+_MASKED_PARAMS = {
+    'pw',
+}
+
+_MASK = "********"
+
 
 def _quote(string: str) -> str:
     """Quote a string per the CLI specification."""
     return ''.join([_QUOTE_MAP.get(char, char) for char in str(string)])
 
 
-def _encode_query(items: dict) -> str:
+def _encode_query(items: dict, *, mask=False) -> str:
     """Encode a dict to query string per CLI specifications."""
     pairs = []
-    for key, value in items.items():
-        item = key + "=" + _quote(value)
+    for key in sorted(items.keys()):
+        value = _MASK if mask and key in _MASKED_PARAMS else items[key]
+        item = "{}={}".format(key, _quote(value))
         # Ensure 'url' goes last per CLI spec
         if key == 'url':
             pairs.append(item)
@@ -82,10 +90,13 @@ class HeosConnection:
 
     async def _connect(self):
         """Perform core connection logic."""
-        open_future = asyncio.open_connection(
-            self.host, const.CLI_PORT)
-        self._reader, self._writer = await asyncio.wait_for(
-            open_future, self.timeout)
+        try:
+            open_future = asyncio.open_connection(
+                self.host, const.CLI_PORT)
+            self._reader, self._writer = await asyncio.wait_for(
+                open_future, self.timeout)
+        except (OSError, ConnectionError, asyncio.TimeoutError) as err:
+            raise HeosError(format_error_message(err)) from err
         # Start response handler
         self._response_handler_task = asyncio.ensure_future(
             self._response_handler())
@@ -164,7 +175,7 @@ class HeosConnection:
                 await self._connect()
                 self._reconnect_task = None
                 return
-            except (ConnectionError, asyncio.TimeoutError) as err:
+            except HeosError as err:
                 # Occurs when we could not reconnect
                 _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()
@@ -211,7 +222,7 @@ class HeosConnection:
                 # Occurs when the task is being killed
                 return
             except (ConnectionError, asyncio.IncompleteReadError,
-                    RuntimeError) as error:
+                    RuntimeError, OSError) as error:
                 # Occurs when the connection breaks
                 asyncio.ensure_future(self._handle_connection_error(error))
                 return
@@ -223,40 +234,46 @@ class HeosConnection:
             if last_activity > threshold:
                 try:
                     await self.commands.heart_beat()
-                except (ConnectionError, asyncio.IncompleteReadError,
-                        asyncio.TimeoutError):
+                except CommandError:
                     pass
             await asyncio.sleep(self._heart_beat_interval / 2)
 
     async def command(
             self, command: str, params: Dict[str, Any] = None) -> HeosResponse:
-        """Run a command and get it's response."""
-        if self._state != const.STATE_CONNECTED:
-            raise ValueError
-
-        # append sequence number
+        """Execute a command and get it's response."""
+        # Build command URI
         sequence = self._sequence
         self._sequence += 1
         params = params or {}
         params['sequence'] = sequence
-        command_name = command
-        uri = const.BASE_URI + command + '?' + _encode_query(params)
+        uri = "{}{}?{}".format(const.BASE_URI, command, _encode_query(params))
+        masked_uri = "{}{}?{}".format(
+            const.BASE_URI, command, _encode_query(params, mask=True))
+
+        if self._state != const.STATE_CONNECTED:
+            _LOGGER.debug("Command failed '%s': %s", masked_uri,
+                          "Not connected to device")
+            raise CommandError(command, "Not connected to device")
 
         # Add reservation
         event = ResponseEvent(sequence)
-        pending_commands = self._pending_commands[command_name]
-        pending_commands.append(event)
+        self._pending_commands[command].append(event)
         # Send command
         try:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
             response = await asyncio.wait_for(event.wait(), self.timeout)
-        except (ConnectionError, asyncio.TimeoutError) as error:
+        except (ConnectionError, asyncio.TimeoutError, OSError) as error:
             # Occurs when the connection breaks
             asyncio.ensure_future(self._handle_connection_error(error))
-            raise
+            message = format_error_message(error)
+            _LOGGER.debug("Command failed '%s': %s", masked_uri, message)
+            raise CommandError(command, message) from error
 
-        _LOGGER.debug("Executed command '%s': '%s'", command, response)
+        if response.result:
+            _LOGGER.debug("Command executed '%s': '%s'", masked_uri, response)
+        else:
+            _LOGGER.debug("Command failed '%s': %s", masked_uri, response)
         response.raise_for_result()
         return response
 

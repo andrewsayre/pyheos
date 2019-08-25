@@ -1,7 +1,7 @@
 """Define consts for the pyheos package."""
 
 __title__ = "pyheos"
-__version__ = "0.5.2"
+__version__ = "0.6.0"
 
 CLI_PORT = 1255
 DEFAULT_TIMEOUT = 10.0
@@ -160,7 +160,9 @@ INPUT_HD_RADIO = "inputs/hdradio"
 INPUT_TV_AUDIO = "inputs/tvaudio"
 INPUT_PHONO = "inputs/phono"
 INPUT_USB_AC = "inputs/usbdac"
-INPUT_ANALOG = "inputs/analog"
+INPUT_ANALOG_IN_1 = "inputs/analog_in_1"
+INPUT_ANALOG_IN_2 = "inputs/analog_in_2"
+INPUT_RECORDER_IN_1 = "inputs/recorder_in_1"
 
 VALID_INPUTS = (
     INPUT_AUX_IN_1, INPUT_AUX_IN_2, INPUT_AUX_IN_3, INPUT_AUX_IN_4,
@@ -171,7 +173,7 @@ VALID_INPUTS = (
     INPUT_HDMI_IN_3, INPUT_HDMI_IN_4, INPUT_HDMI_ARC_1, INPUT_CABLE_SAT,
     INPUT_DVD, INPUT_BLURAY, INPUT_GAME, INPUT_MEDIA_PLAYER, INPUT_CD,
     INPUT_TUNER, INPUT_HD_RADIO, INPUT_TV_AUDIO, INPUT_PHONO, INPUT_USB_AC,
-    INPUT_ANALOG)
+    INPUT_ANALOG_IN_1, INPUT_ANALOG_IN_2, INPUT_RECORDER_IN_1)
 
 # Add to Queue Options
 ADD_QUEUE_PLAY_NOW = 1
