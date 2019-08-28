@@ -115,8 +115,8 @@ async def test_commands_fail_when_disconnected(mock_device, heos, caplog):
     assert str(e_info.value) == "Not connected to device"
     assert e_info.value.command == const.COMMAND_GET_PLAYERS
     assert (
-        "Command failed 'heos://player/get_players?sequence=0': "
-        "Not connected to device" in caplog.text
+        "Command failed 'heos://player/get_players?sequence=0': Not connected to device"
+        in caplog.text
     )
 
 
@@ -779,8 +779,8 @@ async def test_get_music_sources(mock_device, heos):
     pandora = sources[const.MUSIC_SOURCE_PANDORA]
     assert pandora.source_id == 1
     assert (
-        pandora.image_url == "https://production.ws.skyegloup.com:443/"
-        "media/images/service/logos/pandora.png"
+        pandora.image_url
+        == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
     assert pandora.type == const.TYPE_MUSIC_SERVICE
     assert pandora.available
@@ -856,16 +856,16 @@ async def test_sign_in_and_out(mock_device, heos, caplog):
         await heos.sign_in("example@example.com", "example")
     assert str(e_info.value.error_text) == "User not found"
     assert (
-        "Command failed 'heos://system/sign_in"
-        "?un=example@example.com&sequence=2&pw=********':" in caplog.text
+        "Command failed 'heos://system/sign_in?un=example@example.com&sequence=2&pw=********':"
+        in caplog.text
     )
 
     # Test sign-in success
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
     await heos.sign_in("example@example.com", "example")
     assert (
-        "Command executed 'heos://system/sign_in"
-        "?un=example@example.com&sequence=3&pw=********':" in caplog.text
+        "Command executed 'heos://system/sign_in?un=example@example.com&sequence=3&pw=********':"
+        in caplog.text
     )
 
     # Test sign-out
