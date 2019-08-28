@@ -205,7 +205,7 @@ class HeosConnection:
                 commands = self._pending_commands[response.command]
                 if not commands:
                     _LOGGER.debug(
-                        "Received response with no pending " "command: '%s'",
+                        "Received response with no pending command: '%s'",
                         response.command,
                     )
                     continue
