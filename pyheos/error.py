@@ -8,7 +8,7 @@ DEFAULT_ERROR_MESSAGES = {
     ConnectionAbortedError: "Connection aborted",
     ConnectionRefusedError: "Connection refused",
     ConnectionResetError: "Connection reset",
-    OSError: "OS I/O error"
+    OSError: "OS I/O error",
 }
 
 

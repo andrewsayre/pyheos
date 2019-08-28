@@ -14,8 +14,14 @@ SendType = Callable[..., Sequence[asyncio.Future]]
 class Dispatcher:
     """Define the dispatch class."""
 
-    def __init__(self, *, connect: ConnectType = None, send: SendType = None,
-                 signal_prefix: str = '', loop=None):
+    def __init__(
+        self,
+        *,
+        connect: ConnectType = None,
+        send: SendType = None,
+        signal_prefix: str = "",
+        loop=None
+    ):
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
         self._signals = defaultdict(list)
@@ -24,8 +30,7 @@ class Dispatcher:
         self._send = send or self._default_send
         self._disconnects = []
 
-    def connect(self, signal: str, target: TargetType) \
-            -> DisconnectType:
+    def connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
         disconnect = self._connect(self._signal_prefix + signal, target)
         self._disconnects.append(disconnect)
@@ -33,8 +38,7 @@ class Dispatcher:
 
     def send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
         """Fire a signal.  Must be ran in the event loop."""
-        return self._send(
-            self._signal_prefix + signal, *args)
+        return self._send(self._signal_prefix + signal, *args)
 
     def disconnect_all(self):
         """Disconnect all connected."""
@@ -43,8 +47,7 @@ class Dispatcher:
         for disconnect in disconnects:
             disconnect()
 
-    def _default_connect(self, signal: str, target: TargetType) \
-            -> DisconnectType:
+    def _default_connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
         self._signals[signal].append(target)
 
@@ -55,10 +58,10 @@ class Dispatcher:
             except ValueError:
                 # signal was already removed
                 pass
+
         return remove_dispatcher
 
-    def _default_send(self, signal: str, *args: Any) -> \
-            Sequence[asyncio.Future]:
+    def _default_send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
         """Fire a signal.  Must be ran in the event loop."""
         targets = self._signals[signal]
         futures = []

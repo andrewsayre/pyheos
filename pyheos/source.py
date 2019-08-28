@@ -17,8 +17,7 @@ class InputSource:
 
     def __repr__(self):
         """Get a debug representation of the source."""
-        return "<{} ({}) on {}>".format(self._name, self._input_name,
-                                        self._player_id)
+        return "<{} ({}) on {}>".format(self._name, self._input_name, self._player_id)
 
     @property
     def name(self) -> str:
@@ -56,20 +55,20 @@ class HeosSource:
             self._from_data(data)
 
     def _from_data(self, data: dict):
-        self._name = data['name']
-        self._image_url = data['image_url']
-        self._type = data['type']
+        self._name = data["name"]
+        self._image_url = data["image_url"]
+        self._type = data["type"]
 
-        source_id = data.get('sid')
+        source_id = data.get("sid")
         if source_id:
             self._source_id = int(source_id)
 
-        self._available = data.get('available') == 'true'
-        self._service_username = data.get('service_username')
-        self._container = data.get('container') == 'yes'
-        self._container_id = data.get('cid')
-        self._media_id = data.get('mid')
-        self._playable = data.get('playable') == 'yes'
+        self._available = data.get("available") == "true"
+        self._service_username = data.get("service_username")
+        self._container = data.get("container") == "yes"
+        self._container_id = data.get("cid")
+        self._media_id = data.get("mid")
+        self._playable = data.get("playable") == "yes"
 
     def __str__(self):
         """Get a user-readable representation of the source."""
@@ -79,7 +78,7 @@ class HeosSource:
         """Get a debug representation of the source."""
         return "<{} ({}) {}>".format(self._name, self._type, self._source_id)
 
-    async def browse(self) -> 'Sequence[HeosSource]':
+    async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
         items = await self._commands.browse(self._source_id)
         return [HeosSource(self._commands, item) for item in items]

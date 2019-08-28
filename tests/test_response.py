@@ -9,11 +9,10 @@ def test_str():
         "heos": {
             "command": "player/get_play_state",
             "result": "success",
-            "message": "pid={player_id}&state=stop"
+            "message": "pid={player_id}&state=stop",
         },
-        "payload": {
-        }
+        "payload": {},
     }
     player = HeosResponse(data)
-    assert str(player) == str(data['heos'])
+    assert str(player) == str(data["heos"])
     assert repr(player) == str(data)
