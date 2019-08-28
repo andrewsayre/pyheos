@@ -6,17 +6,12 @@ Contributions welcome!
 
 ## Style
 
-This repository follows [PEP8](https://www.python.org/dev/peps/pep-0008/) and [PEP 257 (Docstring Conventions)](https://www.python.org/dev/peps/pep-0257/).  Imports should be sorted with `isort`.  Commits and pull requests are automatically linted with Coveralls, Travis CI, and Hound.
+This repository uses [Black](https://github.com/psf/black) for code style and formatting and [isort](https://readthedocs.org/projects/isort/) for organizing imports.  Commits and pull requests are automatically linted with Coveralls, Travis CI, and Hound.
 
-*Save time by checking for style/lint issues **before** committing.*  Run `lint.bat` to automatically install the test dependencies and run the linters.  Alternatively, you can run the linters manually from the root of the project:
+*Save time by checking for style/lint issues **before** committing.*:
 ```bash
-pip install isort
 pip install -r test-requirements.txt
-
-isort tests pyheos --recursive
-pylint tests pyheos
-flake8 tests pyheos
-pydocstyle tests pyheos
+.\script\lint.cmd
 ```
 
 ## Testing
