@@ -7,14 +7,14 @@ def test_source_str_repr():
     data = {
         "name": "AUX Input",
         "image_url": "https://production.ws.skyegloup.com:443"
-                     "/media/images/service/logos/musicsource_logo_aux.png",
+        "/media/images/service/logos/musicsource_logo_aux.png",
         "type": "heos_service",
         "sid": 1027,
-        "available": "true"
+        "available": "true",
     }
     source = HeosSource(None, data)
-    assert str(source) == '<AUX Input (heos_service)>'
-    assert repr(source) == '<AUX Input (heos_service) 1027>'
+    assert str(source) == "<AUX Input (heos_service)>"
+    assert repr(source) == "<AUX Input (heos_service) 1027>"
 
 
 def test_input_str_repr():

@@ -10,17 +10,17 @@ from .source import HeosSource, InputSource
 
 def parse_player_id(data: dict) -> int:
     """Parse the player ID from the data payload."""
-    return int(data['pid'])
+    return int(data["pid"])
 
 
 def parse_player_name(data: dict) -> str:
     """Parse the player name from the data payload."""
-    return data['name']
+    return data["name"]
 
 
 def parse_player_version(data: dict) -> str:
     """Parse the player version from the data payload."""
-    return data.get('version')
+    return data.get("version")
 
 
 class HeosNowPlayingMedia:
@@ -45,20 +45,20 @@ class HeosNowPlayingMedia:
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
-        self._type = data.get('type')
-        self._song = data.get('song')
-        self._station = data.get('station')
-        self._album = data.get('album')
-        self._artist = data.get('artist')
-        self._image_url = data.get('image_url')
-        self._album_id = data.get('album_id')
-        self._media_id = data.get('mid')
+        self._type = data.get("type")
+        self._song = data.get("song")
+        self._station = data.get("station")
+        self._album = data.get("album")
+        self._artist = data.get("artist")
+        self._image_url = data.get("image_url")
+        self._album_id = data.get("album_id")
+        self._media_id = data.get("mid")
         try:
-            self._queue_id = int(data.get('qid'))
+            self._queue_id = int(data.get("qid"))
         except (TypeError, ValueError):
             self._queue_id = None
         try:
-            self._source_id = int(data.get('sid'))
+            self._source_id = int(data.get("sid"))
         except (TypeError, ValueError):
             self._source_id = None
 
@@ -71,12 +71,13 @@ class HeosNowPlayingMedia:
         self.clear_progress()
 
     def event_update_progress(
-            self, event: HeosResponse, all_progress_events: bool) -> bool:
+        self, event: HeosResponse, all_progress_events: bool
+    ) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self._current_position is None:
-            self._current_position = int(event.get_message('cur_pos'))
+            self._current_position = int(event.get_message("cur_pos"))
             self._current_position_updated = datetime.utcnow()
-            self._duration = int(event.get_message('duration'))
+            self._duration = int(event.get_message("duration"))
             return True
         return False
 
@@ -165,7 +166,7 @@ class HeosPlayer:
         self._heos = heos
         # pylint: disable=protected-access
         self._commands = heos._connection.commands
-        self._name = None       # type: str
+        self._name = None  # type: str
         self._player_id = None  # type: int
         self._model = None  # type: str
         self._version = None  # type: str
@@ -190,18 +191,19 @@ class HeosPlayer:
     def __repr__(self):
         """Get a debug representation of the player."""
         return "{{{} ({}) with id {} at {}}}".format(
-            self.name, self._model, self._player_id, self._ip_address)
+            self.name, self._model, self._player_id, self._ip_address
+        )
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
         self._name = parse_player_name(data)
         self._player_id = parse_player_id(data)
-        self._model = data['model']
+        self._model = data["model"]
         self._version = parse_player_version(data)
-        self._ip_address = data.get('ip')
-        self._network = data.get('network')
+        self._ip_address = data.get("ip")
+        self._network = data.get("network")
         try:
-            self._line_out = int(data.get('lineout'))
+            self._line_out = int(data.get("lineout"))
         except (TypeError, ValueError):
             pass
         self._available = True
@@ -212,11 +214,13 @@ class HeosPlayer:
 
     async def refresh(self):
         """Pull current state."""
-        await asyncio.gather(self.refresh_state(),
-                             self.refresh_now_playing_media(),
-                             self.refresh_volume(),
-                             self.refresh_mute(),
-                             self.refresh_play_mode())
+        await asyncio.gather(
+            self.refresh_state(),
+            self.refresh_now_playing_media(),
+            self.refresh_volume(),
+            self.refresh_mute(),
+            self.refresh_play_mode(),
+        )
 
     async def refresh_state(self):
         """Refresh the now playing state."""
@@ -237,8 +241,9 @@ class HeosPlayer:
 
     async def refresh_play_mode(self):
         """Pull the latest play mode."""
-        self._repeat, self._shuffle = \
-            await self._commands.get_play_mode(self._player_id)
+        self._repeat, self._shuffle = await self._commands.get_play_mode(
+            self._player_id
+        )
 
     async def set_state(self, state: str):
         """Set the state of the player."""
@@ -286,8 +291,7 @@ class HeosPlayer:
 
     async def set_play_mode(self, repeat: str, shuffle: bool):
         """Set the play mode of the player."""
-        await self._commands.set_play_mode(
-            self._player_id, repeat, shuffle)
+        await self._commands.set_play_mode(self._player_id, repeat, shuffle)
 
     async def clear_queue(self):
         """Clear the queue of the player."""
@@ -301,16 +305,17 @@ class HeosPlayer:
         """Clear the queue of the player."""
         await self._commands.play_previous(self._player_id)
 
-    async def play_input(
-            self, input_name: str, *, source_player_id: int = None):
+    async def play_input(self, input_name: str, *, source_player_id: int = None):
         """Play the specified input."""
         await self._commands.play_input(
-            self._player_id, input_name, source_player_id=source_player_id)
+            self._player_id, input_name, source_player_id=source_player_id
+        )
 
     async def play_input_source(self, input_source: InputSource):
         """Play the specified input source."""
         await self.play_input(
-            input_source.input_name, source_player_id=input_source.player_id)
+            input_source.input_name, source_player_id=input_source.player_id
+        )
 
     async def play_favorite(self, preset: int):
         """Play the favorite by 1-based index."""
@@ -322,16 +327,19 @@ class HeosPlayer:
 
     async def play_quick_select(self, quick_select_id: int):
         """Play the specified quick select."""
-        await self._commands.play_quick_select(
-            self._player_id, quick_select_id)
+        await self._commands.play_quick_select(self._player_id, quick_select_id)
 
     async def add_to_queue(self, source: HeosSource, add_queue_option: int):
         """Add the specified source to the queue."""
         if not source.playable:
             raise ValueError("Source '{}' is not playable".format(source))
         await self._commands.add_to_queue(
-            self._player_id, source.source_id, source.container_id,
-            add_queue_option, source.media_id)
+            self._player_id,
+            source.source_id,
+            source.container_id,
+            add_queue_option,
+            source.media_id,
+        )
 
     async def set_quick_select(self, quick_select_id: int):
         """Set the specified quick select to the current source."""
@@ -340,29 +348,31 @@ class HeosPlayer:
     async def get_quick_selects(self) -> Dict[int, str]:
         """Get a list of quick selects."""
         payload = await self._commands.get_quick_selects(self._player_id)
-        return {int(data['id']): data['name'] for data in payload}
+        return {int(data["id"]): data["name"] for data in payload}
 
-    async def event_update(self, event: HeosResponse,
-                           all_progress_events: bool) -> bool:
+    async def event_update(
+        self, event: HeosResponse, all_progress_events: bool
+    ) -> bool:
         """Return True if player update event changed state."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self._now_playing_media.event_update_progress(
-                event, all_progress_events)
+                event, all_progress_events
+            )
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state = event.get_message('state')
+            self._state = event.get_message("state")
             if self._state == const.PLAY_STATE_PLAY:
                 self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._volume = int(float(event.get_message('level')))
-            self._is_muted = event.get_message('mute') == 'on'
+            self._volume = int(float(event.get_message("level")))
+            self._is_muted = event.get_message("mute") == "on"
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self._repeat = event.get_message('repeat')
+            self._repeat = event.get_message("repeat")
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self._shuffle = event.get_message('shuffle') == 'on'
+            self._shuffle = event.get_message("shuffle") == "on"
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self._playback_error = event.get_message('error')
+            self._playback_error = event.get_message("error")
         return True
 
     @property
@@ -433,8 +443,7 @@ class HeosPlayer:
     @property
     def available(self) -> bool:
         """Return True if this player is available."""
-        return self._available \
-            and self._heos.connection_state == const.STATE_CONNECTED
+        return self._available and self._heos.connection_state == const.STATE_CONNECTED
 
     @property
     def playback_error(self) -> str:

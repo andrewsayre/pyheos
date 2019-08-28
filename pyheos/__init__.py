@@ -8,15 +8,15 @@ from .player import HeosNowPlayingMedia, HeosPlayer
 from .source import HeosSource, InputSource
 
 __all__ = [
-    'const',
-    'CommandError',
-    'CommandFailedError',
-    'Dispatcher',
-    'Heos',
-    'HeosError',
-    'HeosGroup',
-    'HeosPlayer',
-    'HeosNowPlayingMedia',
-    'HeosSource',
-    'InputSource',
+    "const",
+    "CommandError",
+    "CommandFailedError",
+    "Dispatcher",
+    "Heos",
+    "HeosError",
+    "HeosGroup",
+    "HeosPlayer",
+    "HeosNowPlayingMedia",
+    "HeosSource",
+    "InputSource",
 ]

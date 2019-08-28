@@ -7,25 +7,30 @@ from .player import HeosPlayer
 from .response import HeosResponse
 
 
-def create_group(heos, data: dict,
-                 players: Dict[int, HeosPlayer]) -> 'HeosGroup':
+def create_group(heos, data: dict, players: Dict[int, HeosPlayer]) -> "HeosGroup":
     """Create a group from the data."""
     leader = None
     members = []
-    for group_player in data['players']:
-        player = players[int(group_player['pid'])]
-        if group_player['role'] == 'leader':
+    for group_player in data["players"]:
+        player = players[int(group_player["pid"])]
+        if group_player["role"] == "leader":
             leader = player
         else:
             members.append(player)
-    return HeosGroup(heos, data['name'], int(data['gid']), leader, members)
+    return HeosGroup(heos, data["name"], int(data["gid"]), leader, members)
 
 
 class HeosGroup:
     """A group of players."""
 
-    def __init__(self, heos, name: str, group_id: int,
-                 leader: HeosPlayer, members: Sequence[HeosPlayer]):
+    def __init__(
+        self,
+        heos,
+        name: str,
+        group_id: int,
+        leader: HeosPlayer,
+        members: Sequence[HeosPlayer],
+    ):
         """Init the group class."""
         self._heos = heos
         # pylint: disable=protected-access
@@ -52,8 +57,8 @@ class HeosGroup:
     async def event_update(self, event: HeosResponse) -> bool:
         """Handle a group update event."""
         if event.command == const.EVENT_GROUP_VOLUME_CHANGED:
-            self._volume = int(float(event.get_message('level')))
-            self._is_muted = event.get_message('mute') == 'on'
+            self._volume = int(float(event.get_message("level")))
+            self._is_muted = event.get_message("mute") == "on"
         return True
 
     async def set_volume(self, level: int):

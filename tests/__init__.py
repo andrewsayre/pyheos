@@ -32,6 +32,7 @@ def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
     async def handler(target_event: str, *args):
         assert target_event == event
         trigger.set()
+
     heos.dispatcher.connect(signal, handler)
     return trigger
 
@@ -50,23 +51,22 @@ class MockHeosDevice:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
-            self._handle_connection, '127.0.0.1', const.CLI_PORT)
+            self._handle_connection, "127.0.0.1", const.CLI_PORT
+        )
 
-        self.register(const.COMMAND_HEART_BEAT, None, 'system.heart_beat')
-        self.register(const.COMMAND_ACCOUNT_CHECK, None,
-                      'system.check_account')
-        self.register(const.COMMAND_GET_PLAYERS, None, 'player.get_players')
-        self.register(const.COMMAND_GET_PLAY_STATE, None,
-                      'player.get_play_state')
-        self.register(const.COMMAND_GET_NOW_PLAYING_MEDIA, None,
-                      'player.get_now_playing_media')
-        self.register(const.COMMAND_GET_VOLUME, None, 'player.get_volume')
-        self.register(const.COMMAND_GET_MUTE, None, 'player.get_mute')
-        self.register(const.COMMAND_GET_PLAY_MODE, None,
-                      'player.get_play_mode')
-        self.register(const.COMMAND_GET_GROUPS, None, 'group.get_groups')
-        self.register(const.COMMAND_GET_GROUP_VOLUME, None, 'group.get_volume')
-        self.register(const.COMMAND_GET_GROUP_MUTE, None, 'group.get_mute')
+        self.register(const.COMMAND_HEART_BEAT, None, "system.heart_beat")
+        self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
+        self.register(const.COMMAND_GET_PLAYERS, None, "player.get_players")
+        self.register(const.COMMAND_GET_PLAY_STATE, None, "player.get_play_state")
+        self.register(
+            const.COMMAND_GET_NOW_PLAYING_MEDIA, None, "player.get_now_playing_media"
+        )
+        self.register(const.COMMAND_GET_VOLUME, None, "player.get_volume")
+        self.register(const.COMMAND_GET_MUTE, None, "player.get_mute")
+        self.register(const.COMMAND_GET_PLAY_MODE, None, "player.get_play_mode")
+        self.register(const.COMMAND_GET_GROUPS, None, "group.get_groups")
+        self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
+        self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
 
     async def stop(self):
         """Stop the heos server."""
@@ -81,21 +81,27 @@ class MockHeosDevice:
 
     async def write_event(self, event: str):
         """Send an event through the event channel."""
-        connection = next(conn for conn in self.connections
-                          if conn.is_registered_for_events)
+        connection = next(
+            conn for conn in self.connections if conn.is_registered_for_events
+        )
         await connection.write(event)
 
-    def register(self, command: str, args: Optional[dict],
-                 response: Union[str, List[str]], *,
-                 replace: bool = False):
+    def register(
+        self,
+        command: str,
+        args: Optional[dict],
+        response: Union[str, List[str]],
+        *,
+        replace: bool = False
+    ):
         """Register a matcher."""
         if replace:
-            self._matchers = [m for m in self._matchers
-                              if m.command != command]
+            self._matchers = [m for m in self._matchers if m.command != command]
         self._matchers.append(CommandMatcher(command, args, response))
 
     async def _handle_connection(
-            self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ):
 
         log = ConnectionLog(reader, writer)
         self.connections.append(log)
@@ -113,14 +119,21 @@ class MockHeosDevice:
             query = dict(parse_qsl(url_parts.query))
 
             command = url_parts.hostname + url_parts.path
-            fixture_name = "{}.{}".format(url_parts.hostname,
-                                          url_parts.path.lstrip('/'))
+            fixture_name = "{}.{}".format(
+                url_parts.hostname, url_parts.path.lstrip("/")
+            )
 
             log.commands[command].append(result)
 
             # Try matchers
-            matcher = next((matcher for matcher in self._matchers
-                            if matcher.is_match(command, query)), None)
+            matcher = next(
+                (
+                    matcher
+                    for matcher in self._matchers
+                    if matcher.is_match(command, query)
+                ),
+                None,
+            )
             if matcher:
                 responses = await matcher.get_response(query)
                 for response in responses:
@@ -130,10 +143,9 @@ class MockHeosDevice:
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = query["enable"]
-                if enable == 'on':
+                if enable == "on":
                     log.is_registered_for_events = True
-                response = (await get_fixture(fixture_name)).replace(
-                    "{enable}", enable)
+                response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())
                 await writer.drain()
             else:
@@ -148,8 +160,7 @@ class MockHeosDevice:
 class CommandMatcher:
     """Define a command match response."""
 
-    def __init__(self, command: str, args: dict,
-                 response: Union[str, List[str]]):
+    def __init__(self, command: str, args: dict, response: Union[str, List[str]]):
         """Init the command response."""
         self.command = command
         self.args = args
@@ -178,10 +189,10 @@ class CommandMatcher:
     async def _get_response(self, response: str, query: dict) -> str:
         response = await get_fixture(response)
         keys = {
-            'pid': '{player_id}',
-            'sequence': '{sequence}',
-            'state': '{state}',
-            'level': '{level}'
+            "pid": "{player_id}",
+            "sequence": "{sequence}",
+            "state": "{state}",
+            "level": "{level}",
         }
         for key, token in keys.items():
             value = query.get(key)
@@ -193,8 +204,7 @@ class CommandMatcher:
 class ConnectionLog:
     """Define a connection log."""
 
-    def __init__(self, reader: asyncio.StreamReader,
-                 writer: asyncio.StreamWriter):
+    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """Initialize the connection log."""
         self._reader = reader
         self._writer = writer
