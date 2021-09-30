@@ -76,6 +76,7 @@ class HeosConnection:
         self._last_activity = None  # type: datetime
         self._heart_beat_interval = heart_beat  # type: Optional[float]
         self._heart_beat_task = None  # type: asyncio.Task
+        self._lock = asyncio.Lock()
 
     async def connect(
         self,
@@ -269,6 +270,7 @@ class HeosConnection:
         event = ResponseEvent(sequence)
         self._pending_commands[command].append(event)
         # Send command
+        await self._lock.acquire()
         try:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
@@ -279,6 +281,8 @@ class HeosConnection:
             message = format_error_message(error)
             _LOGGER.debug("Command failed '%s': %s", masked_uri, message)
             raise CommandError(command, message) from error
+        finally:
+            self._lock.release()
 
         if response.result:
             _LOGGER.debug("Command executed '%s': '%s'", masked_uri, response)
