@@ -262,6 +262,8 @@ class HeosConnection:
             const.BASE_URI, command, _encode_query(params, mask=True)
         )
 
+        await self._lock.acquire()
+
         if self._state != const.STATE_CONNECTED:
             _LOGGER.debug(
                 "Command failed '%s': %s", masked_uri, "Not connected to device"
@@ -272,7 +274,6 @@ class HeosConnection:
         event = ResponseEvent(sequence)
         self._pending_commands[command].append(event)
         # Send command
-        await self._lock.acquire()
         try:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
