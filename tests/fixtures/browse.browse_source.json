@@ -1,0 +1,18 @@
+{
+  "heos": {
+    "command": "browse/browse",
+    "result": "success",
+    "message": "sid=1024&returned=1&count=1"
+  },
+  "payload": [
+    {
+      "container": "yes",
+      "type": "container",
+      "cid": "10",
+      "playable": "yes",
+      "name": "Rockin Songs",
+      "image_url": "http://example.com/Rockin_Songs.jpg",
+      "artist": "Rex Meathammer"
+    }
+  ]
+}

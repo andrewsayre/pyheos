@@ -8,6 +8,7 @@ DEFAULT_TIMEOUT = 10.0
 DEFAULT_RECONNECT_DELAY = 10.0
 DEFAULT_HEART_BEAT = 10.0
 DEFAULT_STEP = 5
+INDEX_CHUNK_SIZE = 50
 
 STATE_CONNECTED = "connected"
 STATE_DISCONNECTED = "disconnected"
@@ -229,6 +230,8 @@ COMMAND_TOGGLE_MUTE = "player/toggle_mute"
 COMMAND_GET_PLAY_MODE = "player/get_play_mode"
 COMMAND_SET_PLAY_MODE = "player/set_play_mode"
 COMMAND_CLEAR_QUEUE = "player/clear_queue"
+COMMAND_GET_QUEUE = "player/get_queue"
+COMMAND_SAVE_QUEUE = "player/save_queue"
 COMMAND_PLAY_NEXT = "player/play_next"
 COMMAND_PLAY_PREVIOUS = "player/play_previous"
 COMMAND_PLAY_QUICK_SELECT = "player/play_quickselect"

@@ -1,0 +1,19 @@
+{
+  "heos": {
+    "command": "browse/browse",
+    "result": "success",
+    "message": "sid=1024&cid=10/11&range=0,50&returned=1&count=1"
+  },
+  "payload": [
+    {
+      "container": "no",
+      "type": "song",
+      "mid": "10/11/20",
+      "playable": "yes",
+      "name": "Rock Me Plenty",
+      "image_url": "http://example.com/Rex_Rocks_Rotherham.jpg",
+      "artist": "Rex Meathammer",
+      "album": "Rex Rocks Rotherham"
+    }
+  ]
+}

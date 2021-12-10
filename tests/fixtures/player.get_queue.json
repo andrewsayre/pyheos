@@ -1,0 +1,25 @@
+{
+	"heos": {
+		"command": "player/get_queue",
+		"result": "success",
+		"message": "pid=1&range=0,50"
+	},
+	"payload": [{
+			"song": "Song 1",
+			"album": "Album 1",
+			"artist": "Artist 1",
+			"image_url": "http://example.com/image_1.jpg",
+			"qid": 1,
+			"mid": "media_1",
+			"album_id": "album_id_1"
+		}, {
+			"song": "Song 2",
+			"album": "Album 2",
+			"artist": "Artist 2",
+			"image_url": "http://example.com/image_2.jpg",
+			"qid": 2,
+			"mid": "media_2",
+			"album_id": "album_id_2"
+		}
+	]
+}

@@ -150,6 +150,18 @@ class HeosCommands:
         response = await self._connection.command(const.COMMAND_BROWSE_BROWSE, params)
         return response.payload
 
+    async def browse_container(
+        self, source_id: int, container_id: str, start: int, end: int
+    ) -> Sequence[dict]:
+        """Browse a music container."""
+        params = {
+            "sid": source_id,
+            "cid": container_id,
+            "range": "%d,%d" % (start, end),
+        }
+        response = await self._connection.command(const.COMMAND_BROWSE_BROWSE, params)
+        return response.payload
+
     async def play_input(
         self, player_id: int, input_name: str, *, source_player_id: int = None
     ):
@@ -195,6 +207,23 @@ class HeosCommands:
         if media_id is not None:
             params["mid"] = media_id
         await self._connection.command(const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+
+    async def get_queue(self, player_id: int, start: int, end: int):
+        """Get the queue."""
+        params = {
+            "pid": player_id,
+            "range": "%d,%d" % (start, end),
+        }
+        response = await self._connection.command(const.COMMAND_GET_QUEUE, params)
+        return response.payload
+
+    async def save_queue(self, player_id: int, name: str) -> None:
+        """Save the queue as a playlist."""
+        params = {
+            "pid": player_id,
+            "name": name,
+        }
+        await self._connection.command(const.COMMAND_SAVE_QUEUE, params)
 
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""
