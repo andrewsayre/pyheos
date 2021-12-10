@@ -618,9 +618,6 @@ async def test_players_changed_event_new_ids(mock_device, heos):
 @pytest.mark.asyncio
 async def test_sources_changed_event(mock_device, heos):
     """Test sources changed fires dispatcher."""
-    mock_device.register(
-        const.COMMAND_BROWSE_GET_SOURCES, None, "browse.get_music_sources"
-    )
     await heos.get_music_sources()
     signal = asyncio.Event()
 

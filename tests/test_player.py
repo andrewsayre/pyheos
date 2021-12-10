@@ -188,6 +188,48 @@ async def test_clear_queue(mock_device, heos):
 
 
 @pytest.mark.asyncio
+async def test_save_queue(mock_device, heos):
+    """Test saving the queue."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    playlist_name = "Test playlist"
+    args = {
+        "pid": "1",
+        "name": playlist_name,
+    }
+    mock_device.register(const.COMMAND_SAVE_QUEUE, args, "player.save_queue")
+    await player.save_queue(playlist_name)
+
+    # Also test with a 'command under process' response
+    mock_device.register(
+        const.COMMAND_SAVE_QUEUE,
+        args,
+        ["player.save_queue", "player.save_queue_processing"],
+        replace=True,
+    )
+    await player.save_queue(playlist_name)
+
+
+@pytest.mark.asyncio
+async def test_get_queue(mock_device, heos):
+    """Test getting the queue."""
+    await heos.get_players()
+    player = heos.players.get(1)
+    start = 0
+    end = 50
+    args = {
+        "pid": "1",
+        "range": "%d,%d" % (start, end),
+    }
+    mock_device.register(const.COMMAND_GET_QUEUE, args, "player.get_queue")
+    queue = await player.get_queue(start, end)
+    assert [item["song"] for item in queue] == [
+        "Song 1",
+        "Song 2",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_play_input_source(mock_device, heos):
     """Test the play input source."""
     await heos.get_players()

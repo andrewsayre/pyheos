@@ -1,5 +1,7 @@
 """Define the heos source module."""
-from typing import Optional, Sequence  # pylint: disable=unused-import
+from typing import Dict, Optional, Sequence  # pylint: disable=unused-import
+
+from . import const
 
 
 class InputSource:
@@ -51,6 +53,7 @@ class HeosSource:
         self._container_id = None  # type: str
         self._media_id = None  # type: str
         self._playable = None  # type: bool
+        self._index = None  # type: Optional[Dict[str, HeosSource]]
         if data:
             self._from_data(data)
 
@@ -70,6 +73,13 @@ class HeosSource:
         self._media_id = data.get("mid")
         self._playable = data.get("playable") == "yes"
 
+    def _inherit_ids(self, data: dict):
+        if self._source_id is not None and data.get("sid") is None:
+            data["sid"] = self._source_id
+
+        if self._container_id is not None and data.get("cid") is None:
+            data["cid"] = self._container_id
+
     def __str__(self):
         """Get a user-readable representation of the source."""
         return "<{} ({})>".format(self._name, self._type)
@@ -80,8 +90,77 @@ class HeosSource:
 
     async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
+        if self._container:
+            raise RuntimeError("Use browse_container instead")
+
         items = await self._commands.browse(self._source_id)
-        return [HeosSource(self._commands, item) for item in items]
+        sources = []
+        for item in items:
+            self._inherit_ids(item)
+            sources.append(HeosSource(self._commands, item))
+
+        return sources
+
+    async def browse_container(self, start: int, end: int) -> "Sequence[HeosSource]":
+        """Browse the contents of the current container."""
+        if not self._container:
+            raise RuntimeError("Use browse instead")
+
+        items = await self._commands.browse_container(
+            self._source_id,
+            self._container_id,
+            start,
+            end,
+        )
+        sources = []
+        for item in items:
+            self._inherit_ids(item)
+            sources.append(HeosSource(self._commands, item))
+
+        return sources
+
+    async def _build_index(self):
+        """Index the child sources belonging to the current source."""
+        self._index = {}
+        if self._container:
+            child_count = 0
+            while True:
+                child_sources = await self.browse_container(
+                    child_count, child_count + const.INDEX_CHUNK_SIZE
+                )
+                if len(child_sources) == 0:
+                    break
+
+                for src in child_sources:
+                    self._index[src.name.lower()] = src
+                    child_count += 1
+        else:
+            child_sources = await self.browse()
+            for src in child_sources:
+                self._index[src.name.lower()] = src
+
+    async def index_all(self) -> int:
+        """Recursively index the current container returning the total number of songs.
+
+        Note that this may be slow and memory hungry for large libraries, but subsequent
+        calls to get_child_source will be fast.
+        """
+        song_count = 0
+        await self._build_index()
+        for src in self._index.values():
+            if src.container:
+                song_count += await src.index_all()
+            else:
+                song_count += 1
+
+        return song_count
+
+    async def get_child_source(self, name: str) -> "Optional[HeosSource]":
+        """Get the named child source, if it exists."""
+        if self._index is None:
+            await self._build_index()
+
+        return self._index.get(name.lower())
 
     @property
     def name(self) -> str:

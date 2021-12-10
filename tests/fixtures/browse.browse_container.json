@@ -1,0 +1,18 @@
+{
+  "heos": {
+    "command": "browse/browse",
+    "result": "success",
+    "message": "sid=1024&cid=10&range=0,50&returned=1&count=1"
+  },
+  "payload": [
+    {
+      "container": "yes",
+      "type": "album",
+      "cid": "10/11",
+      "playable": "yes",
+      "name": "Rex Rocks Rotherham",
+      "image_url": "http://example.com/Rex_Rocks_Rotherham.jpg",
+      "artist": "Rex Meathammer"
+    }
+  ]
+}

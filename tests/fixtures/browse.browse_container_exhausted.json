@@ -1,0 +1,8 @@
+{
+  "heos": {
+    "command": "browse/browse",
+    "result": "success",
+    "message": "sid=1024&cid=10&range=1,51&returned=0&count=1"
+  },
+  "payload": []
+}

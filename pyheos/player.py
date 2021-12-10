@@ -297,6 +297,14 @@ class HeosPlayer:
         """Clear the queue of the player."""
         await self._commands.clear_queue(self._player_id)
 
+    async def get_queue(self, start: int, end: int):
+        """Get the current queue."""
+        return await self._commands.get_queue(self._player_id, start, end)
+
+    async def save_queue(self, playlist_name: str):
+        """Save the queue as a playlist."""
+        await self._commands.save_queue(self.player_id, playlist_name)
+
     async def play_next(self):
         """Clear the queue of the player."""
         await self._commands.play_next(self._player_id)
