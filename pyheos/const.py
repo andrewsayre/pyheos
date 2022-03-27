@@ -113,6 +113,7 @@ INPUT_AUX4 = "inputs/aux4"
 INPUT_AUX5 = "inputs/aux5"
 INPUT_AUX6 = "inputs/aux6"
 INPUT_AUX7 = "inputs/aux7"
+INPUT_AUX_8K = "inputs/aux_8k"
 INPUT_LINE_IN_1 = "inputs/line_in_1"
 INPUT_LINE_IN_2 = "inputs/line_in_2"
 INPUT_LINE_IN_3 = "inputs/line_in_3"
@@ -140,6 +141,7 @@ INPUT_USB_AC = "inputs/usbdac"
 INPUT_ANALOG_IN_1 = "inputs/analog_in_1"
 INPUT_ANALOG_IN_2 = "inputs/analog_in_2"
 INPUT_RECORDER_IN_1 = "inputs/recorder_in_1"
+INPUT_TV = "inputs/tv"
 
 VALID_INPUTS = (
     INPUT_AUX_IN_1,
@@ -154,6 +156,7 @@ VALID_INPUTS = (
     INPUT_AUX5,
     INPUT_AUX6,
     INPUT_AUX7,
+    INPUT_AUX_8K,
     INPUT_LINE_IN_1,
     INPUT_LINE_IN_2,
     INPUT_LINE_IN_3,
@@ -181,6 +184,7 @@ VALID_INPUTS = (
     INPUT_ANALOG_IN_1,
     INPUT_ANALOG_IN_2,
     INPUT_RECORDER_IN_1,
+    INPUT_TV,
 )
 
 # Add to Queue Options
