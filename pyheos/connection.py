@@ -76,6 +76,7 @@ class HeosConnection:
         self._last_activity = None  # type: datetime
         self._heart_beat_interval = heart_beat  # type: Optional[float]
         self._heart_beat_task = None  # type: asyncio.Task
+        self._lock = asyncio.Lock()
 
     async def connect(
         self,
@@ -175,6 +176,8 @@ class HeosConnection:
                 return
             except HeosError as err:
                 # Occurs when we could not reconnect
+                # Set state to reconnecting since _connect may have set it to connected and failed after
+                self._state = const.STATE_RECONNECTING
                 _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()
                 await asyncio.sleep(self._reconnect_delay)
@@ -259,7 +262,10 @@ class HeosConnection:
             const.BASE_URI, command, _encode_query(params, mask=True)
         )
 
+        await self._lock.acquire()
+
         if self._state != const.STATE_CONNECTED:
+            self._lock.release()
             _LOGGER.debug(
                 "Command failed '%s': %s", masked_uri, "Not connected to device"
             )
@@ -273,12 +279,19 @@ class HeosConnection:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
             response = await asyncio.wait_for(event.wait(), self.timeout)
-        except (ConnectionError, asyncio.TimeoutError, OSError) as error:
+        except (
+            ConnectionError,
+            asyncio.TimeoutError,
+            OSError,
+            AttributeError,
+        ) as error:
             # Occurs when the connection breaks
             asyncio.ensure_future(self._handle_connection_error(error))
             message = format_error_message(error)
             _LOGGER.debug("Command failed '%s': %s", masked_uri, message)
             raise CommandError(command, message) from error
+        finally:
+            self._lock.release()
 
         if response.result:
             _LOGGER.debug("Command executed '%s': '%s'", masked_uri, response)
