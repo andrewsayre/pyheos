@@ -265,6 +265,7 @@ class HeosConnection:
         await self._lock.acquire()
 
         if self._state != const.STATE_CONNECTED:
+            self._lock.release()
             _LOGGER.debug(
                 "Command failed '%s': %s", masked_uri, "Not connected to device"
             )
