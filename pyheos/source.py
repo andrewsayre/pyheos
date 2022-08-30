@@ -80,7 +80,10 @@ class HeosSource:
 
     async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
-        items = await self._commands.browse(self._source_id)
+        items = await self._commands.browse(self._source_id, self._container_id)
+        for i in items:
+            if "sid" not in i:
+                i["sid"] = self._source_id
         return [HeosSource(self._commands, item) for item in items]
 
     @property
