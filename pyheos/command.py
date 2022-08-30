@@ -144,9 +144,11 @@ class HeosCommands:
         response = await self._connection.command(const.COMMAND_BROWSE_GET_SOURCES)
         return response.payload
 
-    async def browse(self, source_id: int) -> Sequence[dict]:
+    async def browse(self, source_id: int, container_id: int = None) -> Sequence[dict]:
         """Browse a music source."""
         params = {"sid": source_id}
+        if container_id:
+            params["cid"] = container_id
         response = await self._connection.command(const.COMMAND_BROWSE_BROWSE, params)
         return response.payload
 
