@@ -1,4 +1,5 @@
 """Tests for the pyheos library."""
+
 import asyncio
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -77,7 +78,7 @@ class MockHeosDevice:
             await connection.disconnect()
         self.connections.clear()
         self._server.close()
-        await self._server.wait_closed()
+        # await self._server.wait_closed()
 
     async def write_event(self, event: str):
         """Send an event through the event channel."""
@@ -92,7 +93,7 @@ class MockHeosDevice:
         args: Optional[dict],
         response: Union[str, List[str]],
         *,
-        replace: bool = False
+        replace: bool = False,
     ):
         """Register a matcher."""
         if replace:
@@ -102,7 +103,6 @@ class MockHeosDevice:
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ):
-
         log = ConnectionLog(reader, writer)
         self.connections.append(log)
 
