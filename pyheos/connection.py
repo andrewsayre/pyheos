@@ -54,7 +54,7 @@ class HeosConnection:
         *,
         timeout: float = const.DEFAULT_TIMEOUT,
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
-        all_progress_events=True
+        all_progress_events=True,
     ):
         """Init a new HeosConnection class."""
         self._heos = heos
@@ -65,9 +65,7 @@ class HeosConnection:
         self._reader = None  # type: asyncio.StreamReader
         self._writer = None  # type: asyncio.StreamWriter
         self._response_handler_task = None  # type: asyncio.Task
-        self._pending_commands = defaultdict(
-            list
-        )  # type: DefaultDict[str, List[ResponseEvent]]
+        self._pending_commands = defaultdict(list)  # type: DefaultDict[str, List[ResponseEvent]]
         self._sequence = 0  # type: int
         self._state = const.STATE_DISCONNECTED  # type: str
         self._auto_reconnect = False  # type: bool
@@ -81,7 +79,7 @@ class HeosConnection:
         self,
         *,
         auto_reconnect: bool = False,
-        reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY
+        reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
     ):
         """Invoke the connect operation."""
         if self._state == const.STATE_CONNECTED:
@@ -187,7 +185,7 @@ class HeosConnection:
             # Wait for response
             try:
                 result = await self._reader.readuntil(SEPARATOR_BYTES)
-                self._last_activity = datetime.utcnow()
+                self._last_activity = datetime.now()
                 data = json.loads(result.decode())
                 response = HeosResponse(data)
 
@@ -236,7 +234,7 @@ class HeosConnection:
 
     async def _heart_beat(self):
         while self._state == const.STATE_CONNECTED:
-            last_activity = datetime.utcnow() - self._last_activity
+            last_activity = datetime.now() - self._last_activity
             threshold = timedelta(seconds=self._heart_beat_interval)
             if last_activity > threshold:
                 try:

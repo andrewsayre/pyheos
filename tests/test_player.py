@@ -1,4 +1,5 @@
 """Tests for the player module."""
+
 import pytest
 
 from pyheos import const
@@ -34,6 +35,7 @@ def test_init_minimal_data():
 @pytest.mark.asyncio
 async def test_set_state(mock_device, heos):
     """Test the play, pause, and stop commands."""
+
     await heos.get_players()
     player = heos.players.get(1)
     # Invalid

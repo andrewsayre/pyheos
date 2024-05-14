@@ -1,4 +1,5 @@
 """Define the player module."""
+
 import asyncio
 from datetime import datetime
 from typing import Dict, Optional, Sequence
@@ -76,7 +77,7 @@ class HeosNowPlayingMedia:
         """Update the position/duration from an event."""
         if all_progress_events or self._current_position is None:
             self._current_position = int(event.get_message("cur_pos"))
-            self._current_position_updated = datetime.utcnow()
+            self._current_position_updated = datetime.now()
             self._duration = int(event.get_message("duration"))
             return True
         return False
