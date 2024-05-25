@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import json
 import logging
-from typing import Any, DefaultDict, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from . import const
 from .command import HeosCommands
