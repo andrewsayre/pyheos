@@ -1,4 +1,5 @@
 """Define the heos manager module."""
+
 import asyncio
 from typing import Dict, Optional, Sequence
 

@@ -1,4 +1,5 @@
 """Define the heos group module."""
+
 import asyncio
 from typing import Dict, Sequence
 

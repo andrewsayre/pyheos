@@ -1,4 +1,5 @@
 """Define the error module for HEOS."""
+
 import asyncio
 
 DEFAULT_ERROR_MESSAGES = {

@@ -1,4 +1,5 @@
 """Test fixtures for pyheos."""
+
 import pytest
 
 from pyheos.heos import Heos
