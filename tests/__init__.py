@@ -119,7 +119,7 @@ class MockHeosDevice:
             query = dict(parse_qsl(url_parts.query))
 
             command = url_parts.hostname + url_parts.path
-            fixture_name = f"{url_parts.hostname}.{url_parts.path.lstrip("/")}"
+            fixture_name = f"{url_parts.hostname}.{url_parts.path.lstrip('/')}"
 
             log.commands[command].append(result)
 
