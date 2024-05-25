@@ -1,6 +1,6 @@
 # pyheos
-[![Build Status](https://travis-ci.org/andrewsayre/pyheos.svg?branch=master)](https://travis-ci.org/andrewsayre/pyheos)
-[![Coverage Status](https://coveralls.io/repos/github/andrewsayre/pyheos/badge.svg?branch=master)](https://coveralls.io/github/andrewsayre/pyheos?branch=master)
+[![CI Status](https://github.com/andrewsayre/pyheos/workflows/CI/badge.svg)](https://github.com/andrewsayre/pyheos/actions)
+[![codecov](https://codecov.io/github/andrewsayre/pyheos/graph/badge.svg?token=PV4P3AN7Z1)](https://codecov.io/github/andrewsayre/pyheos)
 [![image](https://img.shields.io/pypi/v/pyheos.svg)](https://pypi.org/project/pyheos/)
 [![image](https://img.shields.io/pypi/pyversions/pyheos.svg)](https://pypi.org/project/pyheos/)
 [![image](https://img.shields.io/pypi/l/pyheos.svg)](https://pypi.org/project/pyheos/)
