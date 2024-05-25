@@ -2,7 +2,7 @@
 
 import asyncio
 from datetime import datetime
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional
 
 from . import const
 from .response import HeosResponse
