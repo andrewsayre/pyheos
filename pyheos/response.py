@@ -21,11 +21,11 @@ class HeosResponse:
 
     def __str__(self):
         """Get a user-readable representation of the response."""
-        return "{}".format(self._raw_data["heos"])
+        return str(self._raw_data["heos"])
 
     def __repr__(self):
         """Get a debug representation of the player."""
-        return "{}".format(self._raw_data)
+        return str(self._raw_data)
 
     def from_json(self, data: dict):
         """Populate the response from json."""

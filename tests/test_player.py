@@ -307,7 +307,7 @@ async def test_add_to_queue_unplayable_source(mock_device, heos):
     )
     with pytest.raises(ValueError) as excinfo:
         await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
-    assert str(excinfo.value) == "Source '{}' is not playable".format(source)
+    assert str(excinfo.value) == f"Source '{source}' is not playable"
 
 
 @pytest.mark.asyncio

@@ -49,7 +49,7 @@ class CommandFailedError(CommandError):
         self._command = command
         self._error_text = text
         self._error_id = error_id
-        super().__init__(command, "{} ({})".format(text, error_id))
+        super().__init__(command, f"{text} ({error_id})")
 
     @property
     def error_text(self) -> str:

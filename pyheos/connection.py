@@ -35,7 +35,7 @@ def _encode_query(items: dict, *, mask=False) -> str:
     pairs = []
     for key in sorted(items.keys()):
         value = _MASK if mask and key in _MASKED_PARAMS else items[key]
-        item = "{}={}".format(key, _quote(value))
+        item = f"{key}={_quote(value)}"
         # Ensure 'url' goes last per CLI spec
         if key == "url":
             pairs.append(item)
@@ -254,10 +254,8 @@ class HeosConnection:
         self._sequence += 1
         params = params or {}
         params["sequence"] = sequence
-        uri = "{}{}?{}".format(const.BASE_URI, command, _encode_query(params))
-        masked_uri = "{}{}?{}".format(
-            const.BASE_URI, command, _encode_query(params, mask=True)
-        )
+        uri = f"{const.BASE_URI}{command}?{_encode_query(params)}"
+        masked_uri = f"{const.BASE_URI}{command}?{_encode_query(params, mask=True)}"
 
         if self._state != const.STATE_CONNECTED:
             _LOGGER.debug(
