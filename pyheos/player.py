@@ -187,7 +187,7 @@ class HeosPlayer:
 
     def __str__(self):
         """Get a user-readable representation of the player."""
-        return f"{{{self._name} ({self._model}))}}"
+        return f"{{{self._name} ({self._model})}}"
 
     def __repr__(self):
         """Get a debug representation of the player."""
