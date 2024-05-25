@@ -16,10 +16,10 @@ FILE_IO_POOL = ThreadPoolExecutor()
 
 async def get_fixture(file: str):
     """Load a fixtures file."""
-    file_name = "tests/fixtures/{file}.json".format(file=file)
+    file_name = f"tests/fixtures/{file}.json"
 
     def read_file():
-        with open(file_name) as open_file:
+        with open(file_name, encoding="utf-8") as open_file:
             return open_file.read()
 
     loop = asyncio.get_event_loop()
@@ -119,9 +119,7 @@ class MockHeosDevice:
             query = dict(parse_qsl(url_parts.query))
 
             command = url_parts.hostname + url_parts.path
-            fixture_name = "{}.{}".format(
-                url_parts.hostname, url_parts.path.lstrip("/")
-            )
+            fixture_name = f"{url_parts.hostname}.{url_parts.path.lstrip("/")}"
 
             log.commands[command].append(result)
 

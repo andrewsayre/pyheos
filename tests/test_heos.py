@@ -16,8 +16,8 @@ def test_init():
     """Test init sets properties."""
     heos = Heos("127.0.0.1")
     assert isinstance(heos.dispatcher, Dispatcher)
-    assert heos.players == {}
-    assert heos.music_sources == {}
+    assert len(heos.players) == 0
+    assert len(heos.music_sources) == 0
     assert heos.connection_state == const.STATE_DISCONNECTED
 
 

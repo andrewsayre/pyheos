@@ -187,13 +187,11 @@ class HeosPlayer:
 
     def __str__(self):
         """Get a user-readable representation of the player."""
-        return "{{{} ({})}}".format(self._name, self._model)
+        return f"{{{self._name} ({self._model}))}}"
 
     def __repr__(self):
         """Get a debug representation of the player."""
-        return "{{{} ({}) with id {} at {}}}".format(
-            self.name, self._model, self._player_id, self._ip_address
-        )
+        return f"{{{self.name} ({self._model}) with id {self._player_id} at {self._ip_address}}}"
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
@@ -333,7 +331,7 @@ class HeosPlayer:
     async def add_to_queue(self, source: HeosSource, add_queue_option: int):
         """Add the specified source to the queue."""
         if not source.playable:
-            raise ValueError("Source '{}' is not playable".format(source))
+            raise ValueError(f"Source '{source}' is not playable")
         await self._commands.add_to_queue(
             self._player_id,
             source.source_id,

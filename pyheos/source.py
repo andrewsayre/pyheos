@@ -14,11 +14,11 @@ class InputSource:
 
     def __str__(self):
         """Get a user-readable representation of the source."""
-        return "<{} ({})>".format(self._name, self._input_name)
+        return f"<{self._name} ({self._input_name})>"
 
     def __repr__(self):
         """Get a debug representation of the source."""
-        return "<{} ({}) on {}>".format(self._name, self._input_name, self._player_id)
+        return f"<{self._name} ({self._input_name}) on {self._player_id}>"
 
     @property
     def name(self) -> str:
@@ -73,11 +73,11 @@ class HeosSource:
 
     def __str__(self):
         """Get a user-readable representation of the source."""
-        return "<{} ({})>".format(self._name, self._type)
+        return f"<{self._name} ({self._type})>"
 
     def __repr__(self):
         """Get a debug representation of the source."""
-        return "<{} ({}) {}>".format(self._name, self._type, self._source_id)
+        return f"<{self._name} ({self._type}) {self._source_id}>"
 
     async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
