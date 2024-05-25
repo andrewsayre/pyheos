@@ -25,7 +25,7 @@ setup(
     license="ASL 2.0",
     packages=find_packages(exclude=("tests", "tests.*")),
     install_requires=[],
-    tests_require=["tox>=3.5.0,<4.0.0"],
+    tests_require=[],
     platforms=["any"],
     keywords="heos",
     zip_safe=False,
