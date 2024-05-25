@@ -1,4 +1,5 @@
 """Tests for the sources module."""
+
 from pyheos.source import HeosSource, InputSource
 
 

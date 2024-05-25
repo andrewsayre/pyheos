@@ -1,4 +1,5 @@
 """Define the HEOS command module."""
+
 from typing import Optional, Sequence, Tuple
 
 from . import const

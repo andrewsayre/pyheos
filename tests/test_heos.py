@@ -1,4 +1,5 @@
 """Tests for the heos class."""
+
 import asyncio
 
 import pytest

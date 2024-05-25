@@ -1,4 +1,5 @@
 """Define the heos source module."""
+
 from typing import Optional, Sequence  # pylint: disable=unused-import
 
 

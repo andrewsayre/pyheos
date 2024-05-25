@@ -65,7 +65,9 @@ class HeosConnection:
         self._reader = None  # type: asyncio.StreamReader
         self._writer = None  # type: asyncio.StreamWriter
         self._response_handler_task = None  # type: asyncio.Task
-        self._pending_commands = defaultdict(list)  # type: DefaultDict[str, List[ResponseEvent]]
+        self._pending_commands = defaultdict(
+            list
+        )  # type: DefaultDict[str, List[ResponseEvent]]
         self._sequence = 0  # type: int
         self._state = const.STATE_DISCONNECTED  # type: str
         self._auto_reconnect = False  # type: bool

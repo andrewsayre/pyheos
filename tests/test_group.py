@@ -1,4 +1,5 @@
 """Tests for the group module."""
+
 import pytest
 
 from pyheos import const

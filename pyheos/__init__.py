@@ -1,4 +1,5 @@
 """pyheos - a library for interacting with HEOS devices."""
+
 from . import const
 from .dispatch import Dispatcher
 from .error import CommandError, CommandFailedError, HeosError
