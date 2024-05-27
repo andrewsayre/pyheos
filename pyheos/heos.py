@@ -22,7 +22,7 @@ class Heos:
         timeout: float = const.DEFAULT_TIMEOUT,
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
         all_progress_events=True,
-        dispatcher: Dispatcher = None
+        dispatcher: Dispatcher = None,
     ):
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(
@@ -45,7 +45,7 @@ class Heos:
         self,
         *,
         auto_reconnect=False,
-        reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY
+        reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
     ):
         """Connect to the CLI."""
         await self._connection.connect(
