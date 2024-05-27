@@ -101,6 +101,9 @@ SOURCE_CONTROLS = {
 
 
 # Inputs
+INPUT_ANALOG_IN_1 = "inputs/analog_in_1"
+INPUT_ANALOG_IN_2 = "inputs/analog_in_2"
+INPUT_AUX_8K = "inputs/aux_8k"
 INPUT_AUX_IN_1 = "inputs/aux_in_1"
 INPUT_AUX_IN_2 = "inputs/aux_in_2"
 INPUT_AUX_IN_3 = "inputs/aux_in_3"
@@ -113,39 +116,39 @@ INPUT_AUX4 = "inputs/aux4"
 INPUT_AUX5 = "inputs/aux5"
 INPUT_AUX6 = "inputs/aux6"
 INPUT_AUX7 = "inputs/aux7"
-INPUT_AUX_8K = "inputs/aux_8k"
-INPUT_LINE_IN_1 = "inputs/line_in_1"
-INPUT_LINE_IN_2 = "inputs/line_in_2"
-INPUT_LINE_IN_3 = "inputs/line_in_3"
-INPUT_LINE_IN_4 = "inputs/line_in_4"
+INPUT_BLURAY = "inputs/bluray"
+INPUT_CABLE_SAT = "inputs/cable_sat"
+INPUT_CD = "inputs/cd"
 INPUT_COAX_IN_1 = "inputs/coax_in_1"
 INPUT_COAX_IN_2 = "inputs/coax_in_2"
-INPUT_OPTICAL_IN_1 = "inputs/optical_in_1"
-INPUT_OPTICAL_IN_2 = "inputs/optical_in_2"
-INPUT_OPTICAL_IN_3 = "inputs/optical_in_3"
+INPUT_DVD = "inputs/dvd"
+INPUT_GAME = "inputs/game"
+INPUT_GAME_2 = "inputs/game2"
+INPUT_HD_RADIO = "inputs/hdradio"
+INPUT_HDMI_ARC_1 = "inputs/hdmi_arc_1"
 INPUT_HDMI_IN_1 = "inputs/hdmi_in_1"
 INPUT_HDMI_IN_2 = "inputs/hdmi_in_2"
 INPUT_HDMI_IN_3 = "inputs/hdmi_in_3"
 INPUT_HDMI_IN_4 = "inputs/hdmi_in_4"
-INPUT_HDMI_ARC_1 = "inputs/hdmi_arc_1"
-INPUT_CABLE_SAT = "inputs/cable_sat"
-INPUT_DVD = "inputs/dvd"
-INPUT_BLURAY = "inputs/bluray"
-INPUT_GAME = "inputs/game"
-INPUT_GAME_2 = "inputs/game2"
+INPUT_LINE_IN_1 = "inputs/line_in_1"
+INPUT_LINE_IN_2 = "inputs/line_in_2"
+INPUT_LINE_IN_3 = "inputs/line_in_3"
+INPUT_LINE_IN_4 = "inputs/line_in_4"
 INPUT_MEDIA_PLAYER = "inputs/mediaplayer"
-INPUT_CD = "inputs/cd"
-INPUT_TUNER = "inputs/tuner"
-INPUT_HD_RADIO = "inputs/hdradio"
-INPUT_TV_AUDIO = "inputs/tvaudio"
+INPUT_OPTICAL_IN_1 = "inputs/optical_in_1"
+INPUT_OPTICAL_IN_2 = "inputs/optical_in_2"
+INPUT_OPTICAL_IN_3 = "inputs/optical_in_3"
 INPUT_PHONO = "inputs/phono"
-INPUT_USB_AC = "inputs/usbdac"
-INPUT_ANALOG_IN_1 = "inputs/analog_in_1"
-INPUT_ANALOG_IN_2 = "inputs/analog_in_2"
 INPUT_RECORDER_IN_1 = "inputs/recorder_in_1"
+INPUT_TUNER = "inputs/tuner"
 INPUT_TV = "inputs/tv"
+INPUT_TV_AUDIO = "inputs/tvaudio"
+INPUT_USB_AC = "inputs/usbdac"
 
 VALID_INPUTS = (
+    INPUT_ANALOG_IN_1,
+    INPUT_ANALOG_IN_2,
+    INPUT_AUX_8K,
     INPUT_AUX_IN_1,
     INPUT_AUX_IN_2,
     INPUT_AUX_IN_3,
@@ -158,37 +161,34 @@ VALID_INPUTS = (
     INPUT_AUX5,
     INPUT_AUX6,
     INPUT_AUX7,
-    INPUT_AUX_8K,
-    INPUT_LINE_IN_1,
-    INPUT_LINE_IN_2,
-    INPUT_LINE_IN_3,
-    INPUT_LINE_IN_4,
+    INPUT_BLURAY,
+    INPUT_CABLE_SAT,
+    INPUT_CD,
     INPUT_COAX_IN_1,
     INPUT_COAX_IN_2,
-    INPUT_OPTICAL_IN_1,
-    INPUT_OPTICAL_IN_2,
-    INPUT_OPTICAL_IN_3,
+    INPUT_DVD,
+    INPUT_GAME_2,
+    INPUT_GAME,
+    INPUT_HD_RADIO,
+    INPUT_HDMI_ARC_1,
     INPUT_HDMI_IN_1,
     INPUT_HDMI_IN_2,
     INPUT_HDMI_IN_3,
     INPUT_HDMI_IN_4,
-    INPUT_HDMI_ARC_1,
-    INPUT_CABLE_SAT,
-    INPUT_DVD,
-    INPUT_BLURAY,
-    INPUT_GAME,
-    INPUT_GAME_2,
+    INPUT_LINE_IN_1,
+    INPUT_LINE_IN_2,
+    INPUT_LINE_IN_3,
+    INPUT_LINE_IN_4,
     INPUT_MEDIA_PLAYER,
-    INPUT_CD,
-    INPUT_TUNER,
-    INPUT_HD_RADIO,
-    INPUT_TV_AUDIO,
+    INPUT_OPTICAL_IN_1,
+    INPUT_OPTICAL_IN_2,
+    INPUT_OPTICAL_IN_3,
     INPUT_PHONO,
-    INPUT_USB_AC,
-    INPUT_ANALOG_IN_1,
-    INPUT_ANALOG_IN_2,
     INPUT_RECORDER_IN_1,
+    INPUT_TUNER,
+    INPUT_TV_AUDIO,
     INPUT_TV,
+    INPUT_USB_AC,
 )
 
 # Add to Queue Options
