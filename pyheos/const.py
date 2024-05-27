@@ -122,6 +122,7 @@ INPUT_COAX_IN_1 = "inputs/coax_in_1"
 INPUT_COAX_IN_2 = "inputs/coax_in_2"
 INPUT_OPTICAL_IN_1 = "inputs/optical_in_1"
 INPUT_OPTICAL_IN_2 = "inputs/optical_in_2"
+INPUT_OPTICAL_IN_3 = "inputs/optical_in_3"
 INPUT_HDMI_IN_1 = "inputs/hdmi_in_1"
 INPUT_HDMI_IN_2 = "inputs/hdmi_in_2"
 INPUT_HDMI_IN_3 = "inputs/hdmi_in_3"
@@ -131,6 +132,7 @@ INPUT_CABLE_SAT = "inputs/cable_sat"
 INPUT_DVD = "inputs/dvd"
 INPUT_BLURAY = "inputs/bluray"
 INPUT_GAME = "inputs/game"
+INPUT_GAME_2 = "inputs/game2"
 INPUT_MEDIA_PLAYER = "inputs/mediaplayer"
 INPUT_CD = "inputs/cd"
 INPUT_TUNER = "inputs/tuner"
@@ -165,6 +167,7 @@ VALID_INPUTS = (
     INPUT_COAX_IN_2,
     INPUT_OPTICAL_IN_1,
     INPUT_OPTICAL_IN_2,
+    INPUT_OPTICAL_IN_3,
     INPUT_HDMI_IN_1,
     INPUT_HDMI_IN_2,
     INPUT_HDMI_IN_3,
@@ -174,6 +177,7 @@ VALID_INPUTS = (
     INPUT_DVD,
     INPUT_BLURAY,
     INPUT_GAME,
+    INPUT_GAME_2,
     INPUT_MEDIA_PLAYER,
     INPUT_CD,
     INPUT_TUNER,
