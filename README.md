@@ -5,7 +5,7 @@
 [![image](https://img.shields.io/pypi/pyversions/pyheos.svg)](https://pypi.org/project/pyheos/)
 [![image](https://img.shields.io/pypi/l/pyheos.svg)](https://pypi.org/project/pyheos/)
 
-An async python library for controlling HEOS devices through the HEOS CLI Protocol (version 1.16 for players with firmware 1.583.145 or newer).
+An async python library for controlling HEOS devices through the HEOS CLI Protocol (version 1.17 for players with firmware 2.41.140 or newer).
 
 ## Installation
 ```bash
