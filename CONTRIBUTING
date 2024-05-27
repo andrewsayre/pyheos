@@ -6,7 +6,7 @@ Contributions welcome!
 
 ## Style
 
-This repository uses [Black](https://github.com/psf/black) for code style and formatting and [isort](https://readthedocs.org/projects/isort/) for organizing imports.  Commits and pull requests are automatically linted with pylint and flake8.
+This repository uses [Ruff](https://docs.astral.sh/ruff/) for code style and formatting. Commits and pull requests are automatically linted and checked using Ruff and must pass in order to be accepted.
 
 *Save time by checking for style/lint issues **before** committing.*:
 ```bash

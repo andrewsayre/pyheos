@@ -1,8 +1,8 @@
 """Defines the dispatch component for notifying others of signals."""
 
 import asyncio
-from collections import defaultdict
 import functools
+from collections import defaultdict
 from typing import Any, Callable, Dict, List, Sequence
 
 TargetType = Callable[..., Any]
@@ -20,7 +20,7 @@ class Dispatcher:
         connect: ConnectType = None,
         send: SendType = None,
         signal_prefix: str = "",
-        loop=None
+        loop=None,
     ):
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
