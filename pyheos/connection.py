@@ -277,12 +277,7 @@ class HeosConnection:
             self._writer.write((uri + SEPARATOR).encode())
             await self._writer.drain()
             response = await asyncio.wait_for(event.wait(), self.timeout)
-        except (
-            ConnectionError,
-            asyncio.TimeoutError,
-            OSError,
-            AttributeError,
-        ) as error:
+        except (ConnectionError, asyncio.TimeoutError, OSError) as error:
             # Occurs when the connection breaks
             asyncio.ensure_future(self._handle_connection_error(error))
             message = format_error_message(error)
