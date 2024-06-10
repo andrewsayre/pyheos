@@ -175,6 +175,8 @@ class HeosConnection:
                 return
             except HeosError as err:
                 # Occurs when we could not reconnect
+                # Set state to reconnecting since _connect may have set it to connected and failed after
+                self._state = const.STATE_RECONNECTING
                 _LOGGER.debug("Failed to reconnect to %s: %s", self.host, err)
                 await self._disconnect()
                 await asyncio.sleep(self._reconnect_delay)
