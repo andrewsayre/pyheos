@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/andrewsayre/pyheo"
+"Source Code" = "https://github.com/andrewsayre/pyheos"
 
 [tool.setuptools]
 platforms = ["any"]
