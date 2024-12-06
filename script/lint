@@ -1,3 +1,5 @@
-@echo off
+#!/usr/bin/env bash
+
+# Run linters
 ruff check --select I --fix
 ruff format

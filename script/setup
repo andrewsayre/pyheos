@@ -13,6 +13,3 @@ uv venv $VIRTUAL_ENV
 
 # install dependencies
 uv pip install -r requirements.txt -r test-requirements.txt
-
-# Activate environment
-source $VIRTUAL_ENV/bin/activate
