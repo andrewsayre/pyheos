@@ -74,6 +74,7 @@ class HeosConnection:
         self._last_activity = None  # type: datetime
         self._heart_beat_interval = heart_beat  # type: Optional[float]
         self._heart_beat_task = None  # type: asyncio.Task
+        self._lock = asyncio.Lock()
 
     async def connect(
         self,
@@ -257,7 +258,10 @@ class HeosConnection:
         uri = f"{const.BASE_URI}{command}?{_encode_query(params)}"
         masked_uri = f"{const.BASE_URI}{command}?{_encode_query(params, mask=True)}"
 
+        await self._lock.acquire()
+
         if self._state != const.STATE_CONNECTED:
+            self._lock.release()
             _LOGGER.debug(
                 "Command failed '%s': %s", masked_uri, "Not connected to device"
             )
@@ -282,6 +286,8 @@ class HeosConnection:
             message = format_error_message(error)
             _LOGGER.debug("Command failed '%s': %s", masked_uri, message)
             raise CommandError(command, message) from error
+        finally:
+            self._lock.release()
 
         if response.result:
             _LOGGER.debug("Command executed '%s': '%s'", masked_uri, response)
