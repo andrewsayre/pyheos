@@ -1,0 +1,61 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "pyheos Dev",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
+	"postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+	"containerEnv": {
+		"PYTHONASYNCIODEBUG": "1"
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"charliermarsh.ruff",
+				"ms-python.pylint",
+				"ms-python.vscode-pylance",
+				"visualstudioexptteam.vscodeintellicode",
+				"redhat.vscode-yaml",
+				"esbenp.prettier-vscode",
+				"GitHub.vscode-pull-request-github",
+				"GitHub.copilot"
+			],
+			"settings": {
+				"python.experiments.optOutFrom": [
+					"pythonTestAdapter"
+				],
+				"python.defaultInterpreterPath": "/home/vscode/.local/venv/bin/python",
+				"python.pythonPath": "/home/vscode/.local/venv/bin/python",
+				"python.terminal.activateEnvInCurrentTerminal": true,
+				"python.testing.pytestArgs": [
+					"--no-cov"
+				],
+				"pylint.importStrategy": "fromEnvironment",
+				"editor.formatOnPaste": false,
+				"editor.formatOnSave": true,
+				"editor.formatOnType": true,
+				"files.trimTrailingWhitespace": true,
+				"terminal.integrated.profiles.linux": {
+					"zsh": {
+						"path": "/usr/bin/zsh"
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "zsh",
+				"yaml.customTags": [
+					"!input scalar",
+					"!secret scalar",
+					"!include_dir_named scalar",
+					"!include_dir_list scalar",
+					"!include_dir_merge_list scalar",
+					"!include_dir_merge_named scalar"
+				],
+				"[python]": {
+					"editor.defaultFormatter": "charliermarsh.ruff"
+				}
+			}
+		}
+	}
+}
