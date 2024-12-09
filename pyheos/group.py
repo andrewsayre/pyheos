@@ -1,14 +1,14 @@
 """Define the heos group module."""
 
 import asyncio
-from typing import Dict, Sequence
+from collections.abc import Sequence
 
 from . import const
 from .player import HeosPlayer
 from .response import HeosResponse
 
 
-def create_group(heos, data: dict, players: Dict[int, HeosPlayer]) -> "HeosGroup":
+def create_group(heos, data: dict, players: dict[int, HeosPlayer]) -> "HeosGroup":
     """Create a group from the data."""
     leader = None
     members = []

@@ -5,7 +5,7 @@ import json
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from . import const
 from .command import HeosCommands
@@ -59,21 +59,23 @@ class HeosConnection:
         """Init a new HeosConnection class."""
         self._heos = heos
         self._all_progress_events = all_progress_events
-        self.host = host  # type: str
+        self.host: str = host
         self.commands = HeosCommands(self)
-        self.timeout = timeout  # type: int
-        self._reader = None  # type: asyncio.StreamReader
-        self._writer = None  # type: asyncio.StreamWriter
-        self._response_handler_task = None  # type: asyncio.Task
-        self._pending_commands = defaultdict(list)  # type: DefaultDict[str, List[ResponseEvent]]
-        self._sequence = 0  # type: int
-        self._state = const.STATE_DISCONNECTED  # type: str
-        self._auto_reconnect = False  # type: bool
-        self._reconnect_delay = const.DEFAULT_RECONNECT_DELAY  # type: float
-        self._reconnect_task = None  # type: asyncio.Task
-        self._last_activity = None  # type: datetime
-        self._heart_beat_interval = heart_beat  # type: Optional[float]
-        self._heart_beat_task = None  # type: asyncio.Task
+        self.timeout: int = timeout
+        self._reader: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamReader | None = None
+        self._response_handler_task: asyncio.Task | None = None
+        self._pending_commands: defaultdict[str, list[ResponseEvent]] = defaultdict(
+            list
+        )
+        self._sequence: int = 0
+        self._state: str = const.STATE_DISCONNECTED
+        self._auto_reconnect: bool = False
+        self._reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY
+        self._reconnect_task: asyncio.Task | None = None
+        self._last_activity: datetime | None = None
+        self._heart_beat_interval: float | None = heart_beat
+        self._heart_beat_task: asyncio.Task | None = None
 
     async def connect(
         self,
@@ -246,7 +248,7 @@ class HeosConnection:
             await asyncio.sleep(self._heart_beat_interval / 2)
 
     async def command(
-        self, command: str, params: Dict[str, Any] = None
+        self, command: str, params: dict[str, Any] = None
     ) -> HeosResponse:
         """Execute a command and get it's response."""
         # Build command URI

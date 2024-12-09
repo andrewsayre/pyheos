@@ -1,6 +1,7 @@
 """Define the HEOS command module."""
 
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 from . import const
 
@@ -106,7 +107,7 @@ class HeosCommands:
         params = {"pid": player_id}
         await self._connection.command(const.COMMAND_TOGGLE_MUTE, params)
 
-    async def get_play_mode(self, player_id: int) -> Tuple[str, bool]:
+    async def get_play_mode(self, player_id: int) -> tuple[str, bool]:
         """Get the current play mode."""
         params = {"pid": player_id}
         response = await self._connection.command(const.COMMAND_GET_PLAY_MODE, params)

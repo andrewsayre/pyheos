@@ -3,7 +3,7 @@
 import asyncio
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional, Union
+from typing import Optional, Union
 from urllib.parse import parse_qsl, urlparse
 
 import pytest
@@ -43,10 +43,10 @@ class MockHeosDevice:
 
     def __init__(self):
         """Init a new instance of the mock heos device."""
-        self._server = None  # type: asyncio.AbstractServer
-        self._started = False
-        self.connections = []  # type: List[ConnectionLog]
-        self._matchers = []  # type: List[CommandMatcher]
+        self._server: asyncio.AbstractServer | None = None
+        self._started: bool = False
+        self.connections: list[ConnectionLog] = []
+        self._matchers: list[CommandMatcher] = []
 
     async def start(self):
         """Start the heos server."""
@@ -91,7 +91,7 @@ class MockHeosDevice:
         self,
         command: str,
         args: Optional[dict],
-        response: Union[str, List[str]],
+        response: Union[str, list[str]],
         *,
         replace: bool = False,
     ):
@@ -158,7 +158,7 @@ class MockHeosDevice:
 class CommandMatcher:
     """Define a command match response."""
 
-    def __init__(self, command: str, args: dict, response: Union[str, List[str]]):
+    def __init__(self, command: str, args: dict, response: Union[str, list[str]]):
         """Init the command response."""
         self.command = command
         self.args = args
@@ -177,7 +177,7 @@ class CommandMatcher:
                     return False
         return True
 
-    async def get_response(self, query: dict) -> List[str]:
+    async def get_response(self, query: dict) -> list[str]:
         """Get the response body."""
         responses = []
         for fixture in self._response:

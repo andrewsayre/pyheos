@@ -1,7 +1,8 @@
 """Define the heos manager module."""
 
 import asyncio
-from typing import Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from . import const
 from .connection import HeosConnection
@@ -33,12 +34,12 @@ class Heos:
             all_progress_events=all_progress_events,
         )
         self._dispatcher = dispatcher or Dispatcher()
-        self._players = {}  # type: Dict[int, HeosPlayer]
+        self._players: dict[int, HeosPlayer] = {}
         self._players_loaded = False
-        self._music_sources = {}  # type: Dict[int, HeosSource]
+        self._music_sources: dict[int, HeosSource] = {}
         self._music_sources_loaded = False
-        self._signed_in_username = None  # type: str
-        self._groups = {}  # type: Dict[int, HeosGroup]
+        self._signed_in_username: str | None = None
+        self._groups: dict[int, HeosGroup] = {}
         self._groups_loaded = False
 
     async def connect(
@@ -125,14 +126,14 @@ class Heos:
         self._players_loaded = True
         return changes
 
-    async def get_players(self, *, refresh=False) -> Dict[int, HeosPlayer]:
+    async def get_players(self, *, refresh=False) -> dict[int, HeosPlayer]:
         """Get available players."""
         # get players and pull initial state
         if not self._players_loaded or refresh:
             await self.load_players()
         return self._players
 
-    async def get_groups(self, *, refresh=False) -> Dict[int, HeosGroup]:
+    async def get_groups(self, *, refresh=False) -> dict[int, HeosGroup]:
         """Get available groups."""
         if not self._groups_loaded or refresh:
             players = await self.get_players()
@@ -163,7 +164,7 @@ class Heos:
         ids.extend(member_ids)
         await self._connection.commands.set_group(ids)
 
-    async def get_music_sources(self, refresh=True) -> Dict[int, HeosSource]:
+    async def get_music_sources(self, refresh=True) -> dict[int, HeosSource]:
         """Get available music sources."""
         if not self._music_sources or refresh:
             payload = await self._connection.commands.get_music_sources()
@@ -187,7 +188,7 @@ class Heos:
             )
         return input_sources
 
-    async def get_favorites(self) -> Dict[int, HeosSource]:
+    async def get_favorites(self) -> dict[int, HeosSource]:
         """Get available favorites."""
         payload = await self._connection.commands.browse(const.MUSIC_SOURCE_FAVORITES)
         sources = [HeosSource(self._connection.commands, item) for item in payload]
@@ -208,17 +209,17 @@ class Heos:
         return self._dispatcher
 
     @property
-    def players(self) -> Dict[int, HeosPlayer]:
+    def players(self) -> dict[int, HeosPlayer]:
         """Get the loaded players."""
         return self._players
 
     @property
-    def groups(self) -> Dict[int, HeosGroup]:
+    def groups(self) -> dict[int, HeosGroup]:
         """Get the loaded groups."""
         return self._groups
 
     @property
-    def music_sources(self) -> Dict[int, HeosSource]:
+    def music_sources(self) -> dict[int, HeosSource]:
         """Get available music sources."""
         return self._music_sources
 

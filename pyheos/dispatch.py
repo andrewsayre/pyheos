@@ -3,7 +3,8 @@
 import asyncio
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 TargetType = Callable[..., Any]
 DisconnectType = Callable[[], None]
@@ -79,6 +80,6 @@ class Dispatcher:
         return self._loop.run_in_executor(None, target, *args)
 
     @property
-    def signals(self) -> Dict[str, List[TargetType]]:
+    def signals(self) -> dict[str, list[TargetType]]:
         """Get the dictionary of registered signals and callbacks."""
         return self._signals

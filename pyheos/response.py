@@ -1,6 +1,6 @@
 """Define the heos response module."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from urllib.parse import parse_qsl
 
 from .error import CommandFailedError
@@ -11,11 +11,11 @@ class HeosResponse:
 
     def __init__(self, data: Optional[dict] = None):
         """Init a new instance of the heos response."""
-        self._raw_data = None  # type: dict
-        self._command = None  # type: str
-        self._result = None  # type: bool
-        self._message = None  # type: dict
-        self._payload = None  # type: dict
+        self._raw_data: dict | None = None
+        self._command: str | None = None
+        self._result: dict | None = None
+        self._message: dict | None = None
+        self._payload: dict | None = None
         if data:
             self.from_json(data)
 
@@ -59,7 +59,7 @@ class HeosResponse:
         return self._result
 
     @property
-    def payload(self) -> Optional[Dict]:
+    def payload(self) -> dict | None:
         """Get the payload of the message."""
         return self._payload
 

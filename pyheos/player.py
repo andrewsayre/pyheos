@@ -1,8 +1,9 @@
 """Define the player module."""
 
 import asyncio
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Optional
 
 from . import const
 from .response import HeosResponse
@@ -29,20 +30,20 @@ class HeosNowPlayingMedia:
 
     def __init__(self):
         """Init NowPlayingMedia info."""
-        self._type = None  # type: str
-        self._song = None  # type: str
-        self._station = None  # type: str
-        self._album = None  # type: str
-        self._artist = None  # type: str
-        self._image_url = None  # type: str
-        self._album_id = None  # type: str
-        self._media_id = None  # type: str
-        self._queue_id = None  # type: int
-        self._source_id = None  # type: int
-        self._current_position = None  # type: int
-        self._current_position_updated = None  # type: datetime
-        self._duration = None  # type: int
-        self._supported_controls = const.CONTROLS_ALL  # type: Sequence[str]
+        self._type: str | None = None
+        self._song: str | None = None
+        self._station: str | None = None
+        self._album: str | None = None
+        self._artist: str | None = None
+        self._image_url: str | None = None
+        self._album_id: str | None = None
+        self._media_id: str | None = None
+        self._queue_id: int | None = None
+        self._source_id: int | None = None
+        self._current_position: int | None = None
+        self._current_position_updated: datetime | None = None
+        self._duration: int | None = None
+        self._supported_controls: Sequence[str] = const.CONTROLS_ALL
 
     def from_data(self, data: dict):
         """Update the attributes from the supplied data."""
@@ -344,7 +345,7 @@ class HeosPlayer:
         """Set the specified quick select to the current source."""
         await self._commands.set_quick_select(self._player_id, quick_select_id)
 
-    async def get_quick_selects(self) -> Dict[int, str]:
+    async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         payload = await self._commands.get_quick_selects(self._player_id)
         return {int(data["id"]): data["name"] for data in payload}
