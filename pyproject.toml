@@ -34,5 +34,4 @@ include-package-data = true
 exclude = ["tests", "tests.*"]
 
 [tool.ruff]
-# Assume Python 3.11
-target-version = "py311"
+required-version = ">=0.8.0"
