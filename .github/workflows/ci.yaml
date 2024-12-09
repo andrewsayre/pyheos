@@ -29,6 +29,8 @@ jobs:
         run: ruff check --select I
       - name: Format (Ruff)
         run: ruff format --check
+      - name: Format (Pylint)
+        run: pylint pyheos tests
 
   tests:
     name: "Run tests on ${{ matrix.python-version }}"
