@@ -314,3 +314,10 @@ runtime-typing = false
 
 [tool.pylint.CODE_STYLE]
 max-line-length-suggestions = 72
+
+[tool.pytest.ini_options]
+log_level = "DEBUG"
+testpaths = ["tests"]
+norecursedirs = ".git"
+timeout = 60
+asyncio_default_fixture_loop_scope = "function"
