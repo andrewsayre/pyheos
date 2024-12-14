@@ -4,3 +4,4 @@
 ruff check --select I --fix
 ruff format
 pylint pyheos tests
+mypy pyheos tests
