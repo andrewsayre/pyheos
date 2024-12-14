@@ -25,11 +25,11 @@ class Dispatcher:
     ):
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
-        self._signals = defaultdict(list)
+        self._signals: dict[str, list] = defaultdict(list)
         self._loop = loop or asyncio.get_event_loop()
         self._connect = connect or self._default_connect
         self._send = send or self._default_send
-        self._disconnects = []
+        self._disconnects: list[Callable] = []
 
     def connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""

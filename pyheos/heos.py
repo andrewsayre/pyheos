@@ -82,7 +82,10 @@ class Heos:
 
     async def load_players(self):
         """Refresh the players."""
-        changes = {const.DATA_NEW: [], const.DATA_MAPPED_IDS: {}}
+        changes: dict[str, list | dict] = {
+            const.DATA_NEW: [],
+            const.DATA_MAPPED_IDS: {},
+        }
         players = {}
         payload = await self._connection.commands.get_players()
         existing = list(self._players.values())
