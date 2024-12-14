@@ -9,13 +9,13 @@ from .error import CommandFailedError
 class HeosResponse:
     """Define a HEOS response representation."""
 
-    def __init__(self, data: Optional[dict] = None):
+    def __init__(self, data: Optional[dict] = None) -> None:
         """Init a new instance of the heos response."""
-        self._raw_data: dict | None = None
+        self._raw_data: dict = {}
         self._command: str | None = None
-        self._result: dict | None = None
-        self._message: dict | None = None
-        self._payload: dict | None = None
+        self._result: dict = {}
+        self._message: dict = {}
+        self._payload: dict = {}
         if data:
             self.from_json(data)
 
@@ -74,11 +74,15 @@ class HeosResponse:
 
     def get_player_id(self) -> int:
         """Get the player_id from the message."""
-        return int(self._message["pid"])
+        if player_id := self._message.get("pid"):
+            return int(player_id)
+        raise ValueError("Response does not contain a player id.")
 
     def get_group_id(self) -> int:
         """Get the group_id from the message."""
-        return int(self._message["gid"])
+        if group_id := self._message.get("gid"):
+            return int(group_id)
+        raise ValueError("Response does not contain a group id.")
 
     def raise_for_result(self):
         """Raise an error if result is not successful."""
