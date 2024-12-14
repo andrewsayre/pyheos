@@ -876,7 +876,7 @@ async def test_sign_in_and_out(mock_device, heos, caplog):
 
 @pytest.mark.asyncio
 async def test_get_groups(mock_device, heos):
-    """Test the get gruops method."""
+    """Test the get groups method."""
     groups = await heos.get_groups()
     assert len(groups) == 1
     group = groups[1]

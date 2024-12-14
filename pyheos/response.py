@@ -64,7 +64,7 @@ class HeosResponse:
         return self._payload
 
     def get_message(self, key: str) -> Any:
-        """Get message paramter by key."""
+        """Get message parameter by key."""
         if self._message:
             return self._message.get(key)
 

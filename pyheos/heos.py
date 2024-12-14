@@ -91,7 +91,7 @@ class Heos:
             name = parse_player_name(player_data)
             version = parse_player_version(player_data)
             # Try finding existing player by id or match name when firmware
-            # verion is different because IDs change after a firmware upgrade
+            # version is different because IDs change after a firmware upgrade
             player = next(
                 (
                     player
@@ -155,7 +155,7 @@ class Heos:
         await self._connection.commands.set_group(ids)
 
     async def remove_group(self, group_id: int):
-        """Ungroup the specifid group."""
+        """Ungroup the specified group."""
         await self._connection.commands.set_group([group_id])
 
     async def update_group(self, group_id: int, member_ids: Sequence[int]):

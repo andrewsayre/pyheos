@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # Run linters
+codespell
 ruff check --select I --fix
 ruff format
 pylint pyheos tests
