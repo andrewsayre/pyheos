@@ -332,18 +332,18 @@ class HeosConnection:
 class ResponseEvent:
     """Define an awaitable command event response."""
 
-    def __init__(self, sequence: int):
+    def __init__(self, sequence: int) -> None:
         """Init a new instance of the CommandEvent."""
-        self._event = asyncio.Event()
-        self._sequence = sequence
-        self._response = None
+        self._event: asyncio.Event = asyncio.Event()
+        self._sequence: int = sequence
+        self._response: HeosResponse | None = None
 
     @property
     def sequence(self) -> int:
         """Get the sequence that represents this event."""
         return self._sequence
 
-    async def wait(self):
+    async def wait(self) -> HeosResponse:
         """Wait until the event is set."""
         await self._event.wait()
         return self._response

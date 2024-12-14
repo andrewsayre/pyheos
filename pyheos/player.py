@@ -15,9 +15,11 @@ def parse_player_id(data: dict) -> int:
     return int(data["pid"])
 
 
-def parse_player_name(data: dict) -> str:
+def parse_player_name(data: dict[str, str]) -> str:
     """Parse the player name from the data payload."""
-    return data["name"]
+    if name := data.get("name"):
+        return name
+    raise ValueError("Data does not contain a player name")
 
 
 def parse_player_version(data: dict) -> str:

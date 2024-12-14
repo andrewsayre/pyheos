@@ -94,7 +94,6 @@ disable_error_code = [
     "assignment",
     "arg-type",
     "return-value",
-    "no-any-return",
     "no-untyped-call",
     "operator",
     "union-attr",

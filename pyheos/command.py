@@ -1,7 +1,7 @@
 """Define the HEOS command module."""
 
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, cast
 
 from . import const
 
@@ -21,7 +21,7 @@ class HeosCommands:
         """Return the logged in username."""
         response = await self._connection.command(const.COMMAND_ACCOUNT_CHECK, None)
         if response.has_message("signed_in"):
-            return response.get_message("un")
+            return str(response.get_message("un"))
         return None
 
     async def sign_in(self, username: str, password: str):
@@ -41,13 +41,13 @@ class HeosCommands:
     async def get_players(self) -> Sequence[dict]:
         """Get players."""
         response = await self._connection.command(const.COMMAND_GET_PLAYERS)
-        return response.payload
+        return cast(Sequence[dict], response.payload)
 
     async def get_player_state(self, player_id: int) -> str:
         """Get the state of the player."""
         params = {"pid": player_id}
         response = await self._connection.command(const.COMMAND_GET_PLAY_STATE, params)
-        return response.get_message("state")
+        return str(response.get_message("state"))
 
     async def set_player_state(self, player_id: int, state: str):
         """Set the state of the player."""
@@ -81,7 +81,7 @@ class HeosCommands:
         """Get the mute state of the player."""
         params = {"pid": player_id}
         response = await self._connection.command(const.COMMAND_GET_MUTE, params)
-        return response.get_message("state") == "on"
+        return str(response.get_message("state")) == "on"
 
     async def set_mute(self, player_id: str, state: bool):
         """Set the mute state of the player."""
@@ -144,13 +144,13 @@ class HeosCommands:
     async def get_music_sources(self) -> Sequence[dict]:
         """Get available music sources."""
         response = await self._connection.command(const.COMMAND_BROWSE_GET_SOURCES)
-        return response.payload
+        return cast(Sequence[dict], response.payload)
 
     async def browse(self, source_id: int) -> Sequence[dict]:
         """Browse a music source."""
         params = {"sid": source_id}
         response = await self._connection.command(const.COMMAND_BROWSE_BROWSE, params)
-        return response.payload
+        return cast(Sequence[dict], response.payload)
 
     async def play_input(
         self, player_id: int, input_name: str, *, source_player_id: int = None
@@ -201,7 +201,7 @@ class HeosCommands:
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""
         response = await self._connection.command(const.COMMAND_GET_GROUPS)
-        return response.payload
+        return cast(Sequence[dict], response.payload)
 
     async def set_group(self, player_ids: Sequence[int]):
         """Create, modify, or ungroup players."""
@@ -220,7 +220,7 @@ class HeosCommands:
         """Get the mute status of the group."""
         params = {"gid": group_id}
         response = await self._connection.command(const.COMMAND_GET_GROUP_MUTE, params)
-        return response.get_message("state") == "on"
+        return str(response.get_message("state")) == "on"
 
     async def set_group_volume(self, group_id: int, level: int):
         """Set the volume of the group."""
@@ -273,4 +273,4 @@ class HeosCommands:
         response = await self._connection.command(
             const.COMMAND_GET_QUICK_SELECTS, params
         )
-        return response.payload
+        return cast(Sequence[dict], response.payload)

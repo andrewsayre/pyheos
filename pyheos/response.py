@@ -15,7 +15,7 @@ class HeosResponse:
         self._command: str | None = None
         self._result: dict = {}
         self._message: dict = {}
-        self._payload: dict = {}
+        self._payload: list | dict | None = None
         if data:
             self.from_json(data)
 
@@ -59,7 +59,7 @@ class HeosResponse:
         return self._result
 
     @property
-    def payload(self) -> dict | None:
+    def payload(self) -> list | dict | None:
         """Get the payload of the message."""
         return self._payload
 
