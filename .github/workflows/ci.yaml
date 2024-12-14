@@ -9,7 +9,7 @@ on:
 
 jobs:
   lint:
-    name: "Check style and lint"
+    name: "Check style, lint, and typing"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +31,8 @@ jobs:
         run: ruff format --check
       - name: Format (Pylint)
         run: pylint pyheos tests
+      - name: Typing my[py]
+        run: mypy pyheos tests
 
   tests:
     name: "Run tests on ${{ matrix.python-version }}"
