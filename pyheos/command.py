@@ -9,11 +9,11 @@ from . import const
 class HeosCommands:
     """Define a class that encapsulates well-known commands."""
 
-    def __init__(self, connection):
+    def __init__(self, connection) -> None:
         """Init the command wrapper."""
         self._connection = connection
 
-    async def heart_beat(self):
+    async def heart_beat(self) -> None:
         """Perform heart beat command."""
         await self._connection.command(const.COMMAND_HEART_BEAT, None)
 
@@ -24,16 +24,16 @@ class HeosCommands:
             return str(response.get_message("un"))
         return None
 
-    async def sign_in(self, username: str, password: str):
+    async def sign_in(self, username: str, password: str) -> None:
         """Sign in to the HEOS account using the provided credential."""
         params = {"un": username, "pw": password}
         await self._connection.command(const.COMMAND_SIGN_IN, params)
 
-    async def sign_out(self):
+    async def sign_out(self) -> None:
         """Sign out of the HEOS account."""
         await self._connection.command(const.COMMAND_SIGN_OUT, None)
 
-    async def register_for_change_events(self, enable=True):
+    async def register_for_change_events(self, enable=True) -> None:
         """Enable or disable change event notifications."""
         params = {"enable": "on" if enable else "off"}
         await self._connection.command(const.COMMAND_REGISTER_FOR_CHANGE_EVENTS, params)
@@ -49,7 +49,7 @@ class HeosCommands:
         response = await self._connection.command(const.COMMAND_GET_PLAY_STATE, params)
         return str(response.get_message("state"))
 
-    async def set_player_state(self, player_id: int, state: str):
+    async def set_player_state(self, player_id: int, state: str) -> None:
         """Set the state of the player."""
         if state not in const.VALID_PLAY_STATES:
             raise ValueError("Invalid play state: " + state)
@@ -243,12 +243,12 @@ class HeosCommands:
         params = {"gid": group_id, "step": step}
         await self._connection.command(const.COMMAND_GROUP_VOLUME_DOWN, params)
 
-    async def group_set_mute(self, group_id: str, state: bool):
+    async def group_set_mute(self, group_id: str, state: bool) -> None:
         """Set the mute state of the group."""
         params = {"gid": group_id, "state": "on" if state else "off"}
         await self._connection.command(const.COMMAND_SET_GROUP_MUTE, params)
 
-    async def group_toggle_mute(self, group_id: int):
+    async def group_toggle_mute(self, group_id: int) -> None:
         """Toggle the mute state."""
         params = {"gid": group_id}
         await self._connection.command(const.COMMAND_GROUP_TOGGLE_MUTE, params)

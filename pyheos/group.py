@@ -31,7 +31,7 @@ class HeosGroup:
         group_id: int,
         leader: HeosPlayer,
         members: Sequence[HeosPlayer],
-    ):
+    ) -> None:
         """Init the group class."""
         self._heos = heos
         # pylint: disable=protected-access
@@ -43,15 +43,15 @@ class HeosGroup:
         self._volume = None  # type: int
         self._is_muted = None  # type: bool
 
-    async def refresh(self):
+    async def refresh(self) -> None:
         """Pull current state."""
         await asyncio.gather(self.refresh_volume(), self.refresh_mute())
 
-    async def refresh_volume(self):
+    async def refresh_volume(self) -> None:
         """Pull the latest volume."""
         self._volume = await self._commands.get_group_volume(self._group_id)
 
-    async def refresh_mute(self):
+    async def refresh_mute(self) -> None:
         """Pull the latest mute status."""
         self._is_muted = await self._commands.get_group_mute(self._group_id)
 
@@ -62,33 +62,33 @@ class HeosGroup:
             self._is_muted = event.get_message("mute") == "on"
         return True
 
-    async def set_volume(self, level: int):
+    async def set_volume(self, level: int) -> None:
         """Set the volume level."""
         await self._commands.set_group_volume(self._group_id, level)
 
-    async def volume_up(self, step: int = const.DEFAULT_STEP):
+    async def volume_up(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
         await self._commands.group_volume_up(self._group_id, step)
 
-    async def volume_down(self, step: int = const.DEFAULT_STEP):
+    async def volume_down(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
         await self._commands.group_volume_down(self._group_id, step)
 
-    async def set_mute(self, state: bool):
+    async def set_mute(self, state: bool) -> None:
         """Set the mute state."""
-        return await self._commands.group_set_mute(self._group_id, state)
+        await self._commands.group_set_mute(self._group_id, state)
 
-    async def mute(self):
+    async def mute(self) -> None:
         """Set mute state."""
-        return await self.set_mute(True)
+        await self.set_mute(True)
 
-    async def unmute(self):
+    async def unmute(self) -> None:
         """Clear mute state."""
-        return await self.set_mute(False)
+        await self.set_mute(False)
 
-    async def toggle_mute(self):
+    async def toggle_mute(self) -> None:
         """Toggle mute state."""
-        return await self._commands.group_toggle_mute(self._group_id)
+        await self._commands.group_toggle_mute(self._group_id)
 
     @property
     def name(self) -> str:

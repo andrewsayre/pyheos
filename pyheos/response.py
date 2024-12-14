@@ -84,7 +84,7 @@ class HeosResponse:
             return int(group_id)
         raise ValueError("Response does not contain a group id.")
 
-    def raise_for_result(self):
+    def raise_for_result(self) -> None:
         """Raise an error if result is not successful."""
         if self.result:
             return

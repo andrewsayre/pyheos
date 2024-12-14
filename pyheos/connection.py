@@ -82,7 +82,7 @@ class HeosConnection:
         *,
         auto_reconnect: bool = False,
         reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
-    ):
+    ) -> None:
         """Invoke the connect operation."""
         if self._state == const.STATE_CONNECTED:
             return
@@ -92,7 +92,7 @@ class HeosConnection:
         self._auto_reconnect = auto_reconnect
         self._reconnect_delay = reconnect_delay
 
-    async def _connect(self):
+    async def _connect(self) -> None:
         """Perform core connection logic."""
         try:
             open_future = asyncio.open_connection(self.host, const.CLI_PORT)
@@ -113,7 +113,7 @@ class HeosConnection:
         _LOGGER.debug("Connected to %s", self.host)
         self._heos.dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Disconnect from the device."""
         if self._state == const.STATE_DISCONNECTED:
             return
@@ -129,7 +129,7 @@ class HeosConnection:
         _LOGGER.debug("Disconnected from %s", self.host)
         self._heos.dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
-    async def _disconnect(self):
+    async def _disconnect(self) -> None:
         # Cancel response handler
         if self._heart_beat_task:
             self._heart_beat_task.cancel()
@@ -150,7 +150,7 @@ class HeosConnection:
         self._sequence = 0
         self._pending_commands.clear()
 
-    async def _handle_connection_error(self, error: Exception):
+    async def _handle_connection_error(self, error: Exception) -> None:
         """Handle connection failures and schedule reconnect."""
         if self._reconnect_task:
             return
@@ -166,7 +166,7 @@ class HeosConnection:
         _LOGGER.debug("Disconnected from %s: %s", self.host, error)
         self._heos.dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
-    async def _reconnect(self):
+    async def _reconnect(self) -> None:
         """Perform core reconnection logic."""
         while self._state != const.STATE_CONNECTED:
             try:
@@ -184,7 +184,7 @@ class HeosConnection:
                 # Occurs when reconnect is cancelled via disconnect
                 return
 
-    async def _response_handler(self):
+    async def _response_handler(self) -> None:
         while True:
             # Wait for response
             try:
@@ -236,7 +236,7 @@ class HeosConnection:
                 asyncio.ensure_future(self._handle_connection_error(error))
                 return
 
-    async def _heart_beat(self):
+    async def _heart_beat(self) -> None:
         while self._state == const.STATE_CONNECTED:
             last_activity = datetime.now() - self._last_activity
             threshold = timedelta(seconds=self._heart_beat_interval)
@@ -292,7 +292,7 @@ class HeosConnection:
         response.raise_for_result()
         return response
 
-    async def _handle_event(self, response: HeosResponse):
+    async def _handle_event(self, response: HeosResponse) -> None:
         """Handle a response event."""
         if response.command in const.PLAYER_EVENTS:
             player_id = response.get_player_id()

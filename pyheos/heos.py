@@ -24,7 +24,7 @@ class Heos:
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
         all_progress_events=True,
         dispatcher: Dispatcher = None,
-    ):
+    ) -> None:
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(
             self,
@@ -47,18 +47,18 @@ class Heos:
         *,
         auto_reconnect=False,
         reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
-    ):
+    ) -> None:
         """Connect to the CLI."""
         await self._connection.connect(
             auto_reconnect=auto_reconnect, reconnect_delay=reconnect_delay
         )
         self._signed_in_username = await self._connection.commands.check_account()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Disconnect from the CLI."""
         await self._connection.disconnect()
 
-    async def _handle_event(self, event: HeosResponse):
+    async def _handle_event(self, event: HeosResponse) -> bool:
         """Handle a heos event."""
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             return await self.load_players()
@@ -72,15 +72,15 @@ class Heos:
             await self.get_groups(refresh=True)
         return True
 
-    async def sign_in(self, username: str, password: str):
+    async def sign_in(self, username: str, password: str) -> None:
         """Sign-in to the HEOS account on the device directly connected."""
         await self._connection.commands.sign_in(username, password)
 
-    async def sign_out(self):
+    async def sign_out(self) -> None:
         """Sign-out of the HEOS account on the device directly connected."""
         await self._connection.commands.sign_out()
 
-    async def load_players(self):
+    async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""
         changes: dict[str, list | dict] = {
             const.DATA_NEW: [],
@@ -151,17 +151,17 @@ class Heos:
             self._groups_loaded = True
         return self._groups
 
-    async def create_group(self, leader_id: int, member_ids: Sequence[int]):
+    async def create_group(self, leader_id: int, member_ids: Sequence[int]) -> None:
         """Create a HEOS group."""
         ids = [leader_id]
         ids.extend(member_ids)
         await self._connection.commands.set_group(ids)
 
-    async def remove_group(self, group_id: int):
+    async def remove_group(self, group_id: int) -> None:
         """Ungroup the specified group."""
         await self._connection.commands.set_group([group_id])
 
-    async def update_group(self, group_id: int, member_ids: Sequence[int]):
+    async def update_group(self, group_id: int, member_ids: Sequence[int]) -> None:
         """Update the membership of a group."""
         ids = [group_id]
         ids.extend(member_ids)
@@ -227,7 +227,7 @@ class Heos:
         return self._music_sources
 
     @property
-    def connection_state(self):
+    def connection_state(self) -> str:
         """Get the state of the connection."""
         return self._connection.state
 
