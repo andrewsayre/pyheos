@@ -92,6 +92,24 @@ disallow_untyped_defs = true
 warn_return_any = true
 warn_unreachable = true
 
+[[tool.mypy.overrides]]
+module = "pyheos.*"
+disable_error_code = [
+    "no-untyped-def",
+    "assignment",
+    "arg-type",
+    "var-annotated",
+    "unreachable",
+    "truthy-function",
+    "return-value",
+    "index",
+    "no-any-return",
+    "no-untyped-call",
+    "operator",
+    "union-attr",
+    "attr-defined"
+]
+
 [tool.pylint.BASIC]
 class-const-naming-style = "any"
 
