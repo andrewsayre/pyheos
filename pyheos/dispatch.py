@@ -18,8 +18,8 @@ class Dispatcher:
     def __init__(
         self,
         *,
-        connect: ConnectType = None,
-        send: SendType = None,
+        connect: ConnectType | None = None,
+        send: SendType | None = None,
         signal_prefix: str = "",
         loop=None,
     ):
