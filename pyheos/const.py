@@ -2,7 +2,6 @@
 
 from typing import Final, Literal
 
-
 CLI_PORT: Final = 1255
 DEFAULT_TIMEOUT: Final = 10.0
 DEFAULT_RECONNECT_DELAY: Final = 10.0

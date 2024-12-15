@@ -1,10 +1,10 @@
 """Define the connection module."""
 
 import asyncio
-from collections.abc import Coroutine
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Coroutine
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Final, Optional
 
