@@ -5,24 +5,21 @@ import json
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Final, Optional
 
 from . import const
 from .command import HeosCommands
 from .error import CommandError, HeosError, format_error_message
 from .response import HeosResponse
 
-SEPARATOR = "\r\n"
-SEPARATOR_BYTES = SEPARATOR.encode()
+SEPARATOR: Final = "\r\n"
+SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER: Final = logging.getLogger(__name__)
 
-
-_QUOTE_MAP = {"&": "%26", "=": "%3D", "%": "%25"}
-
-_MASKED_PARAMS = {"pw"}
-
-_MASK = "********"
+_QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
+_MASKED_PARAMS: Final = {"pw"}
+_MASK: Final = "********"
 
 
 def _quote(string: str) -> str:
@@ -185,7 +182,7 @@ class HeosConnection:
                 return
 
     async def _response_handler(self) -> None:
-        while True:
+        while self._reader:
             # Wait for response
             try:
                 result = await self._reader.readuntil(SEPARATOR_BYTES)
@@ -215,8 +212,7 @@ class HeosConnection:
                 if sequence:
                     sequence_id = int(sequence)
                     event = next(
-                        (event for event in commands if event.sequence == sequence_id),
-                        None,
+                        (event for event in commands if event.sequence == sequence_id)
                     )
                     commands.remove(event)
                 else:
@@ -259,7 +255,7 @@ class HeosConnection:
         uri = f"{const.BASE_URI}{command}?{_encode_query(params)}"
         masked_uri = f"{const.BASE_URI}{command}?{_encode_query(params, mask=True)}"
 
-        if self._state != const.STATE_CONNECTED:
+        if self._state != const.STATE_CONNECTED or self._writer is None:
             _LOGGER.debug(
                 "Command failed '%s': %s", masked_uri, "Not connected to device"
             )

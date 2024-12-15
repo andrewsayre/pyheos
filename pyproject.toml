@@ -93,8 +93,6 @@ disable_error_code = [
     "no-untyped-def",
     "assignment",
     "arg-type",
-    #"operator",
-    "union-attr",
     "attr-defined",
 ]
 

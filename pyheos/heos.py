@@ -82,10 +82,8 @@ class Heos:
 
     async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""
-        changes: dict[str, list | dict] = {
-            const.DATA_NEW: [],
-            const.DATA_MAPPED_IDS: {},
-        }
+        new_player_ids = []
+        mapped_player_ids = {}
         players = {}
         payload = await self._connection.commands.get_players()
         existing = list(self._players.values())
@@ -107,14 +105,14 @@ class Heos:
             if player:
                 # Existing player matched - update
                 if player.player_id != player_id:
-                    changes[const.DATA_MAPPED_IDS][player_id] = player.player_id
+                    mapped_player_ids[player_id] = player.player_id
                 player.from_data(player_data)
                 players[player_id] = player
                 existing.remove(player)
             else:
                 # New player
                 player = HeosPlayer(self, player_data)
-                changes[const.DATA_NEW].append(player_id)
+                new_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
         for player in existing:
@@ -127,7 +125,10 @@ class Heos:
         )
         self._players = players
         self._players_loaded = True
-        return changes
+        return {
+            const.DATA_NEW: new_player_ids,
+            const.DATA_MAPPED_IDS: mapped_player_ids,
+        }
 
     async def get_players(self, *, refresh=False) -> dict[int, HeosPlayer]:
         """Get available players."""
