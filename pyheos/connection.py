@@ -73,7 +73,7 @@ class HeosConnection:
         self._auto_reconnect: bool = False
         self._reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY
         self._reconnect_task: asyncio.Task | None = None
-        self._last_activity: datetime | None = None
+        self._last_activity: datetime = datetime.now()
         self._heart_beat_interval: float | None = heart_beat
         self._heart_beat_task: asyncio.Task | None = None
 
@@ -245,7 +245,7 @@ class HeosConnection:
                     await self.commands.heart_beat()
                 except CommandError:
                     pass
-            await asyncio.sleep(self._heart_beat_interval / 2)
+            await asyncio.sleep(float(self._heart_beat_interval) / 2)
 
     async def command(
         self, command: str, params: dict[str, Any] = None

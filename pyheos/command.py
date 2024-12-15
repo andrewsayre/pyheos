@@ -187,7 +187,7 @@ class HeosCommands:
     ):
         """Add the container or track to the queue."""
         if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:
-            raise ValueError("Invalid queue options: " + add_queue_option)
+            raise ValueError(f"Invalid queue options: {add_queue_option}")
         params = {
             "pid": player_id,
             "sid": source_id,
