@@ -1,8 +1,9 @@
 """Define the error module for HEOS."""
 
 import asyncio
+from typing import Final
 
-DEFAULT_ERROR_MESSAGES = {
+DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
     asyncio.TimeoutError: "Command timed out",
     ConnectionError: "Connection error",
     BrokenPipeError: "Broken pipe",

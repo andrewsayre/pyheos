@@ -18,6 +18,8 @@ def create_group(heos, data: dict, players: dict[int, HeosPlayer]) -> "HeosGroup
             leader = player
         else:
             members.append(player)
+    if leader is None:
+        raise ValueError("No leader found in group")
     return HeosGroup(heos, data["name"], int(data["gid"]), leader, members)
 
 

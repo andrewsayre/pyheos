@@ -1,6 +1,7 @@
 """Define the connection module."""
 
 import asyncio
+from collections.abc import Coroutine
 import json
 import logging
 from collections import defaultdict
@@ -92,7 +93,7 @@ class HeosConnection:
     async def _connect(self) -> None:
         """Perform core connection logic."""
         try:
-            open_future = asyncio.open_connection(self.host, const.CLI_PORT)
+            open_future: Coroutine = asyncio.open_connection(self.host, const.CLI_PORT)
             self._reader, self._writer = await asyncio.wait_for(
                 open_future, self.timeout
             )
@@ -233,6 +234,8 @@ class HeosConnection:
                 return
 
     async def _heart_beat(self) -> None:
+        if TYPE_CHECKING:
+            assert self._heart_beat_interval is not None
         while self._state == const.STATE_CONNECTED:
             last_activity = datetime.now() - self._last_activity
             threshold = timedelta(seconds=self._heart_beat_interval)

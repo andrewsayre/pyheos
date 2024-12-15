@@ -56,18 +56,18 @@ class HeosNowPlayingMedia:
         self._album_id = data.get("album_id")
         self._media_id = data.get("mid")
         try:
-            self._queue_id = int(data.get("qid"))
+            self._queue_id = int(str(data.get("qid")))
         except (TypeError, ValueError):
             self._queue_id = None
         try:
-            self._source_id = int(data.get("sid"))
+            self._source_id = int(str(data.get("sid")))
         except (TypeError, ValueError):
             self._source_id = None
 
-        supported_controls = const.CONTROLS_ALL if self._source_id else []
-        controls = const.SOURCE_CONTROLS.get(self._source_id)
-        if controls:
-            supported_controls = controls.get(self._type, supported_controls)
+        supported_controls = const.CONTROLS_ALL if self._source_id is not None else []
+        if self._source_id is not None and self._type is not None:
+            if controls := const.SOURCE_CONTROLS.get(self._source_id):
+                supported_controls = controls.get(self._type, const.CONTROLS_ALL)
         self._supported_controls = supported_controls
 
         self.clear_progress()
@@ -163,7 +163,7 @@ class HeosNowPlayingMedia:
 class HeosPlayer:
     """Define a HEOS player."""
 
-    def __init__(self, heos, data: Optional[dict]):
+    def __init__(self, heos, data: dict):
         """Initialize a player with the data."""
         self._heos = heos
         # pylint: disable=protected-access
@@ -204,7 +204,7 @@ class HeosPlayer:
         self._ip_address = data.get("ip")
         self._network = data.get("network")
         try:
-            self._line_out = int(data.get("lineout"))
+            self._line_out = int(str(data.get("lineout")))
         except (TypeError, ValueError):
             pass
         self._available = True
