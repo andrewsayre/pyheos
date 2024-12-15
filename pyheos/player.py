@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from . import const
 from .response import HeosResponse
@@ -17,14 +17,12 @@ def parse_player_id(data: dict) -> int:
 
 def parse_player_name(data: dict[str, str]) -> str:
     """Parse the player name from the data payload."""
-    if name := data.get("name"):
-        return name
-    raise ValueError("Data does not contain a player name")
+    return str(data["name"])
 
 
 def parse_player_version(data: dict) -> str:
     """Parse the player version from the data payload."""
-    return data.get("version")
+    return str(data.get("version", ""))
 
 
 class HeosNowPlayingMedia:
@@ -92,72 +90,72 @@ class HeosNowPlayingMedia:
         self._duration = None
 
     @property
-    def type(self) -> str:
+    def type(self) -> str | None:
         """Get the type of the media playing."""
         return self._type
 
     @property
-    def song(self) -> str:
+    def song(self) -> str | None:
         """Get the song playing."""
         return self._song
 
     @property
-    def station(self) -> str:
+    def station(self) -> str | None:
         """Get the station playing."""
         return self._station
 
     @property
-    def album(self) -> str:
+    def album(self) -> str | None:
         """Get the album playing."""
         return self._album
 
     @property
-    def artist(self) -> str:
+    def artist(self) -> str | None:
         """Get the artist playing."""
         return self._artist
 
     @property
-    def image_url(self) -> str:
+    def image_url(self) -> str | None:
         """Get the image url of the media playing."""
         return self._image_url
 
     @property
-    def album_id(self) -> str:
+    def album_id(self) -> str | None:
         """Get the id of the playing album."""
         return self._album_id
 
     @property
-    def media_id(self) -> str:
+    def media_id(self) -> str | None:
         """Get the media id of the playing media."""
         return self._media_id
 
     @property
-    def queue_id(self) -> int:
+    def queue_id(self) -> int | None:
         """Get the queue id of the playing media."""
         return self._queue_id
 
     @property
-    def source_id(self) -> int:
+    def source_id(self) -> int | None:
         """Get the source id of the playing media."""
         return self._source_id
 
     @property
-    def current_position(self) -> int:
+    def current_position(self) -> int | None:
         """Get the current position within the playing media."""
         return self._current_position
 
     @property
-    def current_position_updated(self) -> datetime:
+    def current_position_updated(self) -> datetime | None:
         """Get the datetime the position was last updated."""
         return self._current_position_updated
 
     @property
-    def duration(self):
+    def duration(self) -> int | None:
         """Get the duration of the current playing media."""
         return self._duration
 
     @property
-    def supported_controls(self):
+    def supported_controls(self) -> Sequence[str]:
         """Get the supported controls given the source."""
         return self._supported_controls
 
@@ -165,38 +163,39 @@ class HeosNowPlayingMedia:
 class HeosPlayer:
     """Define a HEOS player."""
 
-    def __init__(self, heos, data: Optional[dict] = None):
+    def __init__(self, heos, data: Optional[dict]):
         """Initialize a player with the data."""
         self._heos = heos
         # pylint: disable=protected-access
         self._commands = heos._connection.commands
-        self._name = None  # type: str
-        self._player_id = None  # type: int
-        self._model = None  # type: str
-        self._version = None  # type: str
-        self._ip_address = None  # type: str
-        self._network = None  # type: str
-        self._line_out = None  # type: int
-        if data:
-            self.from_data(data)
-        self._state = None  # type: None
-        self._volume = None  # type: int
-        self._is_muted = None  # type: bool
-        self._repeat = None  # type: str
-        self._shuffle = None  # type: bool
-        self._playback_error = None  # type: str
-        self._now_playing_media = HeosNowPlayingMedia()
-        self._available = True  # type: bool
+        self._name: str = ""
+        self._player_id: int = 0
+        self._model: str = ""
+        self._version: str = ""
+        self._ip_address: str = ""
+        self._network: str = ""
+        self._line_out: int | None = None
 
-    def __str__(self):
+        self.from_data(data)
+
+        self._state: str | None = None
+        self._volume: int | None = None
+        self._is_muted: bool | None = None
+        self._repeat: str | None = None
+        self._shuffle: bool | None = None
+        self._playback_error: str | None = None
+        self._now_playing_media: HeosNowPlayingMedia = HeosNowPlayingMedia()
+        self._available: bool = True
+
+    def __str__(self) -> str:
         """Get a user-readable representation of the player."""
         return f"{{{self._name} ({self._model})}}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Get a debug representation of the player."""
         return f"{{{self.name} ({self._model}) with id {self._player_id} at {self._ip_address}}}"
 
-    def from_data(self, data: dict):
+    def from_data(self, data: dict) -> None:
         """Update the attributes from the supplied data."""
         self._name = parse_player_name(data)
         self._player_id = parse_player_id(data)
@@ -410,12 +409,12 @@ class HeosPlayer:
         return self._network
 
     @property
-    def line_out(self) -> int:
+    def line_out(self) -> int | None:
         """Get the line out configuration."""
         return self._line_out
 
     @property
-    def state(self) -> str:
+    def state(self) -> str | None:
         """Get the state of the player."""
         return self._state
 
@@ -425,22 +424,22 @@ class HeosPlayer:
         return self._now_playing_media
 
     @property
-    def volume(self) -> int:
+    def volume(self) -> int | None:
         """Get the volume of the player."""
         return self._volume
 
     @property
-    def is_muted(self) -> bool:
+    def is_muted(self) -> bool | None:
         """Get whether the device is muted or not."""
         return self._is_muted
 
     @property
-    def repeat(self) -> str:
+    def repeat(self) -> str | None:
         """Get the repeat mode."""
         return self._repeat
 
     @property
-    def shuffle(self) -> bool:
+    def shuffle(self) -> bool | None:
         """Get if shuffle is active."""
         return self._shuffle
 
@@ -450,7 +449,7 @@ class HeosPlayer:
         return self._available and self._heos.connection_state == const.STATE_CONNECTED
 
     @property
-    def playback_error(self) -> str:
+    def playback_error(self) -> str | None:
         """Get the last playback error."""
         return self._playback_error
 

@@ -5,7 +5,7 @@ import json
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from . import const
 from .command import HeosCommands
@@ -346,9 +346,13 @@ class ResponseEvent:
     async def wait(self) -> HeosResponse:
         """Wait until the event is set."""
         await self._event.wait()
+        if TYPE_CHECKING:
+            assert self._response is not None
         return self._response
 
-    def set(self, response: HeosResponse):
+    def set(self, response: HeosResponse) -> None:
         """Set the response."""
+        if response is None:
+            raise ValueError("Response must not be None")
         self._response = response
         self._event.set()

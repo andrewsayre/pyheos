@@ -9,15 +9,16 @@ from .error import CommandFailedError
 class HeosResponse:
     """Define a HEOS response representation."""
 
-    def __init__(self, data: Optional[dict] = None) -> None:
+    def __init__(self, data: dict) -> None:
         """Init a new instance of the heos response."""
-        self._raw_data: dict = {}
-        self._command: str | None = None
-        self._result: dict = {}
-        self._message: dict = {}
-        self._payload: list | dict | None = None
-        if data:
-            self.from_json(data)
+        self._raw_data: dict = data
+        heos = data["heos"]
+        self._command: str = str(heos["command"])
+        self._result: bool = str(heos.get("result")) == "success"
+        self._message: dict[str, str] = {}
+        if raw_message := heos.get("message"):
+            self._message = dict(parse_qsl(raw_message, True))
+        self._payload: list | dict | None = data.get("payload")
 
     def __str__(self):
         """Get a user-readable representation of the response."""
@@ -27,21 +28,10 @@ class HeosResponse:
         """Get a debug representation of the player."""
         return str(self._raw_data)
 
-    def from_json(self, data: dict):
-        """Populate the response from json."""
-        self._raw_data = data
-        heos = data["heos"]
-        self._command = heos["command"]
-        self._result = heos.get("result") == "success"
-        raw_message = heos.get("message")
-        if raw_message:
-            self._message = dict(parse_qsl(raw_message, True))
-        self._payload = data.get("payload")
-
     @property
     def is_under_process(self) -> bool:
         """Return True if the response represents a command under process."""
-        return self._message and "command under process" in self._message
+        return "command under process" in self._message
 
     @property
     def is_event(self) -> bool:
@@ -70,7 +60,7 @@ class HeosResponse:
 
     def has_message(self, key: str) -> bool:
         """Determine if the key within the message."""
-        return self._message and key in self._message
+        return key in self._message
 
     def get_player_id(self) -> int:
         """Get the player_id from the message."""

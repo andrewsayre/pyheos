@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Sequence
-from typing import Optional
+from typing import Any, Optional
 
 from . import const
 from .connection import HeosConnection
@@ -58,7 +58,7 @@ class Heos:
         """Disconnect from the CLI."""
         await self._connection.disconnect()
 
-    async def _handle_event(self, event: HeosResponse) -> bool:
+    async def _handle_event(self, event: HeosResponse) -> Any:
         """Handle a heos event."""
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             return await self.load_players()
