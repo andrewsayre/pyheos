@@ -101,7 +101,7 @@ disable_error_code = [
     "var-annotated",
     "comparison-overlap",
     "attr-defined",
-    "str-bytes-safe",
+
     "unreachable",
 ]
 
