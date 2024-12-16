@@ -1,6 +1,6 @@
 """Define the heos source module."""
 
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from pyheos.command import HeosCommands  # pylint: disable=unused-import
 
@@ -41,37 +41,21 @@ class InputSource:
 class HeosSource:
     """Define an individual heos source."""
 
-    def __init__(self, commands: HeosCommands, data: Optional[dict] = None) -> None:
+    def __init__(self, commands: HeosCommands, data: dict[str, Any]) -> None:
         """Init the source class."""
         self._commands = commands
-        self._name = None  # type: str
-        self._image_url = None  # type: str
-        self._type = None  # type: str
-        self._source_id = None  # type: int
-        self._available = None  # type: bool
-        self._service_username = None  # type: str
-        self._container = None  # type: bool
-        self._container_id = None  # type: str
-        self._media_id = None  # type: str
-        self._playable = None  # type: bool
-        if data:
-            self._from_data(data)
-
-    def _from_data(self, data: dict) -> None:
-        self._name = data["name"]
-        self._image_url = data["image_url"]
-        self._type = data["type"]
-
-        source_id = data.get("sid")
-        if source_id:
-            self._source_id = int(source_id)
-
-        self._available = data.get("available") == "true"
-        self._service_username = data.get("service_username")
-        self._container = data.get("container") == "yes"
-        self._container_id = data.get("cid")
-        self._media_id = data.get("mid")
-        self._playable = data.get("playable") == "yes"
+        self._name: str = data["name"]
+        self._image_url: str = data["image_url"]
+        self._type: str = data["type"]
+        self._source_id: int | None = (
+            int(str(data.get("sid"))) if data.get("sid") else None
+        )
+        self._available: bool = data.get("available") == "true"
+        self._service_username: str | None = data.get("service_username")
+        self._container: bool = data.get("container") == "yes"
+        self._container_id: str | None = data.get("cid")
+        self._media_id: str | None = data.get("mid")
+        self._playable: bool = data.get("playable") == "yes"
 
     def __str__(self) -> str:
         """Get a user-readable representation of the source."""
@@ -83,6 +67,8 @@ class HeosSource:
 
     async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
+        if not self._source_id:
+            raise ValueError("Source is not browseable.")
         items = await self._commands.browse(self._source_id)
         return [HeosSource(self._commands, item) for item in items]
 
@@ -102,7 +88,7 @@ class HeosSource:
         return self._type
 
     @property
-    def source_id(self) -> int:
+    def source_id(self) -> int | None:
         """Get the id of the source."""
         return self._source_id
 
@@ -112,12 +98,12 @@ class HeosSource:
         return self._available
 
     @property
-    def service_username(self) -> str:
+    def service_username(self) -> str | None:
         """Get the service username."""
         return self._service_username
 
     @property
-    def media_id(self) -> str:
+    def media_id(self) -> str | None:
         """Get the media id."""
         return self._media_id
 
@@ -127,7 +113,7 @@ class HeosSource:
         return self._container
 
     @property
-    def container_id(self) -> str:
+    def container_id(self) -> str | None:
         """Get the ID of the container."""
         return self._container_id
 

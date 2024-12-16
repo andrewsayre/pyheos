@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from . import const
 from .response import HeosResponse
@@ -11,21 +11,6 @@ from .source import HeosSource, InputSource
 
 if TYPE_CHECKING:
     from .heos import Heos
-
-
-def parse_player_id(data: dict) -> int:
-    """Parse the player ID from the data payload."""
-    return int(data["pid"])
-
-
-def parse_player_name(data: dict[str, str]) -> str:
-    """Parse the player name from the data payload."""
-    return str(data["name"])
-
-
-def parse_player_version(data: dict) -> str:
-    """Parse the player version from the data payload."""
-    return str(data.get("version", ""))
 
 
 class HeosNowPlayingMedia:
@@ -166,20 +151,19 @@ class HeosNowPlayingMedia:
 class HeosPlayer:
     """Define a HEOS player."""
 
-    def __init__(self, heos: "Heos", data: dict):
+    def __init__(self, heos: "Heos", data: dict[str, Any]) -> None:
         """Initialize a player with the data."""
         self._heos = heos
         # pylint: disable=protected-access
         self._commands = heos._connection.commands
-        self._name: str = ""
-        self._player_id: int = 0
-        self._model: str = ""
-        self._version: str = ""
-        self._ip_address: str = ""
-        self._network: str = ""
-        self._line_out: int | None = None
 
-        self.from_data(data)
+        self._name: str = str(data["name"])
+        self._player_id: int = int(data["pid"])
+        self._model: str = data["model"]
+        self._version: str = data["version"]
+        self._ip_address: str = data["ip"]
+        self._network: str = data["network"]
+        self._line_out: int = data["lineout"]
 
         self._state: str | None = None
         self._volume: int | None = None
@@ -198,23 +182,18 @@ class HeosPlayer:
         """Get a debug representation of the player."""
         return f"{{{self.name} ({self._model}) with id {self._player_id} at {self._ip_address}}}"
 
-    def from_data(self, data: dict) -> None:
-        """Update the attributes from the supplied data."""
-        self._name = parse_player_name(data)
-        self._player_id = parse_player_id(data)
-        self._model = data["model"]
-        self._version = parse_player_version(data)
-        self._ip_address = data.get("ip")
-        self._network = data.get("network")
-        try:
-            self._line_out = int(str(data.get("lineout")))
-        except (TypeError, ValueError):
-            pass
-        self._available = True
-
     def set_available(self, available: bool) -> None:
         """Mark player removed after a change event."""
         self._available = available
+
+    def from_data(self, data: dict[str, Any]) -> None:
+        """Update the attributes from the supplied data."""
+        self._name = str(data["name"])
+        self._model = data["model"]
+        self._version = data["version"]
+        self._ip_address = data["ip"]
+        self._network = data["network"]
+        self._line_out = data["lineout"]
 
     async def refresh(self) -> None:
         """Pull current state."""
@@ -310,7 +289,7 @@ class HeosPlayer:
         await self._commands.play_previous(self._player_id)
 
     async def play_input(
-        self, input_name: str, *, source_player_id: int = None
+        self, input_name: str, *, source_player_id: int | None = None
     ) -> None:
         """Play the specified input."""
         await self._commands.play_input(
@@ -339,6 +318,8 @@ class HeosPlayer:
         """Add the specified source to the queue."""
         if not source.playable:
             raise ValueError(f"Source '{source}' is not playable")
+        assert source.source_id is not None
+        assert source.container_id is not None
         await self._commands.add_to_queue(
             self._player_id,
             source.source_id,

@@ -44,12 +44,12 @@ class HeosGroup:
         self._heos = heos
         # pylint: disable=protected-access
         self._commands = heos._connection.commands
-        self._name = name  # type: str
-        self._group_id = group_id  # type: int
-        self._leader = leader  # type: HeosPlayer
-        self._members = members  # type: Sequence[HeosPlayer]
-        self._volume = None  # type: int
-        self._is_muted = None  # type: bool
+        self._name: str = name
+        self._group_id: int = group_id
+        self._leader: HeosPlayer = leader
+        self._members: Sequence[HeosPlayer] = members
+        self._volume: int = 0
+        self._is_muted: bool = False
 
     async def refresh(self) -> None:
         """Pull current state."""

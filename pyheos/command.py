@@ -157,7 +157,7 @@ class HeosCommands:
         return cast(Sequence[dict], response.payload)
 
     async def play_input(
-        self, player_id: int, input_name: str, *, source_player_id: int = None
+        self, player_id: int, input_name: str, *, source_player_id: int | None = None
     ) -> None:
         """Play the specified input source."""
         if input_name not in const.VALID_INPUTS:
@@ -187,7 +187,7 @@ class HeosCommands:
         source_id: int,
         container_id: str,
         add_queue_option: int,
-        media_id: str = None,
+        media_id: str | None = None,
     ) -> None:
         """Add the container or track to the queue."""
         if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:

@@ -18,18 +18,11 @@ def test_str():
         "ip": "192.168.0.1",
         "network": "wired",
         "lineout": 1,
+        "serial": "1234567890",
     }
     player = HeosPlayer(Heos("None"), data)
     assert str(player) == "{Back Patio (HEOS Drive)}"
     assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}"
-
-
-def test_init_minimal_data():
-    """Test the init function."""
-    data = {"name": "Back Patio", "pid": 1, "model": "HEOS Drive"}
-    player = HeosPlayer(Heos("None"), data)
-    assert str(player) == "{Back Patio (HEOS Drive)}"
-    assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at None}"
 
 
 @pytest.mark.asyncio
@@ -318,15 +311,18 @@ async def test_add_to_queue_invalid_queue_option(mock_device, heos):
     source = HeosSource(
         None,
         {
-            "name": "Unplayable",
+            "name": "My Playlist",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
+            "container": "yes",
+            "cid": "123",
+            "sid": const.MUSIC_SOURCE_PLAYLISTS,
         },
     )
     with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(source, "invalid")
-    assert str(excinfo.value) == "Invalid queue options: invalid"
+        await player.add_to_queue(source, 100)
+    assert str(excinfo.value) == "Invalid queue options: 100"
 
 
 @pytest.mark.asyncio

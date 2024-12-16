@@ -8,7 +8,7 @@ from . import const
 from .connection import HeosConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
-from .player import HeosPlayer, parse_player_id, parse_player_name, parse_player_version
+from .player import HeosPlayer
 from .response import HeosResponse
 from .source import HeosSource, InputSource
 
@@ -23,7 +23,7 @@ class Heos:
         timeout: float = const.DEFAULT_TIMEOUT,
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
         all_progress_events: bool = True,
-        dispatcher: Dispatcher = None,
+        dispatcher: Dispatcher | None = None,
     ) -> None:
         """Init a new instance of the Heos CLI API."""
         self._connection = HeosConnection(
@@ -88,9 +88,9 @@ class Heos:
         payload = await self._connection.commands.get_players()
         existing = list(self._players.values())
         for player_data in payload:
-            player_id = parse_player_id(player_data)
-            name = parse_player_name(player_data)
-            version = parse_player_version(player_data)
+            player_id = player_data["pid"]
+            name = player_data["name"]
+            version = player_data["version"]
             # Try finding existing player by id or match name when firmware
             # version is different because IDs change after a firmware upgrade
             player = next(
@@ -175,6 +175,7 @@ class Heos:
             self._music_sources.clear()
             for data in payload:
                 source = HeosSource(self._connection.commands, data)
+                assert source.source_id is not None
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
@@ -185,10 +186,14 @@ class Heos:
         sources = [HeosSource(self._connection.commands, item) for item in payload]
         input_sources = []
         for source in sources:
+            assert source.source_id is not None
             player_id = source.source_id
             items = await source.browse()
             input_sources.extend(
-                [InputSource(player_id, item.name, item.media_id) for item in items]
+                [
+                    InputSource(player_id, item.name, str(item.media_id))
+                    for item in items
+                ]
             )
         return input_sources
 

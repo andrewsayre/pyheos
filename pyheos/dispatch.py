@@ -21,7 +21,7 @@ class Dispatcher:
         connect: ConnectType | None = None,
         send: SendType | None = None,
         signal_prefix: str = "",
-        loop: asyncio.AbstractEventLoop = None,
+        loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix

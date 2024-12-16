@@ -62,7 +62,7 @@ class HeosConnection:
         self._all_progress_events = all_progress_events
         self.host: str = host
         self.commands = HeosCommands(self)
-        self.timeout: int = timeout
+        self.timeout: float = timeout
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._response_handler_task: asyncio.Task | None = None
