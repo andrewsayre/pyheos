@@ -61,7 +61,7 @@ class HeosConnection:
         self.commands = HeosCommands(self)
         self.timeout: int = timeout
         self._reader: asyncio.StreamReader | None = None
-        self._writer: asyncio.StreamReader | None = None
+        self._writer: asyncio.StreamWriter | None = None
         self._response_handler_task: asyncio.Task | None = None
         self._pending_commands: defaultdict[str, list[ResponseEvent]] = defaultdict(
             list

@@ -89,7 +89,7 @@ warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = "pyheos.*"
-disable_error_code = ["no-untyped-def", "assignment", "attr-defined"]
+disable_error_code = ["no-untyped-def", "assignment"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
