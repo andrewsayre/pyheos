@@ -1,6 +1,6 @@
 """Define the heos source module."""
 
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 from pyheos.command import HeosCommands  # pylint: disable=unused-import
 

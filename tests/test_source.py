@@ -1,9 +1,12 @@
 """Tests for the sources module."""
 
+from unittest.mock import Mock
+
+from pyheos.command import HeosCommands
 from pyheos.source import HeosSource, InputSource
 
 
-def test_source_str_repr():
+def test_source_str_repr() -> None:
     """Test the __str__ function."""
     data = {
         "name": "AUX Input",
@@ -13,13 +16,14 @@ def test_source_str_repr():
         "sid": 1027,
         "available": "true",
     }
-    source = HeosSource(None, data)
+    source = HeosSource(Mock(HeosCommands), data)
     assert str(source) == "<AUX Input (heos_service)>"
     assert repr(source) == "<AUX Input (heos_service) 1027>"
 
 
-def test_input_str_repr():
+def test_input_str_repr() -> None:
     """Test the __str__ function."""
     source = InputSource(1, "Test", "Input")
     assert str(source) == "<Test (Input)>"
+
     assert repr(source) == "<Test (Input) on 1>"

@@ -1,5 +1,7 @@
 """Test fixtures for pyheos."""
 
+from collections.abc import Callable, Coroutine
+
 import pytest
 
 from pyheos.heos import Heos
@@ -26,26 +28,26 @@ def heos_fixture(event_loop):
 
 
 @pytest.fixture
-def handler():
+def handler() -> Callable:
     """Fixture handler to mock in the dispatcher."""
 
     def target(*args, **kwargs):
-        target.fired = True
-        target.args = args
-        target.kwargs = kwargs
+        target.fired = True  # type: ignore[attr-defined]
+        target.args = args  # type: ignore[attr-defined]
+        target.kwargs = kwargs  # type: ignore[attr-defined]
 
-    target.fired = False
+    target.fired = False  # type: ignore[attr-defined]
     return target
 
 
 @pytest.fixture
-def async_handler():
+def async_handler() -> Callable[..., Coroutine]:
     """Fixture async handler to mock in the dispatcher."""
 
-    async def target(*args, **kwargs):
-        target.fired = True
-        target.args = args
-        target.kwargs = kwargs
+    async def target(*args, **kwargs) -> None:
+        target.fired = True  # type: ignore[attr-defined]
+        target.args = args  # type: ignore[attr-defined]
+        target.kwargs = kwargs  # type: ignore[attr-defined]
 
-    target.fired = False
+    target.fired = False  # type: ignore[attr-defined]
     return target

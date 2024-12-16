@@ -1,6 +1,6 @@
 """Define consts for the pyheos package."""
 
-from typing import Final, Literal
+from typing import Final
 
 CLI_PORT: Final = 1255
 DEFAULT_TIMEOUT: Final = 10.0

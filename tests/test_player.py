@@ -1,14 +1,18 @@
 """Tests for the player module."""
 
+from unittest.mock import Mock
+
 import pytest
 
 from pyheos import const
+from pyheos.command import HeosCommands
 from pyheos.heos import Heos
 from pyheos.player import HeosPlayer
 from pyheos.source import HeosSource, InputSource
+from tests import MockHeosDevice
 
 
-def test_str():
+def test_str() -> None:
     """Test the __str__ function."""
     data = {
         "name": "Back Patio",
@@ -26,11 +30,11 @@ def test_str():
 
 
 @pytest.mark.asyncio
-async def test_set_state(mock_device, heos):
+async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play, pause, and stop commands."""
 
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     # Invalid
     with pytest.raises(ValueError):
         await player.set_state("invalid")
@@ -60,10 +64,10 @@ async def test_set_state(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_set_volume(mock_device, heos):
+async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the set_volume command."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     with pytest.raises(ValueError):
         await player.set_volume(-1)
@@ -77,10 +81,10 @@ async def test_set_volume(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_set_mute(mock_device, heos):
+async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the set_mute command."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     # Mute
     mock_device.register(
         const.COMMAND_SET_MUTE, {"pid": "1", "state": "on"}, "player.set_mute"
@@ -97,19 +101,19 @@ async def test_set_mute(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_toggle_mute(mock_device, heos):
+async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the toggle_mute command."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     mock_device.register(const.COMMAND_TOGGLE_MUTE, {"pid": "1"}, "player.toggle_mute")
     await player.toggle_mute()
 
 
 @pytest.mark.asyncio
-async def test_volume_up(mock_device, heos):
+async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_up command."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     with pytest.raises(ValueError):
         await player.volume_up(0)
     with pytest.raises(ValueError):
@@ -121,10 +125,10 @@ async def test_volume_up(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_volume_down(mock_device, heos):
+async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_down command."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     with pytest.raises(ValueError):
         await player.volume_down(0)
     with pytest.raises(ValueError):
@@ -136,10 +140,10 @@ async def test_volume_down(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_set_play_mode(mock_device, heos):
+async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     args = {"pid": "1", "repeat": const.REPEAT_ON_ALL, "shuffle": "on"}
     mock_device.register(const.COMMAND_SET_PLAY_MODE, args, "player.set_play_mode")
 
@@ -150,10 +154,10 @@ async def test_set_play_mode(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_play_next_previous(mock_device, heos):
+async def test_play_next_previous(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     args = {"pid": "1"}
     # Next
     mock_device.register(const.COMMAND_PLAY_NEXT, args, "player.play_next")
@@ -164,10 +168,10 @@ async def test_play_next_previous(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_clear_queue(mock_device, heos):
+async def test_clear_queue(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     args = {"pid": "1"}
     mock_device.register(const.COMMAND_CLEAR_QUEUE, args, "player.clear_queue")
     await player.clear_queue()
@@ -183,10 +187,10 @@ async def test_clear_queue(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_play_input_source(mock_device, heos):
+async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play input source."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     # Test invalid input_name
     with pytest.raises(ValueError):
@@ -203,10 +207,10 @@ async def test_play_input_source(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_play_favorite(mock_device, heos):
+async def test_play_favorite(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     # Test invalid starting index
     with pytest.raises(ValueError):
@@ -219,10 +223,10 @@ async def test_play_favorite(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_play_url(mock_device, heos):
+async def test_play_url(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     url = "https://my.website.com/podcast.mp3"
     args = {"pid": "1", "url": url}
     mock_device.register(const.COMMAND_BROWSE_PLAY_STREAM, args, "browse.play_stream")
@@ -231,10 +235,10 @@ async def test_play_url(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_play_quick_select(mock_device, heos):
+async def test_play_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     with pytest.raises(ValueError):
         await player.play_quick_select(0)
@@ -249,10 +253,10 @@ async def test_play_quick_select(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_set_quick_select(mock_device, heos):
+async def test_set_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     with pytest.raises(ValueError):
         await player.set_quick_select(0)
@@ -265,10 +269,10 @@ async def test_set_quick_select(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_quick_selects(mock_device, heos):
+async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     args = {"pid": "1"}
     mock_device.register(
         const.COMMAND_GET_QUICK_SELECTS, args, "player.get_quickselects"
@@ -285,12 +289,14 @@ async def test_get_quick_selects(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_unplayable_source(mock_device, heos):
+async def test_add_to_queue_unplayable_source(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test add to queue with unplayable source raises."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     source = HeosSource(
-        None,
+        Mock(HeosCommands),
         {
             "name": "Unplayable",
             "type": const.TYPE_PLAYLIST,
@@ -304,12 +310,14 @@ async def test_add_to_queue_unplayable_source(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_invalid_queue_option(mock_device, heos):
+async def test_add_to_queue_invalid_queue_option(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test add to queue with invalid option raises."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     source = HeosSource(
-        None,
+        Mock(HeosCommands),
         {
             "name": "My Playlist",
             "type": const.TYPE_PLAYLIST,
@@ -326,12 +334,12 @@ async def test_add_to_queue_invalid_queue_option(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_container(mock_device, heos):
+async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test adding a container to the queue."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     source = HeosSource(
-        None,
+        Mock(HeosCommands),
         {
             "name": "My Playlist",
             "type": const.TYPE_PLAYLIST,
@@ -355,12 +363,12 @@ async def test_add_to_queue_container(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_track(mock_device, heos):
+async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test adding a track to the queue."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     source = HeosSource(
-        None,
+        Mock(HeosCommands),
         {
             "name": "My Track",
             "type": const.TYPE_SONG,
@@ -386,10 +394,12 @@ async def test_add_to_queue_track(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_now_playing_media_unavailable(mock_device, heos):
+async def test_now_playing_media_unavailable(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test edge where now_playing_media returns an empty payload."""
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     mock_device.register(
         const.COMMAND_GET_NOW_PLAYING_MEDIA,
         None,

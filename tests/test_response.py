@@ -3,7 +3,7 @@
 from pyheos.response import HeosResponse
 
 
-def test_str():
+def test_str() -> None:
     """Test the __str__ function."""
     data = {
         "heos": {

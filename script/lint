@@ -2,7 +2,7 @@
 
 # Run linters
 codespell
-ruff check --select I --fix
+ruff check --extend-select I --fix
 ruff format
 pylint pyheos tests
 mypy pyheos tests

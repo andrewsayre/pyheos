@@ -3,7 +3,7 @@
 import asyncio
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from urllib.parse import parse_qsl, urlparse
 
 import pytest
@@ -14,11 +14,11 @@ from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
 FILE_IO_POOL = ThreadPoolExecutor()
 
 
-async def get_fixture(file: str):
+async def get_fixture(file: str) -> str:
     """Load a fixtures file."""
     file_name = f"tests/fixtures/{file}.json"
 
-    def read_file():
+    def read_file() -> str:
         with open(file_name, encoding="utf-8") as open_file:
             return open_file.read()
 
@@ -30,7 +30,7 @@ def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
     """Connect a handler to the specific signal and assert event."""
     trigger = asyncio.Event()
 
-    async def handler(target_event: str, *args):
+    async def handler(target_event: str, *args: Any) -> None:
         assert target_event == event
         trigger.set()
 
@@ -41,14 +41,14 @@ def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
 class MockHeosDevice:
     """Define a mock heos device."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init a new instance of the mock heos device."""
         self._server: asyncio.AbstractServer | None = None
         self._started: bool = False
         self.connections: list[ConnectionLog] = []
         self._matchers: list[CommandMatcher] = []
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
@@ -69,7 +69,7 @@ class MockHeosDevice:
         self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
         self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the heos server."""
         if not self._started:
             return
@@ -77,10 +77,11 @@ class MockHeosDevice:
         for connection in self.connections:
             await connection.disconnect()
         self.connections.clear()
-        self._server.close()
-        # await self._server.wait_closed()
 
-    async def write_event(self, event: str):
+        assert self._server is not None
+        self._server.close()
+
+    async def write_event(self, event: str) -> None:
         """Send an event through the event channel."""
         connection = next(
             conn for conn in self.connections if conn.is_registered_for_events
@@ -94,7 +95,7 @@ class MockHeosDevice:
         response: Union[str, list[str]],
         *,
         replace: bool = False,
-    ):
+    ) -> None:
         """Register a matcher."""
         if replace:
             self._matchers = [m for m in self._matchers if m.command != command]
@@ -102,23 +103,23 @@ class MockHeosDevice:
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ):
+    ) -> None:
         log = ConnectionLog(reader, writer)
         self.connections.append(log)
 
         while self._started:
             try:
-                result = await reader.readuntil(SEPARATOR_BYTES)
+                result: str = (await reader.readuntil(SEPARATOR_BYTES)).decode()
             except asyncio.IncompleteReadError:
                 # Occurs when the reader is being stopped
                 break
 
-            result = result.decode().rstrip(SEPARATOR)
+            result = result.rstrip(SEPARATOR)
 
             url_parts = urlparse(result)
             query = dict(parse_qsl(url_parts.query))
 
-            command = url_parts.hostname + url_parts.path
+            command = str(url_parts.hostname) + str(url_parts.path)
             fixture_name = (
                 f"{str(url_parts.hostname)}.{str(url_parts.path.lstrip('/'))}"
             )
@@ -142,14 +143,14 @@ class MockHeosDevice:
                 continue
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
-                enable = query["enable"]
+                enable = str(query["enable"])
                 if enable == "on":
                     log.is_registered_for_events = True
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())
                 await writer.drain()
             else:
-                pytest.fail("Unrecognized command: " + result)
+                pytest.fail(f"Unrecognized command: {result}")
 
         try:
             self.connections.remove(log)
@@ -160,7 +161,9 @@ class MockHeosDevice:
 class CommandMatcher:
     """Define a command match response."""
 
-    def __init__(self, command: str, args: dict, response: Union[str, list[str]]):
+    def __init__(
+        self, command: str, args: dict | None, response: Union[str, list[str]]
+    ) -> None:
         """Init the command response."""
         self.command = command
         self.args = args
@@ -169,7 +172,7 @@ class CommandMatcher:
             response = [response]
         self._response = response
 
-    def is_match(self, command, args):
+    def is_match(self, command: str, args: dict) -> bool:
         """Determine if the command matches the target."""
         if command != self.command:
             return False
@@ -204,18 +207,20 @@ class CommandMatcher:
 class ConnectionLog:
     """Define a connection log."""
 
-    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def __init__(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         """Initialize the connection log."""
         self._reader = reader
         self._writer = writer
         self.is_registered_for_events = False
-        self.commands = defaultdict(list)
+        self.commands: dict[str, list[str]] = defaultdict(list)
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Close the connection."""
         self._writer.close()
 
-    async def write(self, payload: str):
+    async def write(self, payload: str) -> None:
         """Write the payload to the stream."""
         data = (payload + SEPARATOR).encode()
         self._writer.write(data)

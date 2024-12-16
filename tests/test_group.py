@@ -3,13 +3,15 @@
 import pytest
 
 from pyheos import const
+from pyheos.heos import Heos
+from tests import MockHeosDevice
 
 
 @pytest.mark.asyncio
-async def test_set_volume(mock_device, heos):
+async def test_set_volume(mock_device: MockHeosDevice, heos: Heos):
     """Test the set_volume command."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
     mock_device.register(
         const.COMMAND_SET_GROUP_VOLUME, {"level": "25", "gid": "1"}, "group.set_volume"
     )
@@ -21,10 +23,10 @@ async def test_set_volume(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_volume_down(mock_device, heos):
+async def test_volume_down(mock_device: MockHeosDevice, heos: Heos):
     """Test the volume_down command."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
     mock_device.register(
         const.COMMAND_GROUP_VOLUME_DOWN, {"step": "6", "gid": "1"}, "group.volume_down"
     )
@@ -37,10 +39,10 @@ async def test_volume_down(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_volume_up(mock_device, heos):
+async def test_volume_up(mock_device: MockHeosDevice, heos: Heos):
     """Test the volume_up command."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
     mock_device.register(
         const.COMMAND_GROUP_VOLUME_UP, {"step": "6", "gid": "1"}, "group.volume_up"
     )
@@ -52,10 +54,10 @@ async def test_volume_up(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_set_mute(mock_device, heos):
+async def test_set_mute(mock_device: MockHeosDevice, heos: Heos):
     """Test mute and unmute commands."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
 
     mock_device.register(
         const.COMMAND_SET_GROUP_MUTE, {"gid": "1", "state": "on"}, "group.set_mute"
@@ -72,10 +74,10 @@ async def test_set_mute(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_toggle_mute(mock_device, heos):
+async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos):
     """Test toggle mute command."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
     mock_device.register(
         const.COMMAND_GROUP_TOGGLE_MUTE, {"gid": "1"}, "group.toggle_mute"
     )

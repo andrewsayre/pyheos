@@ -87,23 +87,6 @@ disallow_untyped_defs = true
 warn_return_any = true
 warn_unreachable = true
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-disable_error_code = [
-    "no-untyped-def",
-    "misc",
-    "union-attr",
-    "no-untyped-call",
-    "arg-type",
-    "assignment",
-    "operator",
-    "index",
-    "var-annotated",
-    "comparison-overlap",
-    "attr-defined",
-
-    "unreachable",
-]
 
 [tool.pylint.BASIC]
 class-const-naming-style = "any"

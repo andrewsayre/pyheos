@@ -9,10 +9,10 @@ from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos
 
-from . import connect_handler, get_fixture
+from . import MockHeosDevice, connect_handler, get_fixture
 
 
-def test_init():
+def test_init() -> None:
     """Test init sets properties."""
     heos = Heos("127.0.0.1")
     assert isinstance(heos.dispatcher, Dispatcher)
@@ -22,7 +22,7 @@ def test_init():
 
 
 @pytest.mark.asyncio
-async def test_connect(mock_device):
+async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
     heos = Heos("127.0.0.1")
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
@@ -39,7 +39,7 @@ async def test_connect(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_connect_not_logged_in(mock_device, heos):
+async def test_connect_not_logged_in(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test signed-in status shows correctly when logged out."""
     mock_device.register(
         const.COMMAND_ACCOUNT_CHECK,
@@ -54,7 +54,7 @@ async def test_connect_not_logged_in(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_heart_beat(mock_device):
+async def test_heart_beat(mock_device: MockHeosDevice) -> None:
     """Test heart beat fires at interval."""
     heos = Heos("127.0.0.1", heart_beat=0.5)
     await heos.connect()
@@ -67,7 +67,7 @@ async def test_heart_beat(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_connect_fails():
+async def test_connect_fails() -> None:
     """Test connect fails when host not available."""
     heos = Heos("127.0.0.1")
     with pytest.raises(HeosError) as e_info:
@@ -81,7 +81,7 @@ async def test_connect_fails():
 
 
 @pytest.mark.asyncio
-async def test_connect_timeout():
+async def test_connect_timeout() -> None:
     """Test connect fails when host not available."""
     heos = Heos("www.google.com", timeout=1)
     with pytest.raises(HeosError) as e_info:
@@ -95,7 +95,7 @@ async def test_connect_timeout():
 
 
 @pytest.mark.asyncio
-async def test_disconnect(mock_device, heos):
+async def test_disconnect(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test disconnect updates state and fires signal."""
     # Fixture automatically connects
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
@@ -105,7 +105,9 @@ async def test_disconnect(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_commands_fail_when_disconnected(mock_device, heos, caplog):
+async def test_commands_fail_when_disconnected(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
     """Test calling commands fail when disconnected."""
     # Fixture automatically connects
     await heos.disconnect()
@@ -122,7 +124,9 @@ async def test_commands_fail_when_disconnected(mock_device, heos, caplog):
 
 
 @pytest.mark.asyncio
-async def test_connection_error_during_event(mock_device, heos):
+async def test_connection_error_during_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
@@ -135,7 +139,9 @@ async def test_connection_error_during_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_connection_error_during_command(mock_device, heos):
+async def test_connection_error_during_command(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test connection error during command results in disconnected."""
     disconnect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
@@ -153,7 +159,7 @@ async def test_connection_error_during_command(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_reconnect_during_event(mock_device):
+async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos("127.0.0.1", timeout=0.1)
 
@@ -185,7 +191,7 @@ async def test_reconnect_during_event(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_reconnect_during_command(mock_device):
+async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos("127.0.0.1", timeout=1.0)
 
@@ -219,7 +225,7 @@ async def test_reconnect_during_command(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_reconnect_cancelled(mock_device):
+async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     """Test reconnect is canceled by calling disconnect."""
     heos = Heos("127.0.0.1")
 
@@ -247,12 +253,12 @@ async def test_reconnect_cancelled(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_get_players(mock_device, heos):
+async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get_players method load players."""
     await heos.get_players()
     # Assert players loaded
     assert len(heos.players) == 2
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert player.player_id == 1
     assert player.name == "Back Patio"
     assert player.ip_address == "192.168.0.1"
@@ -270,7 +276,7 @@ async def test_get_players(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_players_error(mock_device, heos):
+async def test_get_players_error(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get_players method load players."""
     mock_device.register(
         const.COMMAND_GET_PLAYERS, None, "player.get_players_error", replace=True
@@ -285,11 +291,13 @@ async def test_get_players_error(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_player_state_changed_event(mock_device, heos):
+async def test_player_state_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test playing state updates when event is received."""
     # assert not playing
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert player.state == const.PLAY_STATE_STOP
 
     # Attach dispatch handler
@@ -314,15 +322,17 @@ async def test_player_state_changed_event(mock_device, heos):
     await signal.wait()
     # Assert state changed
     assert player.state == const.PLAY_STATE_PLAY
-    assert heos.players.get(2).state == const.PLAY_STATE_STOP
+    assert heos.players[2].state == const.PLAY_STATE_STOP
 
 
 @pytest.mark.asyncio
-async def test_player_now_playing_changed_event(mock_device, heos):
+async def test_player_now_playing_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test now playing updates when event is received."""
     # assert current state
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     now_playing = player.now_playing_media
     assert now_playing.album == ""
     assert now_playing.type == "song"
@@ -378,11 +388,13 @@ async def test_player_now_playing_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_player_volume_changed_event(mock_device, heos):
+async def test_player_volume_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test volume state updates when event is received."""
     # assert not playing
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert player.volume == 36
     assert not player.is_muted
 
@@ -410,16 +422,18 @@ async def test_player_volume_changed_event(mock_device, heos):
     # Assert state changed
     assert player.volume == 50
     assert player.is_muted
-    assert heos.players.get(2).volume == 36
-    assert not heos.players.get(2).is_muted
+    assert heos.players[2].volume == 36
+    assert not heos.players[2].is_muted
 
 
 @pytest.mark.asyncio
-async def test_player_now_playing_progress_event(mock_device, heos):
+async def test_player_now_playing_progress_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test now playing progress updates when event received."""
     # assert not playing
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert player.now_playing_media.duration is None
     assert player.now_playing_media.current_position is None
     assert player.now_playing_media.current_position_updated is None
@@ -449,20 +463,20 @@ async def test_player_now_playing_progress_event(mock_device, heos):
     assert player.now_playing_media.duration == 210000
     assert player.now_playing_media.current_position == 113000
     assert player.now_playing_media.current_position_updated is not None
-    player2 = heos.players.get(2)
+    player2 = heos.players.get(2)  # type: ignore[unreachable]
     assert player2.now_playing_media.duration is None
     assert player2.now_playing_media.current_position is None
     assert player2.now_playing_media.current_position_updated is None
 
 
 @pytest.mark.asyncio
-async def test_limited_progress_event_updates(mock_device):
+async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> None:
     """Test progress updates only once if no other events."""
     # assert not playing
     heos = Heos("127.0.0.1", all_progress_events=False)
     await heos.connect()
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -492,11 +506,13 @@ async def test_limited_progress_event_updates(mock_device):
 
 
 @pytest.mark.asyncio
-async def test_repeat_mode_changed_event(mock_device, heos):
+async def test_repeat_mode_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test repeat mode changes when event received."""
     # assert not playing
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert player.repeat == const.REPEAT_OFF
 
     # Attach dispatch handler
@@ -520,11 +536,13 @@ async def test_repeat_mode_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_shuffle_mode_changed_event(mock_device, heos):
+async def test_shuffle_mode_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test shuffle mode changes when event received."""
     # assert not playing
     await heos.get_players()
-    player = heos.players.get(1)
+    player = heos.players[1]
     assert not player.shuffle
 
     # Attach dispatch handler
@@ -548,7 +566,7 @@ async def test_shuffle_mode_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_players_changed_event(mock_device, heos):
+async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test players are resynced when event received."""
     # assert not playing
     old_players = (await heos.get_players()).copy()
@@ -579,11 +597,13 @@ async def test_players_changed_event(mock_device, heos):
     # Assert 3 (Basement) was added
     assert heos.players.get(3) is not None
     # Assert 1 (Backyard) was updated
-    assert heos.players.get(1).name == "Backyard"
+    assert heos.players[1].name == "Backyard"
 
 
 @pytest.mark.asyncio
-async def test_players_changed_event_new_ids(mock_device, heos):
+async def test_players_changed_event_new_ids(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test players are resynced when event received after firmware update."""
     # assert not playing
     old_players = (await heos.get_players()).copy()
@@ -617,7 +637,7 @@ async def test_players_changed_event_new_ids(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_sources_changed_event(mock_device, heos):
+async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test sources changed fires dispatcher."""
     mock_device.register(
         const.COMMAND_BROWSE_GET_SOURCES, None, "browse.get_music_sources"
@@ -647,7 +667,7 @@ async def test_sources_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_groups_changed_event(mock_device, heos):
+async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test groups changed fires dispatcher."""
     groups = await heos.get_groups()
     assert len(groups) == 1
@@ -672,7 +692,9 @@ async def test_groups_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_player_playback_error_event(mock_device, heos):
+async def test_player_playback_error_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test player playback error fires dispatcher."""
     await heos.get_players()
     signal = asyncio.Event()
@@ -694,7 +716,9 @@ async def test_player_playback_error_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_player_queue_changed_event(mock_device, heos):
+async def test_player_queue_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test player queue changed fires dispatcher."""
     await heos.get_players()
     signal = asyncio.Event()
@@ -715,10 +739,12 @@ async def test_player_queue_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_group_volume_changed_event(mock_device, heos):
+async def test_group_volume_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
     """Test group volume changed fires dispatcher."""
     await heos.get_groups()
-    group = heos.groups.get(1)
+    group = heos.groups[1]
     assert group.volume == 42
     assert not group.is_muted
 
@@ -742,7 +768,7 @@ async def test_group_volume_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_user_changed_event(mock_device, heos):
+async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test user changed fires dispatcher and updates logged in user."""
     signal = asyncio.Event()
 
@@ -769,7 +795,7 @@ async def test_user_changed_event(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_music_sources(mock_device, heos):
+async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the heos connect method."""
     mock_device.register(
         const.COMMAND_BROWSE_GET_SOURCES, None, "browse.get_music_sources"
@@ -791,7 +817,7 @@ async def test_get_music_sources(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_input_sources(mock_device, heos):
+async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get input sources method."""
     mock_device.register(
         const.COMMAND_BROWSE_BROWSE, {"sid": "1027"}, "browse.browse_aux_input"
@@ -814,7 +840,7 @@ async def test_get_input_sources(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_favorites(mock_device, heos):
+async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get favorites method."""
     mock_device.register(
         const.COMMAND_BROWSE_BROWSE, {"sid": "1028"}, "browse.browse_favorites"
@@ -830,7 +856,7 @@ async def test_get_favorites(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_get_playlists(mock_device, heos):
+async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get playlists method."""
     mock_device.register(
         const.COMMAND_BROWSE_BROWSE, {"sid": "1025"}, "browse.browse_playlists"
@@ -847,7 +873,9 @@ async def test_get_playlists(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_sign_in_and_out(mock_device, heos, caplog):
+async def test_sign_in_and_out(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
     """Test the sign in and sign out methods and ensure log is masked."""
     data = {"un": "example@example.com", "pw": "example"}
 
@@ -875,7 +903,7 @@ async def test_sign_in_and_out(mock_device, heos, caplog):
 
 
 @pytest.mark.asyncio
-async def test_get_groups(mock_device, heos):
+async def test_get_groups(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get groups method."""
     groups = await heos.get_groups()
     assert len(groups) == 1
@@ -890,7 +918,7 @@ async def test_get_groups(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_create_group(mock_device, heos):
+async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test creating a group."""
     data = {"pid": "1,2,3"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_create")
@@ -898,7 +926,7 @@ async def test_create_group(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_remove_group(mock_device, heos):
+async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
     data = {"pid": "1"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_remove")
@@ -906,7 +934,7 @@ async def test_remove_group(mock_device, heos):
 
 
 @pytest.mark.asyncio
-async def test_update_group(mock_device, heos):
+async def test_update_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
     data = {"pid": "1,2"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_update")
