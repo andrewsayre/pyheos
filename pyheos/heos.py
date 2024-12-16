@@ -22,7 +22,7 @@ class Heos:
         *,
         timeout: float = const.DEFAULT_TIMEOUT,
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
-        all_progress_events=True,
+        all_progress_events: bool = True,
         dispatcher: Dispatcher = None,
     ) -> None:
         """Init a new instance of the Heos CLI API."""
@@ -45,7 +45,7 @@ class Heos:
     async def connect(
         self,
         *,
-        auto_reconnect=False,
+        auto_reconnect: bool = False,
         reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
     ) -> None:
         """Connect to the CLI."""
@@ -130,14 +130,14 @@ class Heos:
             const.DATA_MAPPED_IDS: mapped_player_ids,
         }
 
-    async def get_players(self, *, refresh=False) -> dict[int, HeosPlayer]:
+    async def get_players(self, *, refresh: bool = False) -> dict[int, HeosPlayer]:
         """Get available players."""
         # get players and pull initial state
         if not self._players_loaded or refresh:
             await self.load_players()
         return self._players
 
-    async def get_groups(self, *, refresh=False) -> dict[int, HeosGroup]:
+    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
         """Get available groups."""
         if not self._groups_loaded or refresh:
             players = await self.get_players()
@@ -168,7 +168,7 @@ class Heos:
         ids.extend(member_ids)
         await self._connection.commands.set_group(ids)
 
-    async def get_music_sources(self, refresh=True) -> dict[int, HeosSource]:
+    async def get_music_sources(self, refresh: bool = True) -> dict[int, HeosSource]:
         """Get available music sources."""
         if not self._music_sources or refresh:
             payload = await self._connection.commands.get_music_sources()

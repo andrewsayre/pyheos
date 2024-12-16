@@ -3,11 +3,14 @@
 import asyncio
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Literal, Optional
+from typing import TYPE_CHECKING
 
 from . import const
 from .response import HeosResponse
 from .source import HeosSource, InputSource
+
+if TYPE_CHECKING:
+    from .heos import Heos
 
 
 def parse_player_id(data: dict) -> int:
@@ -163,7 +166,7 @@ class HeosNowPlayingMedia:
 class HeosPlayer:
     """Define a HEOS player."""
 
-    def __init__(self, heos, data: dict):
+    def __init__(self, heos: "Heos", data: dict):
         """Initialize a player with the data."""
         self._heos = heos
         # pylint: disable=protected-access
@@ -209,7 +212,7 @@ class HeosPlayer:
             pass
         self._available = True
 
-    def set_available(self, available) -> None:
+    def set_available(self, available: bool) -> None:
         """Mark player removed after a change event."""
         self._available = available
 
@@ -454,6 +457,6 @@ class HeosPlayer:
         return self._playback_error
 
     @property
-    def heos(self):
+    def heos(self) -> "Heos":
         """Get the heos instance attached to this player."""
         return self._heos

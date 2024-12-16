@@ -1,22 +1,24 @@
 """Define the heos source module."""
 
-from typing import Optional, Sequence  # pylint: disable=unused-import
+from typing import Optional, Sequence
+
+from pyheos.command import HeosCommands  # pylint: disable=unused-import
 
 
 class InputSource:
     """Define an input source."""
 
-    def __init__(self, player_id: int, name: str, input_name: str):
+    def __init__(self, player_id: int, name: str, input_name: str) -> None:
         """Init the source."""
         self._player_id = player_id  # type: int
         self._name = name  # type: str
         self._input_name = input_name  # type: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Get a user-readable representation of the source."""
         return f"<{self._name} ({self._input_name})>"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Get a debug representation of the source."""
         return f"<{self._name} ({self._input_name}) on {self._player_id}>"
 
@@ -39,7 +41,7 @@ class InputSource:
 class HeosSource:
     """Define an individual heos source."""
 
-    def __init__(self, commands, data: Optional[dict] = None):
+    def __init__(self, commands: HeosCommands, data: Optional[dict] = None) -> None:
         """Init the source class."""
         self._commands = commands
         self._name = None  # type: str
@@ -55,7 +57,7 @@ class HeosSource:
         if data:
             self._from_data(data)
 
-    def _from_data(self, data: dict):
+    def _from_data(self, data: dict) -> None:
         self._name = data["name"]
         self._image_url = data["image_url"]
         self._type = data["type"]
@@ -71,11 +73,11 @@ class HeosSource:
         self._media_id = data.get("mid")
         self._playable = data.get("playable") == "yes"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Get a user-readable representation of the source."""
         return f"<{self._name} ({self._type})>"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Get a debug representation of the source."""
         return f"<{self._name} ({self._type}) {self._source_id}>"
 

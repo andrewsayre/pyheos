@@ -13,6 +13,9 @@ from .command import HeosCommands
 from .error import CommandError, HeosError, format_error_message
 from .response import HeosResponse
 
+if TYPE_CHECKING:
+    from .heos import Heos
+
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
@@ -28,7 +31,7 @@ def _quote(string: str) -> str:
     return "".join([_QUOTE_MAP.get(char, char) for char in str(string)])
 
 
-def _encode_query(items: dict, *, mask=False) -> str:
+def _encode_query(items: dict[str, str], *, mask: bool = False) -> str:
     """Encode a dict to query string per CLI specifications."""
     pairs = []
     for key in sorted(items.keys()):
@@ -47,13 +50,13 @@ class HeosConnection:
 
     def __init__(
         self,
-        heos,
+        heos: "Heos",
         host: str,
         *,
         timeout: float = const.DEFAULT_TIMEOUT,
         heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
-        all_progress_events=True,
-    ):
+        all_progress_events: bool = True,
+    ) -> None:
         """Init a new HeosConnection class."""
         self._heos = heos
         self._all_progress_events = all_progress_events
@@ -247,7 +250,7 @@ class HeosConnection:
             await asyncio.sleep(float(self._heart_beat_interval) / 2)
 
     async def command(
-        self, command: str, params: dict[str, Any] = None
+        self, command: str, params: dict[str, Any] | None = None
     ) -> HeosResponse:
         """Execute a command and get it's response."""
         # Build command URI

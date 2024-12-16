@@ -21,8 +21,8 @@ class Dispatcher:
         connect: ConnectType | None = None,
         send: SendType | None = None,
         signal_prefix: str = "",
-        loop=None,
-    ):
+        loop: asyncio.AbstractEventLoop = None,
+    ) -> None:
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
         self._signals: dict[str, list] = defaultdict(list)
@@ -41,7 +41,7 @@ class Dispatcher:
         """Fire a signal.  Must be ran in the event loop."""
         return self._send(self._signal_prefix + signal, *args)
 
-    def disconnect_all(self):
+    def disconnect_all(self) -> None:
         """Disconnect all connected."""
         disconnects = self._disconnects.copy()
         self._disconnects.clear()
@@ -71,7 +71,7 @@ class Dispatcher:
             futures.append(task)
         return futures
 
-    def _call_target(self, target, *args) -> asyncio.Future:
+    def _call_target(self, target: Callable, *args: Any) -> asyncio.Future:
         check_target = target
         while isinstance(check_target, functools.partial):
             check_target = check_target.func

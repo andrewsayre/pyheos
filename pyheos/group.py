@@ -2,13 +2,19 @@
 
 import asyncio
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from . import const
 from .player import HeosPlayer
 from .response import HeosResponse
 
+if TYPE_CHECKING:
+    from pyheos.heos import Heos
 
-def create_group(heos, data: dict, players: dict[int, HeosPlayer]) -> "HeosGroup":
+
+def create_group(
+    heos: "Heos", data: dict[str, Any], players: dict[int, HeosPlayer]
+) -> "HeosGroup":
     """Create a group from the data."""
     leader = None
     members = []
@@ -28,7 +34,7 @@ class HeosGroup:
 
     def __init__(
         self,
-        heos,
+        heos: "Heos",
         name: str,
         group_id: int,
         leader: HeosPlayer,

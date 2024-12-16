@@ -1,6 +1,6 @@
 """Define the heos response module."""
 
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import parse_qsl
 
 from .error import CommandFailedError
@@ -20,11 +20,11 @@ class HeosResponse:
             self._message = dict(parse_qsl(raw_message, True))
         self._payload: list | dict | None = data.get("payload")
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Get a user-readable representation of the response."""
         return str(self._raw_data["heos"])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Get a debug representation of the player."""
         return str(self._raw_data)
 
@@ -49,7 +49,7 @@ class HeosResponse:
         return self._result
 
     @property
-    def payload(self) -> list | dict | None:
+    def payload(self) -> list[Any] | dict[str, Any] | None:
         """Get the payload of the message."""
         return self._payload
 
