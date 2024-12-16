@@ -68,7 +68,7 @@ class HeosSource:
     async def browse(self) -> "Sequence[HeosSource]":
         """Browse the contents of the current source."""
         if not self._source_id:
-            raise ValueError("Source is not browseable.")
+            raise ValueError("Source is not browsable.")
         items = await self._commands.browse(self._source_id)
         return [HeosSource(self._commands, item) for item in items]
 
