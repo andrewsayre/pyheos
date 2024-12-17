@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 import pytest_asyncio
 
-from pyheos.heos import Heos
+from pyheos.heos import Heos, HeosOptions
 
 from . import MockHeosDevice
 
@@ -23,7 +23,7 @@ async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
 @pytest_asyncio.fixture(name="heos")
 async def heos_fixture() -> AsyncGenerator[Heos]:
     """Fixture for a connected heos."""
-    heos = Heos("127.0.0.1", timeout=1, heart_beat=None)
+    heos = Heos(HeosOptions("127.0.0.1", timeout=1, heart_beat=False))
     await heos.connect()
     yield heos
     await heos.disconnect()

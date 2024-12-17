@@ -2,7 +2,10 @@
 
 import asyncio
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Any, Optional
+
+from pyheos.credential import Credential
 
 from . import const
 from .connection import HeosConnection
@@ -13,34 +16,63 @@ from .response import HeosResponse
 from .source import HeosSource, InputSource
 
 
+@dataclass(frozen=True)
+class HeosOptions:
+    """
+    The HeosOptions encapsulates options for connecting to a Heos System.
+
+    Args:
+        host: A host name or IP address of a HEOS-capable device.
+        timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+        heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
+        heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
+        all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
+        dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
+        auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
+        auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
+        credential: Credential to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+    """
+
+    host: str
+    timeout: float = field(default=const.DEFAULT_TIMEOUT, kw_only=True)
+    heart_beat: float = field(default=True, kw_only=True)
+    heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
+    all_progress_events: bool = field(default=True, kw_only=True)
+    dispatcher: Dispatcher | None = field(default=None, kw_only=True)
+    auto_reconnect: bool = field(default=False, kw_only=True)
+    auto_reconnect_delay: float = field(
+        default=const.DEFAULT_RECONNECT_DELAY, kw_only=True
+    )
+    credential: Credential | None = field(default=None, kw_only=True)
+
+
 class Heos:
     """The Heos class provides access to the CLI API."""
 
-    def __init__(
-        self,
-        host: str,
-        *,
-        timeout: float = const.DEFAULT_TIMEOUT,
-        heart_beat: Optional[float] = const.DEFAULT_HEART_BEAT,
-        all_progress_events: bool = True,
-        dispatcher: Dispatcher | None = None,
-    ) -> None:
+    def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
+        self._options = options
+
         self._connection = HeosConnection(
             self,
-            host,
-            timeout=timeout,
-            heart_beat=heart_beat,
-            all_progress_events=all_progress_events,
+            options.host,
+            timeout=options.timeout,
+            heart_beat=options.heart_beat_interval if options.heart_beat else None,
+            all_progress_events=options.all_progress_events,
         )
-        self._dispatcher = dispatcher or Dispatcher()
+
+        self._dispatcher = options.dispatcher or Dispatcher()
+
         self._players: dict[int, HeosPlayer] = {}
         self._players_loaded = False
+
         self._music_sources: dict[int, HeosSource] = {}
         self._music_sources_loaded = False
-        self._signed_in_username: str | None = None
+
         self._groups: dict[int, HeosGroup] = {}
         self._groups_loaded = False
+
+        self._signed_in_username: str | None = None
 
     async def connect(
         self,
