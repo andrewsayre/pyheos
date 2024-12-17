@@ -49,6 +49,26 @@ class HeosOptions:
 class Heos:
     """The Heos class provides access to the CLI API."""
 
+    @classmethod
+    async def create_and_connect(cls, host: str, **kwargs: Any) -> "Heos":
+        """
+        Create a new instance of the Heos CLI API and connect.
+
+        Args:
+            host: A host name or IP address of a HEOS-capable device.
+            timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+            heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
+            heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
+            all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
+            dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
+            auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
+            auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
+            credential: Credential to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+        """
+        heos = Heos(HeosOptions(host, **kwargs))
+        await heos.connect()
+        return heos
+
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
         self._options = options
@@ -74,15 +94,11 @@ class Heos:
 
         self._signed_in_username: str | None = None
 
-    async def connect(
-        self,
-        *,
-        auto_reconnect: bool = False,
-        reconnect_delay: float = const.DEFAULT_RECONNECT_DELAY,
-    ) -> None:
+    async def connect(self) -> None:
         """Connect to the CLI."""
         await self._connection.connect(
-            auto_reconnect=auto_reconnect, reconnect_delay=reconnect_delay
+            auto_reconnect=self._options.auto_reconnect,
+            reconnect_delay=self._options.auto_reconnect_delay,
         )
         self._signed_in_username = await self._connection.commands.check_account()
 
