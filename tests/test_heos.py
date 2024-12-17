@@ -1,6 +1,7 @@
 """Tests for the heos class."""
 
 import asyncio
+from typing import Any
 
 import pytest
 
@@ -303,7 +304,7 @@ async def test_player_state_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_STATE_CHANGED
         signal.set()
@@ -349,7 +350,7 @@ async def test_player_now_playing_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_NOW_PLAYING_CHANGED
         signal.set()
@@ -401,7 +402,7 @@ async def test_player_volume_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_VOLUME_CHANGED
         signal.set()
@@ -422,7 +423,7 @@ async def test_player_volume_changed_event(
     # Assert state changed
     assert player.volume == 50
     assert player.is_muted
-    assert heos.players[2].volume == 36
+    assert heos.players[2].volume == 36  # type: ignore[unreachable]
     assert not heos.players[2].is_muted
 
 
@@ -441,7 +442,7 @@ async def test_player_now_playing_progress_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS
         signal.set()
@@ -481,7 +482,7 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         if not signal.is_set():
             signal.set()
         else:
@@ -518,7 +519,7 @@ async def test_repeat_mode_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_REPEAT_MODE_CHANGED
         signal.set()
@@ -548,7 +549,7 @@ async def test_shuffle_mode_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == player.player_id
         assert event == const.EVENT_SHUFFLE_MODE_CHANGED
         signal.set()
@@ -574,7 +575,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, data):
+    async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_PLAYERS_CHANGED
         assert data == {const.DATA_NEW: [3], const.DATA_MAPPED_IDS: {}}
         signal.set()
@@ -610,7 +611,7 @@ async def test_players_changed_event_new_ids(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, data):
+    async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_PLAYERS_CHANGED
         assert data == {const.DATA_NEW: [], const.DATA_MAPPED_IDS: {101: 1, 102: 2}}
         signal.set()
@@ -645,7 +646,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     await heos.get_music_sources()
     signal = asyncio.Event()
 
-    async def handler(event: str, data):
+    async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_SOURCES_CHANGED
         signal.set()
 
@@ -673,7 +674,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
     assert len(groups) == 1
     signal = asyncio.Event()
 
-    async def handler(event: str, data):
+    async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_GROUPS_CHANGED
         signal.set()
 
@@ -699,7 +700,7 @@ async def test_player_playback_error_event(
     await heos.get_players()
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == 1
         assert event == const.EVENT_PLAYER_PLAYBACK_ERROR
         signal.set()
@@ -723,7 +724,7 @@ async def test_player_queue_changed_event(
     await heos.get_players()
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str):
+    async def handler(player_id: int, event: str) -> None:
         assert player_id == 1
         assert event == const.EVENT_PLAYER_QUEUE_CHANGED
         signal.set()
@@ -750,7 +751,7 @@ async def test_group_volume_changed_event(
 
     signal = asyncio.Event()
 
-    async def handler(group_id: int, event: str):
+    async def handler(group_id: int, event: str) -> None:
         assert group_id == 1
         assert event == const.EVENT_GROUP_VOLUME_CHANGED
         signal.set()
@@ -772,7 +773,7 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     """Test user changed fires dispatcher and updates logged in user."""
     signal = asyncio.Event()
 
-    async def handler(event: str, data):
+    async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_USER_CHANGED
         signal.set()
 
@@ -791,7 +792,7 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     await mock_device.write_event(event_to_raise)
     await signal.wait()
     assert heos.is_signed_in
-    assert heos.signed_in_username == "example@example.com"
+    assert heos.signed_in_username == "example@example.com"  # type: ignore[unreachable]
 
 
 @pytest.mark.asyncio
