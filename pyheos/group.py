@@ -4,9 +4,10 @@ import asyncio
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
+from pyheos.message import HeosMessage
+
 from . import const
 from .player import HeosPlayer
-from .response import HeosResponse
 
 if TYPE_CHECKING:
     from pyheos.heos import Heos
@@ -43,7 +44,7 @@ class HeosGroup:
         """Init the group class."""
         self._heos = heos
         # pylint: disable=protected-access
-        self._commands = heos._connection.commands
+        self._commands = heos._commands
         self._name: str = name
         self._group_id: int = group_id
         self._leader: HeosPlayer = leader
@@ -63,11 +64,11 @@ class HeosGroup:
         """Pull the latest mute status."""
         self._is_muted = await self._commands.get_group_mute(self._group_id)
 
-    async def event_update(self, event: HeosResponse) -> bool:
+    async def event_update(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
         if event.command == const.EVENT_GROUP_VOLUME_CHANGED:
-            self._volume = int(float(event.get_message("level")))
-            self._is_muted = event.get_message("mute") == "on"
+            self._volume = event.get_message_value_int("level")
+            self._is_muted = event.get_message_value("mute") == "on"
         return True
 
     async def set_volume(self, level: int) -> None:

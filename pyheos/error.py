@@ -3,6 +3,8 @@
 import asyncio
 from typing import Final
 
+from pyheos.message import HeosMessage
+
 DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
     asyncio.TimeoutError: "Command timed out",
     ConnectionError: "Connection error",
@@ -51,6 +53,17 @@ class CommandFailedError(CommandError):
         self._error_text = text
         self._error_id = error_id
         super().__init__(command, f"{text} ({error_id})")
+
+    @classmethod
+    def from_message(cls, message: HeosMessage) -> "CommandFailedError":
+        """Create a new instance of the error from a message."""
+        text = str(message.message.get("text"))
+        system_error_number = message.message.get("syserrno")
+        if system_error_number:
+            text = "f{text} {system_error_number}"
+        error_id_text = message.message.get("eid")
+        error_id = int(error_id_text) if error_id_text else 0
+        return CommandFailedError(message.command, text, error_id)
 
     @property
     def error_text(self) -> str:

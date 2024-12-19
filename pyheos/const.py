@@ -5,8 +5,22 @@ from typing import Final
 CLI_PORT: Final = 1255
 DEFAULT_TIMEOUT: Final = 10.0
 DEFAULT_RECONNECT_DELAY: Final = 10.0
+DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
+
+QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
+MASKED_PARAMS: Final = {"pw"}
+MASK: Final = "********"
+SEPARATOR: Final = "\r\n"
+SEPARATOR_BYTES: Final = SEPARATOR.encode()
+
+PARAM_ENABLE: Final = "enable"
+PARAM_URL: Final = "url"
+PARAM_SIGNED_IN: Final = "signed_in"
+
+VALUE_ON: Final = "on"
+VALUE_OFF: Final = "off"
 
 STATE_CONNECTED: Final = "connected"
 STATE_DISCONNECTED: Final = "disconnected"

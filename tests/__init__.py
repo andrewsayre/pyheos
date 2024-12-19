@@ -9,7 +9,7 @@ from urllib.parse import parse_qsl, urlparse
 import pytest
 
 from pyheos import Heos, const
-from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
+from pyheos.const import SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
 
@@ -144,8 +144,7 @@ class MockHeosDevice:
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query["enable"])
-                if enable == "on":
-                    log.is_registered_for_events = True
+                log.is_registered_for_events = enable == "on"
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())
                 await writer.drain()

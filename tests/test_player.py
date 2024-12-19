@@ -12,7 +12,8 @@ from pyheos.source import HeosSource, InputSource
 from tests import MockHeosDevice
 
 
-def test_str() -> None:
+@pytest.mark.asyncio
+async def test_str() -> None:
     """Test the __str__ function."""
     data = {
         "name": "Back Patio",
