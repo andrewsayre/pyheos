@@ -57,10 +57,9 @@ class CommandFailedError(CommandError):
     @classmethod
     def from_message(cls, message: HeosMessage) -> "CommandFailedError":
         """Create a new instance of the error from a message."""
-        text = str(message.message.get("text"))
-        system_error_number = message.message.get("syserrno")
-        if system_error_number:
-            text = "f{text} {system_error_number}"
+        text = message.get_message_value("text")
+        if system_error_number := message.message.get("syserrno"):
+            text = f"{text} {system_error_number}"
         error_id_text = message.message.get("eid")
         error_id = int(error_id_text) if error_id_text else 0
         return CommandFailedError(message.command, text, error_id)

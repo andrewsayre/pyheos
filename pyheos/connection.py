@@ -28,11 +28,11 @@ class ConnectionBase:
         self._state = const.STATE_DISCONNECTED
         self._writer: asyncio.StreamWriter | None = None
         self._pending_command_event = ResponseEvent()
-        self._running_tasks: list[asyncio.Task] = []
+        self._running_tasks: set[asyncio.Task] = set()
         self._last_activity: datetime = datetime.now()
         self._command_lock = asyncio.Lock()
 
-        self._on_event_callbacks: list[Callable[[HeosMessage], None]] = []
+        self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable]] = []
         self._on_connected_callbacks: list[Callable[[], Awaitable]] = []
         self._on_disconnected_callbacks: list[Callable[[bool], Awaitable]] = []
 
@@ -41,14 +41,14 @@ class ConnectionBase:
         """Get the current state of the connection."""
         return self._state
 
-    def add_on_event(self, callback: Callable[[HeosMessage], None]) -> None:
+    def add_on_event(self, callback: Callable[[HeosMessage], Awaitable]) -> None:
         """Add a callback to be invoked when an event is received."""
         self._on_event_callbacks.append(callback)
 
-    def _on_event(self, message: HeosMessage) -> None:
+    async def _on_event(self, message: HeosMessage) -> None:
         """Handle an HEOS message that is an event."""
         for callback in self._on_event_callbacks:
-            callback(message)
+            await callback(message)
 
     def add_on_connected(self, callback: Callable[[], Awaitable]) -> None:
         """Add a callback to be invoked when connected."""
@@ -70,20 +70,29 @@ class ConnectionBase:
 
     def _register_task(self, future: Coroutine) -> None:
         """Register a task that is running in the background, so it can be canceled and reset later."""
-        self._running_tasks.append(asyncio.ensure_future(future))
+        task = asyncio.ensure_future(future)
+        self._running_tasks.add(task)
+        task.add_done_callback(self._running_tasks.discard)
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
+        # Stop running tasks and clear list
+        for task in list(self._running_tasks):
+            if task.cancel():
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        self._running_tasks.clear()
         # Close the writer
         if self._writer:
             self._writer.close()
-            await self._writer.wait_closed()
-            self._writer = None
-        # Stop running tasks and clear list
-        for task in self._running_tasks:
-            task.cancel()
-            await task
-        self._running_tasks.clear()
+            try:
+                await self._writer.wait_closed()
+            except (ConnectionError, OSError, asyncio.CancelledError):
+                pass
+            finally:
+                self._writer = None
         # Reset other parameters
         self._pending_command_event.clear()
         self._last_activity = datetime.now()
@@ -100,29 +109,26 @@ class ConnectionBase:
         while True:
             try:
                 binary_result = await reader.readuntil(const.SEPARATOR_BYTES)
-            except asyncio.CancelledError:  # Occurs when the task killed
-                return
             except (
                 ConnectionError,
                 asyncio.IncompleteReadError,
                 RuntimeError,
                 OSError,
             ) as error:
-                # Run in the background to ensure connection is reset.
-                asyncio.ensure_future(self._disconnect_from_error(error))
+                await self._disconnect_from_error(error)
                 return
             else:
                 self._last_activity = datetime.now()
-                self._handle_message(HeosMessage(binary_result.decode()))
+                await self._handle_message(HeosMessage(binary_result.decode()))
 
-    def _handle_message(self, message: HeosMessage) -> None:
+    async def _handle_message(self, message: HeosMessage) -> None:
         """Handle a message received from the HEOS device."""
         if message.is_under_process:
             _LOGGER.debug(f"Command under process '{message.command}': '{message}'")
             return
         if message.is_event:
             _LOGGER.debug(f"Event received: '{message.command}': '{message}'")
-            self._on_event(message)
+            self._register_task(self._on_event(message))
             return
 
         # Set the message on the pending command.
@@ -135,9 +141,10 @@ class ConnectionBase:
         async def _command_impl() -> HeosMessage:
             """Implementation of the command."""
             if self._state is not const.STATE_CONNECTED:
-                raise HeosError(
-                    f"Cannot call command when state is not connected. Current state: {self._state}"
+                _LOGGER.debug(
+                    f"Command failed '{command.uri_masked}': Not connected to device"
                 )
+                raise CommandError(command.command, "Not connected to device")
             if TYPE_CHECKING:
                 assert self._writer is not None
             assert not self._pending_command_event.is_set()
@@ -145,13 +152,9 @@ class ConnectionBase:
             try:
                 self._writer.write((command.uri + const.SEPARATOR).encode())
                 await self._writer.drain()
-            except (
-                ConnectionError,
-                OSError,
-                AttributeError,
-            ) as error:
+            except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
-                asyncio.ensure_future(self._disconnect_from_error(error))
+                self._register_task(self._disconnect_from_error(error))
                 message = format_error_message(error)
                 _LOGGER.debug(f"Command failed '{command.uri_masked}': {message}")
                 raise CommandError(command.uri_masked, message) from error
@@ -165,7 +168,7 @@ class ConnectionBase:
                 )
             except asyncio.TimeoutError as error:
                 # Occurs when the command times out
-                _LOGGER.debug(f"Command timed out '{command.uri_masked}': {error}")
+                _LOGGER.debug(f"Command timed out '{command.uri_masked}'")
                 raise CommandError(
                     command.uri_masked, format_error_message(error)
                 ) from error
@@ -191,11 +194,10 @@ class ConnectionBase:
 
     async def connect(self) -> None:
         """Connect to the HEOS device."""
-        if self._state is not const.STATE_DISCONNECTED:
+        if self._state is const.STATE_CONNECTED:
             raise HeosError(
-                f"Connect can only be called when the state is disconnected. Current state: {self._state}"
+                "Connect can only be called when the state is not connected."
             )
-
         # Open the connection to the host
         try:
             reader, self._writer = await asyncio.wait_for(
@@ -213,8 +215,6 @@ class ConnectionBase:
 
     async def disconnect(self) -> None:
         """Disconnect from the HEOS device."""
-        if self._state is const.STATE_DISCONNECTED:
-            raise HeosError("Cannot call disconnect when state is disconnected.")
         await self._reset()
         _LOGGER.debug(f"Disconnected from {self._host}")
         await self._on_disconnected()
@@ -259,15 +259,11 @@ class AutoReconnectingConnection(ConnectionBase):
             if last_acitvity_delta >= self._heart_beat_interval_delta:
                 try:
                     await self.command(HeosCommand(const.COMMAND_HEART_BEAT))
-                except (CommandError, asyncio.TimeoutError, asyncio.CancelledError):
+                except (CommandError, asyncio.TimeoutError):
                     # Exit the task, as the connection will be reset/closed.
                     return
             # Sleep until next interval
-            try:
-                await asyncio.sleep(float(self._heart_beat_interval / 2))
-            except asyncio.CancelledError:
-                # Exit task gracefully.
-                return
+            await asyncio.sleep(float(self._heart_beat_interval / 2))
 
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect after disconnection from error."""
@@ -283,8 +279,6 @@ class AutoReconnectingConnection(ConnectionBase):
                 _LOGGER.debug(
                     f"Failed reconnect attempt {attempts} to {self._host}: {err}"
                 )
-            except asyncio.CancelledError:
-                pass
             else:
                 return
 

@@ -17,6 +17,9 @@ SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
 PARAM_ENABLE: Final = "enable"
 PARAM_URL: Final = "url"
+PARAM_PLAYER_ID: Final = "pid"
+PARAM_GROUP_ID: Final = "gid"
+PARAM_USER_NAME = "un"
 PARAM_SIGNED_IN: Final = "signed_in"
 
 VALUE_ON: Final = "on"

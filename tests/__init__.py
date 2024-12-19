@@ -1,9 +1,10 @@
 """Tests for the pyheos library."""
 
 import asyncio
+import logging
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional, Union
+from typing import Any, Final, Optional, Union
 from urllib.parse import parse_qsl, urlparse
 
 import pytest
@@ -12,6 +13,7 @@ from pyheos import Heos, const
 from pyheos.const import SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
+_LOGGER: Final = logging.getLogger(__name__)
 
 
 async def get_fixture(file: str) -> str:
@@ -31,8 +33,8 @@ def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
     trigger = asyncio.Event()
 
     async def handler(target_event: str, *args: Any) -> None:
-        assert target_event == event
-        trigger.set()
+        if target_event == event:
+            trigger.set()
 
     heos.dispatcher.connect(signal, handler)
     return trigger
@@ -80,6 +82,7 @@ class MockHeosDevice:
 
         assert self._server is not None
         self._server.close()
+        await self._server.wait_closed()
 
     async def write_event(self, event: str) -> None:
         """Send an event through the event channel."""
@@ -112,7 +115,7 @@ class MockHeosDevice:
                 result: str = (await reader.readuntil(SEPARATOR_BYTES)).decode()
             except asyncio.IncompleteReadError:
                 # Occurs when the reader is being stopped
-                break
+                return
 
             result = result.rstrip(SEPARATOR)
 
@@ -192,7 +195,6 @@ class CommandMatcher:
         response = await get_fixture(response)
         keys = {
             "pid": "{player_id}",
-            "sequence": "{sequence}",
             "state": "{state}",
             "level": "{level}",
         }
@@ -218,6 +220,7 @@ class ConnectionLog:
     async def disconnect(self) -> None:
         """Close the connection."""
         self._writer.close()
+        await self._writer.wait_closed()
 
     async def write(self, payload: str) -> None:
         """Write the payload to the stream."""

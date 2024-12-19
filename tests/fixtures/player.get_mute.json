@@ -1,1 +1,1 @@
-{"heos": {"result": "success", "command": "player/get_mute", "message": "pid={player_id}&state=off&sequence={sequence}"}}
+{"heos": {"result": "success", "command": "player/get_mute", "message": "pid={player_id}&state=off"}}

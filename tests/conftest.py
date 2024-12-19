@@ -23,7 +23,12 @@ async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
 @pytest_asyncio.fixture(name="heos")
 async def heos_fixture() -> AsyncGenerator[Heos]:
     """Fixture for a connected heos."""
-    heos = await Heos.create_and_connect("127.0.0.1", timeout=1, heart_beat=False)
+    heos = await Heos.create_and_connect(
+        "127.0.0.1",
+        timeout=0.1,
+        auto_reconnect_delay=0.1,
+        heart_beat=False,
+    )
     yield heos
     await heos.disconnect()
 

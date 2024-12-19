@@ -13,7 +13,8 @@ from pyheos.heos import Heos, HeosOptions
 from . import MockHeosDevice, connect_handler, get_fixture
 
 
-def test_init() -> None:
+@pytest.mark.asyncio
+async def test_init() -> None:
     """Test init sets properties."""
     heos = Heos(HeosOptions("127.0.0.1"))
     assert isinstance(heos.dispatcher, Dispatcher)
@@ -25,7 +26,7 @@ def test_init() -> None:
 @pytest.mark.asyncio
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
-    heos = Heos(HeosOptions("127.0.0.1"))
+    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1))
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     await heos.connect()
     await signal.wait()
@@ -56,9 +57,9 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
 @pytest.mark.asyncio
 async def test_heart_beat(mock_device: MockHeosDevice) -> None:
     """Test heart beat fires at interval."""
-    heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.5)
+    heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
 
-    await asyncio.sleep(1.0)
+    await asyncio.sleep(0.2)
 
     connection = mock_device.connections[0]
     assert len(connection.commands[const.COMMAND_HEART_BEAT]) == 1
@@ -69,7 +70,7 @@ async def test_heart_beat(mock_device: MockHeosDevice) -> None:
 @pytest.mark.asyncio
 async def test_connect_fails() -> None:
     """Test connect fails when host not available."""
-    heos = Heos(HeosOptions("127.0.0.1", auto_reconnect=True))
+    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1))
     with pytest.raises(HeosError) as e_info:
         await heos.connect()
     assert isinstance(e_info.value.__cause__, ConnectionRefusedError)
@@ -83,7 +84,7 @@ async def test_connect_fails() -> None:
 @pytest.mark.asyncio
 async def test_connect_timeout() -> None:
     """Test connect fails when host not available."""
-    heos = Heos(HeosOptions("www.google.com", timeout=1, auto_reconnect=True))
+    heos = Heos(HeosOptions("172.0.0.1", timeout=0.1))
     with pytest.raises(HeosError) as e_info:
         await heos.connect()
     assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
@@ -113,26 +114,23 @@ async def test_commands_fail_when_disconnected(
     await heos.disconnect()
     assert heos.connection_state == const.STATE_DISCONNECTED
 
-    with pytest.raises(CommandError) as e_info:
+    with pytest.raises(CommandError, match="Not connected to device") as e_info:
         await heos.load_players()
-    assert str(e_info.value) == "Not connected to device"
     assert e_info.value.command == const.COMMAND_GET_PLAYERS
     assert (
-        "Command failed 'heos://player/get_players?sequence=0': Not connected to device"
+        "Command failed 'heos://player/get_players': Not connected to device"
         in caplog.text
     )
 
 
 @pytest.mark.asyncio
-async def test_connection_error_during_event(
-    mock_device: MockHeosDevice, heos: Heos
-) -> None:
+async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
     )
 
-    # Assert transitions to reconnecting and fires disconnect
+    # Assert transitions to disconnected and fires disconnect
     await mock_device.stop()
     await disconnect_signal.wait()
     assert heos.connection_state == const.STATE_DISCONNECTED
@@ -147,7 +145,7 @@ async def test_connection_error_during_command(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
     )
 
-    # Assert transitions to reconnecting and fires disconnect
+    # Assert transitions to disconnected and fires disconnect
     await mock_device.stop()
     with pytest.raises(CommandError) as e_info:
         await heos.get_players()
@@ -163,7 +161,11 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos(
         HeosOptions(
-            "127.0.0.1", timeout=0.1, auto_reconnect=True, auto_reconnect_delay=0
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            heart_beat=False,
         )
     )
 
@@ -197,7 +199,14 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
 @pytest.mark.asyncio
 async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
-    heos = Heos(HeosOptions("127.0.0.1", timeout=1.0, auto_reconnect=True))
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+        )
+    )
 
     connect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
@@ -231,7 +240,14 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
 @pytest.mark.asyncio
 async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     """Test reconnect is canceled by calling disconnect."""
-    heos = Heos(HeosOptions("127.0.0.1", auto_reconnect=True))
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+        )
+    )
 
     connect_signal = connect_handler(
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
@@ -250,6 +266,8 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     await mock_device.stop()
     await disconnect_signal.wait()
     assert heos.connection_state == const.STATE_RECONNECTING
+
+    await asyncio.sleep(0.3)
 
     # Assert reconnects once server is back up and fires connected
     await heos.disconnect()
@@ -884,11 +902,10 @@ async def test_sign_in_and_out(
 
     # Test sign-in failure
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
-    with pytest.raises(CommandFailedError) as e_info:
+    with pytest.raises(CommandFailedError, match="User not found"):
         await heos.sign_in("example@example.com", "example")
-    assert str(e_info.value.error_text) == "User not found"
     assert (
-        "Command failed 'heos://system/sign_in?un=example@example.com&sequence=2&pw=********':"
+        "Command failed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
 
@@ -896,7 +913,7 @@ async def test_sign_in_and_out(
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
     await heos.sign_in("example@example.com", "example")
     assert (
-        "Command executed 'heos://system/sign_in?un=example@example.com&sequence=3&pw=********':"
+        "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
 

@@ -1,1 +1,1 @@
-{"heos": {"command": "player/get_play_mode", "result": "success", "message": "pid={player_id}&repeat=off&shuffle=off&sequence={sequence}"}}
+{"heos": {"command": "player/get_play_mode", "result": "success", "message": "pid={player_id}&repeat=off&shuffle=off"}}

@@ -1,9 +1,10 @@
 """Define the heos manager module."""
 
 import asyncio
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Final, Optional
 
 from pyheos.command import HeosCommands
 from pyheos.credential import Credential
@@ -15,6 +16,8 @@ from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
 from .source import HeosSource, InputSource
+
+_LOGGER: Final = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -129,51 +132,54 @@ class Heos:
         assert self._connection.state == const.STATE_DISCONNECTED
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
-    def _on_event(self, event: HeosMessage) -> None:
+    async def _handle_heos_event(self, event: HeosMessage) -> None:
+        """Process a HEOS system event."""
+        result: dict[str, list | dict] | None = None
+        if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
+            result = await self.load_players()
+        if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
+            await self.get_music_sources(refresh=True)
+        elif event.command == const.EVENT_USER_CHANGED:
+            self._signed_in_username = (
+                event.get_message_value(const.PARAM_USER_NAME)
+                if const.PARAM_SIGNED_IN in event.message
+                else None
+            )
+        elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+            await self.get_groups(refresh=True)
+
+        self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
+        _LOGGER.debug("Event received: %s", event)
+
+    async def _handle_player_event(self, event: HeosMessage) -> None:
+        """Process an event about a player."""
+        player_id = event.get_message_value_int(const.PARAM_PLAYER_ID)
+        player = self.players.get(player_id)
+        if player and (
+            await player.event_update(event, self._options.all_progress_events)
+        ):
+            self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
+            _LOGGER.debug("Event received for player %s: %s", player, event)
+
+    async def _handle_group_event(self, event: HeosMessage) -> None:
+        """Process an event about a group."""
+        group_id = event.get_message_value_int(const.PARAM_GROUP_ID)
+        group = self.groups.get(group_id)
+        if group:
+            await group.event_update(event)
+            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+            _LOGGER.debug("Event received for group %s: %s", group_id, event)
+
+    async def _on_event(self, event: HeosMessage) -> None:
         """Handle a heos event."""
-
-        # TODO: Implement this event handling and dispatching
-        # if response.command in const.PLAYER_EVENTS:
-        #     player_id = response.get_player_id()
-        #     player = self._heos.players.get(player_id)
-        #     if player and (
-        #         await player.event_update(response, self._all_progress_events)
-        #     ):
-        #         self._heos.dispatcher.send(
-        #             const.SIGNAL_PLAYER_EVENT, player_id, response.command
-        #         )
-        #         _LOGGER.debug("Event received for player %s: %s", player, response)
-        # elif response.command in const.GROUP_EVENTS:
-        #     group_id = response.get_group_id()
-        #     group = self._heos.groups.get(group_id)
-        #     if group:
-        #         await group.event_update(response)
-        #         self._heos.dispatcher.send(
-        #             const.SIGNAL_GROUP_EVENT, group_id, response.command
-        #         )
-        #         _LOGGER.debug("Event received for group %s: %s", group_id, response)
-        # elif response.command in const.HEOS_EVENTS:
-        #     # pylint: disable=protected-access
-        #     result = await self._heos._handle_event(response)
-        #     self._heos.dispatcher.send(
-        #         const.SIGNAL_CONTROLLER_EVENT, response.command, result
-        #     )
-        #     _LOGGER.debug("Event received: %s", response)
-        # else:
-        #     _LOGGER.debug("Unrecognized event: %s", response)
-
-        # if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
-        #     return await self.load_players()
-        # if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
-        #     await self.get_music_sources(refresh=True)
-        # elif event.command == const.EVENT_USER_CHANGED:
-        #     self._signed_in_username = (
-        #         event.get_message("un") if event.has_message("signed_in") else None
-        #     )
-        # elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
-        #     await self.get_groups(refresh=True)
-
-        pass
+        if event.command in const.HEOS_EVENTS:
+            await self._handle_heos_event(event)
+        elif event.command in const.PLAYER_EVENTS:
+            await self._handle_player_event(event)
+        elif event.command in const.GROUP_EVENTS:
+            await self._handle_group_event(event)
+        else:
+            _LOGGER.debug("Unrecognized event: %s", event)
 
     async def sign_in(self, username: str, password: str) -> None:
         """Sign-in to the HEOS account on the device directly connected."""
