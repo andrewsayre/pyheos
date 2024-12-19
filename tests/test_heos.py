@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 from pyheos import const
+from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
@@ -52,6 +53,63 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
     heos = await Heos.create_and_connect("127.0.0.1")
     assert not heos.is_signed_in
     assert not heos.signed_in_username
+
+    await heos.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
+    """Test heos signs-in when credentials provided."""
+    data = {
+        const.PARAM_USER_NAME: "example@example.com",
+        const.PARAM_PASSWORD: "example",
+    }
+    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in")
+
+    credentials = Credentials("example@example.com", "example")
+
+    heos = await Heos.create_and_connect("127.0.0.1", credentials=credentials)
+
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
+
+    await heos.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_connect_with_bad_credentials_raises_event(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test event raised when bad credentials supplied."""
+    data = {
+        const.PARAM_USER_NAME: "example@example.com",
+        const.PARAM_PASSWORD: "example",
+    }
+    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
+    mock_device.register(
+        const.COMMAND_ACCOUNT_CHECK,
+        None,
+        "system.check_account_logged_out",
+        replace=True,
+    )
+    credentials = Credentials("example@example.com", "example")
+    heos = Heos(HeosOptions("127.0.0.1", credentials=credentials))
+
+    signal = asyncio.Event()
+
+    async def handler(event: str) -> None:
+        assert event == const.EVENT_USER_CREDENTIALS_INVALID
+        signal.set()
+
+    heos.dispatcher.connect(const.SIGNAL_HEOS_EVENT, handler)
+
+    await heos.connect()
+    await signal.wait()
+
+    assert not heos.is_signed_in
+    assert heos.signed_in_username is None
+
+    await heos.disconnect()
 
 
 @pytest.mark.asyncio

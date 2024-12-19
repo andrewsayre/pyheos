@@ -52,7 +52,7 @@ Retrieve the available players as a `dict[int, pyheos.Heos.HeosPlayer]` where th
 
 This class encapsulates the options and configuration for connecting to a HEOS system.
 
-#### `pyheos.HeosOptions(host, \*, timeout, heart_beat, heart_beat_interval, dispatcher, auto_reconnect, auto_reconnect_delay, credential)
+#### `pyheos.HeosOptions(host, \*, timeout, heart_beat, heart_beat_interval, dispatcher, auto_reconnect, auto_reconnect_delay, credentials)
 
 - `host: str`: A host name or IP address of a HEOS-capable device. This parameter is required.
 - `timeout: float`: The timeout in seconds for opening a connectoin and issuing commands to the device. Default is `pyheos.const.DEFAULT_TIMEOUT = 10.0`. This parameter is required.
@@ -62,7 +62,7 @@ This class encapsulates the options and configuration for connecting to a HEOS s
 - `dispatcher: pyheos.Dispatcher | None`: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
 - `auto_reconnect: bool`: Set to `True` to automatically reconnect if the connection is lost. The default is `False`. Used in conjunction with `auto_reconnect_delay`.
 - `auto_reconnect_delay: float`: The number of seconds to wait before attempting to reconnect upon a connection failure. The default is `DEFAULT_RECONNECT_DELAY = 10.0`. Used in conjunction with `auto_reconnect`.
-- `credential`: Credential to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+- `credentials`: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
 
 ##### Example:
 

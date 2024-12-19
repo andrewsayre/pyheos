@@ -1,7 +1,7 @@
 """pyheos - a library for interacting with HEOS devices."""
 
 from . import const
-from .credential import Credential
+from .credentials import Credentials
 from .dispatch import Dispatcher
 from .error import CommandError, CommandFailedError, HeosError
 from .group import HeosGroup
@@ -13,7 +13,7 @@ __all__ = [
     "const",
     "CommandError",
     "CommandFailedError",
-    "Credential",
+    "Credentials",
     "Dispatcher",
     "Heos",
     "HeosError",

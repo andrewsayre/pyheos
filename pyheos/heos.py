@@ -7,7 +7,8 @@ from dataclasses import dataclass, field
 from typing import Any, Final, Optional
 
 from pyheos.command import HeosCommands
-from pyheos.credential import Credential
+from pyheos.credentials import Credentials
+from pyheos.error import CommandError
 from pyheos.message import HeosMessage
 
 from . import const
@@ -34,7 +35,7 @@ class HeosOptions:
         dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
         auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
         auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
-        credential: Credential to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+        credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
     """
 
     host: str
@@ -50,7 +51,7 @@ class HeosOptions:
     )
     heart_beat: bool = field(default=True, kw_only=True)
     heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
-    credential: Credential | None = field(default=None, kw_only=True)
+    credentials: Credentials | None = field(default=None, kw_only=True)
 
 
 class Heos:
@@ -71,7 +72,7 @@ class Heos:
             auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
             heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
             heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
-            credential: Credential to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+            credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
 
         """
         heos = Heos(HeosOptions(host, **kwargs))
@@ -118,8 +119,21 @@ class Heos:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
 
-        await self._commands.register_for_change_events(True)
+        # Sign-in to the account if provided
+        if self._options.credentials:
+            try:
+                await self._commands.sign_in(
+                    self._options.credentials.username,
+                    self._options.credentials.password,
+                )
+            except CommandError as err:
+                _LOGGER.error("Failed to sign-in to HEOS account: %s", err)
+                self._dispatcher.send(
+                    const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+                )
+
         self._signed_in_username = await self._commands.check_account()
+        await self._commands.register_for_change_events(True)
 
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
@@ -140,11 +154,12 @@ class Heos:
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
-            self._signed_in_username = (
-                event.get_message_value(const.PARAM_USER_NAME)
-                if const.PARAM_SIGNED_IN in event.message
-                else None
-            )
+            if const.PARAM_SIGNED_IN in event.message:
+                self._signed_in_username = event.get_message_value(
+                    const.PARAM_USER_NAME
+                )
+            else:
+                self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
             await self.get_groups(refresh=True)
 
