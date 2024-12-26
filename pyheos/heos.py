@@ -119,10 +119,10 @@ class Heos:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
 
-        # Sign-in to the account if provided
         if self._options.credentials:
+            # Sign-in to the account if provided
             try:
-                await self._commands.sign_in(
+                self._signed_in_username = await self._commands.sign_in(
                     self._options.credentials.username,
                     self._options.credentials.password,
                 )
@@ -131,10 +131,11 @@ class Heos:
                 self._dispatcher.send(
                     const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
                 )
+        else:
+            # Determine the logged in user
+            self._signed_in_username = await self._commands.check_account()
 
-        self._signed_in_username = await self._commands.check_account()
         await self._commands.register_for_change_events(True)
-
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -198,11 +199,12 @@ class Heos:
 
     async def sign_in(self, username: str, password: str) -> None:
         """Sign-in to the HEOS account on the device directly connected."""
-        await self._commands.sign_in(username, password)
+        self._signed_in_username = await self._commands.sign_in(username, password)
 
     async def sign_out(self) -> None:
         """Sign-out of the HEOS account on the device directly connected."""
         await self._commands.sign_out()
+        self._signed_in_username = None
 
     async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""

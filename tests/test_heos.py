@@ -956,7 +956,15 @@ async def test_sign_in_and_out(
     mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Test the sign in and sign out methods and ensure log is masked."""
-    data = {"un": "example@example.com", "pw": "example"}
+    # Test sign-out (Heos will already be logged in initially)
+    mock_device.register(const.COMMAND_SIGN_OUT, None, "system.sign_out")
+    await heos.sign_out()
+    assert heos.signed_in_username is None
+
+    data = {
+        const.PARAM_USER_NAME: "example@example.com",
+        const.PARAM_PASSWORD: "example",
+    }
 
     # Test sign-in failure
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
@@ -966,6 +974,7 @@ async def test_sign_in_and_out(
         "Command failed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
+    assert heos.signed_in_username is None
 
     # Test sign-in success
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
@@ -974,10 +983,7 @@ async def test_sign_in_and_out(
         "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
-
-    # Test sign-out
-    mock_device.register(const.COMMAND_SIGN_OUT, None, "system.sign_out")
-    await heos.sign_out()
+    assert heos.signed_in_username == data[const.PARAM_USER_NAME]
 
 
 @pytest.mark.asyncio

@@ -30,13 +30,16 @@ class HeosCommands:
         """Return the logged in username."""
         response = await self._connection.command(HeosCommands._account_check_command)
         if const.PARAM_SIGNED_IN in response.message:
-            return str(response.message["un"])
+            return response.get_message_value(const.PARAM_USER_NAME)
         return None
 
-    async def sign_in(self, username: str, password: str) -> None:
-        """Sign in to the HEOS account using the provided credential."""
-        params = {"un": username, "pw": password}
-        await self._connection.command(HeosCommand(const.COMMAND_SIGN_IN, params))
+    async def sign_in(self, username: str, password: str) -> str:
+        """Sign in to the HEOS account using the provided credential and return the user name."""
+        params = {const.PARAM_USER_NAME: username, const.PARAM_PASSWORD: password}
+        response = await self._connection.command(
+            HeosCommand(const.COMMAND_SIGN_IN, params)
+        )
+        return response.get_message_value(const.PARAM_USER_NAME)
 
     async def sign_out(self) -> None:
         """Sign out of the HEOS account."""
