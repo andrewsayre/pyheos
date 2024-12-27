@@ -58,6 +58,7 @@ This class encapsulates the options and configuration for connecting to a HEOS s
 - `timeout: float`: The timeout in seconds for opening a connectoin and issuing commands to the device. Default is `pyheos.const.DEFAULT_TIMEOUT = 10.0`. This parameter is required.
 - `heart_beat: bool`: Set to `True` to enable heart beat messages, `False` to disable. Used in conjunction with `heart_beat_delay`. The default is `True`.
 - `heart_beat_interval: float`: The interval in seconds between heart beat messages. Used in conjunction with `heart_beat`. Default is `pyheos.const.DEFAULT_HEART_BEAT = 10.0`
+- `events: bool`: Set to `True` to enable event updates, `False` to disable. The default is `True`.
 - `all_progress_events: bool`: Set to `True` to receive media progress events, `False` to only receive media changed events. The default is `True`.
 - `dispatcher: pyheos.Dispatcher | None`: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
 - `auto_reconnect: bool`: Set to `True` to automatically reconnect if the connection is lost. The default is `False`. Used in conjunction with `auto_reconnect_delay`.

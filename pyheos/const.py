@@ -41,6 +41,17 @@ STATE_CONNECTED: Final = "connected"
 STATE_DISCONNECTED: Final = "disconnected"
 STATE_RECONNECTING: Final = "reconnecting"
 
+ATTR_IP_ADDRESS: Final = "ip"
+ATTR_MODEL: Final = "model"
+ATTR_NAME: Final = "name"
+ATTR_NETWORK: Final = "network"
+ATTR_SERIAL: Final = "serial"
+ATTR_VERSION: Final = "version"
+
+NETWORK_TYPE_WIRED: Final = "wired"
+NETWORK_TYPE_WIFI: Final = "wifi"
+NETWORK_TYPE_UNKNOWN: Final = "unknown"
+
 DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"
 

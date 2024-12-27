@@ -10,6 +10,7 @@ from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.message import HeosMessage
+from pyheos.system import HeosHost, HeosSystem
 
 from . import const
 from .connection import AutoReconnectingConnection
@@ -29,6 +30,7 @@ class HeosOptions:
     Args:
         host: A host name or IP address of a HEOS-capable device.
         timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+        events: Set to True to enable event updates, False to disable. The default is True.
         heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
         heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
         all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
@@ -40,6 +42,7 @@ class HeosOptions:
 
     host: str
     timeout: float = field(default=const.DEFAULT_TIMEOUT, kw_only=True)
+    events: bool = field(default=True, kw_only=True)
     all_progress_events: bool = field(default=True, kw_only=True)
     dispatcher: Dispatcher | None = field(default=None, kw_only=True)
     auto_reconnect: bool = field(default=False, kw_only=True)
@@ -65,6 +68,7 @@ class Heos:
         Args:
             host: A host name or IP address of a HEOS-capable device.
             timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+            events: Set to True to enable event updates, False to disable. The default is True.
             all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
             dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
             auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
@@ -78,6 +82,21 @@ class Heos:
         heos = Heos(HeosOptions(host, **kwargs))
         await heos.connect()
         return heos
+
+    @classmethod
+    async def validate_connection(cls, host: str) -> HeosSystem:
+        """
+        Validate the connection to the HEOS device and return information about the HEOS system.
+
+        Args:
+            host: A host name or IP address of a HEOS-capable device.
+        """
+        heos = Heos(HeosOptions(host, events=False, heart_beat=False))
+        try:
+            await heos.connect()
+            return await heos.get_system_info()
+        finally:
+            await heos.disconnect()
 
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
@@ -135,7 +154,7 @@ class Heos:
             # Determine the logged in user
             self._signed_in_username = await self._commands.check_account()
 
-        await self._commands.register_for_change_events(True)
+        await self._commands.register_for_change_events(self._options.events)
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -205,6 +224,13 @@ class Heos:
         """Sign-out of the HEOS account on the device directly connected."""
         await self._commands.sign_out()
         self._signed_in_username = None
+
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system."""
+        payload = await self._commands.get_players()
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
 
     async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""

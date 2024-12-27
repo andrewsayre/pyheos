@@ -11,14 +11,15 @@
 			"version": "1.493.180",
 			"ip": "192.168.0.1",
 			"network": "wired",
-			"lineout": 1
+			"lineout": 1,
+			"serial": "B1A2C3K"
 		}, {
 			"name": "Basement",
 			"pid": 3,
 			"model": "HEOS Drive",
 			"version": "1.493.180",
-			"ip": "192.168.0.3",
-			"network": "wireless",
+			"ip": "127.0.0.3",
+			"network": "wifi",
 			"lineout": 1
 		}
 	]

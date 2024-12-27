@@ -25,6 +25,32 @@ async def test_init() -> None:
 
 
 @pytest.mark.asyncio
+async def test_validate_connection(mock_device: MockHeosDevice) -> None:
+    """Test get_system_info method returns system info."""
+    system_info = await Heos.validate_connection("127.0.0.1")
+
+    assert system_info.signed_in_username == "example@example.com"
+    assert system_info.is_signed_in
+    assert system_info.host.ip_address == "127.0.0.1"
+    assert system_info.connected_to_preferred_host is True
+    assert [system_info.host] == system_info.preferred_hosts
+
+    assert system_info.hosts[0].ip_address == "127.0.0.1"
+    assert system_info.hosts[0].model == "HEOS Drive"
+    assert system_info.hosts[0].name == "Back Patio"
+    assert system_info.hosts[0].network == const.NETWORK_TYPE_WIRED
+    assert system_info.hosts[0].serial == "B1A2C3K"
+    assert system_info.hosts[0].version == "1.493.180"
+
+    assert system_info.hosts[1].ip_address == "127.0.0.2"
+    assert system_info.hosts[1].model == "HEOS Drive"
+    assert system_info.hosts[1].name == "Front Porch"
+    assert system_info.hosts[1].network == const.NETWORK_TYPE_WIFI
+    assert system_info.hosts[1].serial is None
+    assert system_info.hosts[1].version == "1.493.180"
+
+
+@pytest.mark.asyncio
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
     heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1))
@@ -341,7 +367,7 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     player = heos.players[1]
     assert player.player_id == 1
     assert player.name == "Back Patio"
-    assert player.ip_address == "192.168.0.1"
+    assert player.ip_address == "127.0.0.1"
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
     assert player.network == "wired"
