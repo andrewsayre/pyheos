@@ -9,23 +9,30 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
+ATTR_ENABLE: Final = "enable"
+ATTR_ERROR_ID: Final = "eid"
+ATTR_GROUP_ID: Final = "gid"
+ATTR_IP_ADDRESS: Final = "ip"
+ATTR_LINE_OUT: Final = "lineout"
+ATTR_MODEL: Final = "model"
+ATTR_NAME: Final = "name"
+ATTR_NETWORK: Final = "network"
+ATTR_PASSWORD: Final = "pw"
+ATTR_PLAYER_ID: Final = "pid"
+ATTR_SERIAL: Final = "serial"
+ATTR_SIGNED_OUT: Final = "signed_out"
+ATTR_SIGNED_IN: Final = "signed_in"
+ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
+ATTR_TEXT: Final = "text"
+ATTR_URL: Final = "url"
+ATTR_USER_NAME: Final = "un"
+ATTR_VERSION: Final = "version"
+
 QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
-MASKED_PARAMS: Final = {"pw"}
+MASKED_PARAMS: Final = {ATTR_PASSWORD}
 MASK: Final = "********"
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
-
-PARAM_ENABLE: Final = "enable"
-PARAM_URL: Final = "url"
-PARAM_PLAYER_ID: Final = "pid"
-PARAM_GROUP_ID: Final = "gid"
-PARAM_USER_NAME: Final = "un"
-PARAM_PASSWORD: Final = "pw"
-PARAM_SIGNED_IN: Final = "signed_in"
-PARAM_SIGNED_OUT: Final = "signed_out"
-PARAM_ERROR_ID: Final = "eid"
-PARAM_TEXT: Final = "text"
-PARAM_SYSTEM_ERROR_NUMBER: Final = "syserrno"
 
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
@@ -40,15 +47,6 @@ SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 STATE_CONNECTED: Final = "connected"
 STATE_DISCONNECTED: Final = "disconnected"
 STATE_RECONNECTING: Final = "reconnecting"
-
-ATTR_IP_ADDRESS: Final = "ip"
-ATTR_LINE_OUT: Final = "lineout"
-ATTR_MODEL: Final = "model"
-ATTR_NAME: Final = "name"
-ATTR_NETWORK: Final = "network"
-ATTR_PLAYER_ID: Final = "pid"
-ATTR_SERIAL: Final = "serial"
-ATTR_VERSION: Final = "version"
 
 NETWORK_TYPE_WIRED: Final = "wired"
 NETWORK_TYPE_WIFI: Final = "wifi"

@@ -87,8 +87,8 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
 async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
     """Test heos signs-in when credentials provided."""
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in")
 
@@ -108,8 +108,8 @@ async def test_connect_with_bad_credentials_raises_event(
 ) -> None:
     """Test event raised when bad credentials supplied."""
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
     mock_device.register(
@@ -988,8 +988,8 @@ async def test_sign_in_and_out(
     assert heos.signed_in_username is None
 
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
 
     # Test sign-in failure
@@ -1009,7 +1009,7 @@ async def test_sign_in_and_out(
         "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
-    assert heos.signed_in_username == data[const.PARAM_USER_NAME]
+    assert heos.signed_in_username == data[const.ATTR_USER_NAME]
 
 
 @pytest.mark.asyncio

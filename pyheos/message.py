@@ -59,7 +59,7 @@ class HeosCommand:
             value = const.MASK if mask and key in const.MASKED_PARAMS else items[key]
             item = f"{key}={HeosCommand._quote(value)}"
             # Ensure 'url' goes last per CLI spec
-            if key == const.PARAM_URL:
+            if key == const.ATTR_URL:
                 pairs.append(item)
             else:
                 pairs.insert(0, item)

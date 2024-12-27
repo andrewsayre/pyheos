@@ -174,10 +174,8 @@ class Heos:
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
-            if const.PARAM_SIGNED_IN in event.message:
-                self._signed_in_username = event.get_message_value(
-                    const.PARAM_USER_NAME
-                )
+            if const.ATTR_SIGNED_IN in event.message:
+                self._signed_in_username = event.get_message_value(const.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
@@ -188,7 +186,7 @@ class Heos:
 
     async def _handle_player_event(self, event: HeosMessage) -> None:
         """Process an event about a player."""
-        player_id = event.get_message_value_int(const.PARAM_PLAYER_ID)
+        player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
         if player and (
             await player.event_update(event, self._options.all_progress_events)
@@ -198,7 +196,7 @@ class Heos:
 
     async def _handle_group_event(self, event: HeosMessage) -> None:
         """Process an event about a group."""
-        group_id = event.get_message_value_int(const.PARAM_GROUP_ID)
+        group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
         if group:
             await group.event_update(event)

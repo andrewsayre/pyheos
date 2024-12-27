@@ -194,7 +194,7 @@ class CommandMatcher:
     async def _get_response(self, response: str, query: dict) -> str:
         response = await get_fixture(response)
         keys = {
-            const.PARAM_PLAYER_ID: "{player_id}",
+            const.ATTR_PLAYER_ID: "{player_id}",
             "state": "{state}",
             "level": "{level}",
         }

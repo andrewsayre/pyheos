@@ -22,24 +22,24 @@ class HeosCommands:
         await self._connection.command(
             HeosCommand(
                 const.COMMAND_REGISTER_FOR_CHANGE_EVENTS,
-                {const.PARAM_ENABLE: const.VALUE_ON if enable else const.VALUE_OFF},
+                {const.ATTR_ENABLE: const.VALUE_ON if enable else const.VALUE_OFF},
             )
         )
 
     async def check_account(self) -> Optional[str]:
         """Return the logged in username."""
         response = await self._connection.command(HeosCommands._account_check_command)
-        if const.PARAM_SIGNED_IN in response.message:
-            return response.get_message_value(const.PARAM_USER_NAME)
+        if const.ATTR_SIGNED_IN in response.message:
+            return response.get_message_value(const.ATTR_USER_NAME)
         return None
 
     async def sign_in(self, username: str, password: str) -> str:
         """Sign in to the HEOS account using the provided credential and return the user name."""
-        params = {const.PARAM_USER_NAME: username, const.PARAM_PASSWORD: password}
+        params = {const.ATTR_USER_NAME: username, const.ATTR_PASSWORD: password}
         response = await self._connection.command(
             HeosCommand(const.COMMAND_SIGN_IN, params)
         )
-        return response.get_message_value(const.PARAM_USER_NAME)
+        return response.get_message_value(const.ATTR_USER_NAME)
 
     async def sign_out(self) -> None:
         """Sign out of the HEOS account."""
