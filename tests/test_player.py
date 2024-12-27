@@ -17,12 +17,12 @@ async def test_str() -> None:
     """Test the __str__ function."""
     data = {
         const.ATTR_NAME: "Back Patio",
-        "pid": 1,
+        const.ATTR_PLAYER_ID: 1,
         const.ATTR_MODEL: "HEOS Drive",
         const.ATTR_VERSION: "1.493.180",
         const.ATTR_IP_ADDRESS: "192.168.0.1",
         const.ATTR_NETWORK: const.NETWORK_TYPE_WIRED,
-        "lineout": 1,
+        const.ATTR_LINE_OUT: 1,
         const.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer(Heos(HeosOptions("None")), data)

@@ -159,12 +159,12 @@ class HeosPlayer:
         self._commands = heos._commands
 
         self._name: str = str(data[const.ATTR_NAME])
-        self._player_id: int = int(data["pid"])
+        self._player_id: int = int(data[const.ATTR_PLAYER_ID])
         self._model: str = data[const.ATTR_MODEL]
         self._version: str = data[const.ATTR_VERSION]
         self._ip_address: str = data[const.ATTR_IP_ADDRESS]
         self._network: str = data[const.ATTR_NETWORK]
-        self._line_out: int = data["lineout"]
+        self._line_out: int = data[const.ATTR_LINE_OUT]
 
         self._state: str | None = None
         self._volume: int | None = None
@@ -194,7 +194,7 @@ class HeosPlayer:
         self._version = data[const.ATTR_VERSION]
         self._ip_address = data[const.ATTR_IP_ADDRESS]
         self._network = data[const.ATTR_NETWORK]
-        self._line_out = data["lineout"]
+        self._line_out = data[const.ATTR_LINE_OUT]
 
     async def refresh(self) -> None:
         """Pull current state."""

@@ -20,7 +20,7 @@ def create_group(
     leader = None
     members = []
     for group_player in data["players"]:
-        player = players[int(group_player["pid"])]
+        player = players[int(group_player[const.ATTR_PLAYER_ID])]
         if group_player["role"] == "leader":
             leader = player
         else:

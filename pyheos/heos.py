@@ -240,7 +240,7 @@ class Heos:
         payload = await self._commands.get_players()
         existing = list(self._players.values())
         for player_data in payload:
-            player_id = player_data["pid"]
+            player_id = player_data[const.ATTR_PLAYER_ID]
             name = player_data[const.ATTR_NAME]
             version = player_data[const.ATTR_VERSION]
             # Try finding existing player by id or match name when firmware
