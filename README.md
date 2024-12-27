@@ -52,7 +52,7 @@ Retrieve the available players as a `dict[int, pyheos.Heos.HeosPlayer]` where th
 
 This class encapsulates the options and configuration for connecting to a HEOS system.
 
-#### `pyheos.HeosOptions(host, \*, timeout, heart_beat, heart_beat_interval, dispatcher, auto_reconnect, auto_reconnect_delay, auto_reconnect_max_attempts, credentials)`
+#### `pyheos.HeosOptions(host, *, timeout, heart_beat, heart_beat_interval, dispatcher, auto_reconnect, auto_reconnect_delay, auto_reconnect_max_attempts, credentials)`
 
 - `host: str`: A host name or IP address of a HEOS-capable device. This parameter is required.
 - `timeout: float`: The timeout in seconds for opening a connectoin and issuing commands to the device. Default is `pyheos.const.DEFAULT_TIMEOUT = 10.0`. This parameter is required.
