@@ -101,7 +101,7 @@ class Heos:
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
         self._options = options
-
+        self._current_credential = options.credentials
         self._connection = AutoReconnectingConnection(
             options.host,
             timeout=options.timeout,
@@ -138,15 +138,17 @@ class Heos:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
 
-        if self._options.credentials:
+        if self._current_credential:
             # Sign-in to the account if provided
             try:
                 self._signed_in_username = await self._commands.sign_in(
-                    self._options.credentials.username,
-                    self._options.credentials.password,
+                    self._current_credential.username,
+                    self._current_credential.password,
                 )
             except CommandError as err:
-                _LOGGER.error("Failed to sign-in to HEOS account: %s", err)
+                _LOGGER.debug(
+                    "Failed to sign-in to HEOS Account after connection: %s", err
+                )
                 self._dispatcher.send(
                     const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
                 )
@@ -214,14 +216,32 @@ class Heos:
         else:
             _LOGGER.debug("Unrecognized event: %s", event)
 
-    async def sign_in(self, username: str, password: str) -> None:
-        """Sign-in to the HEOS account on the device directly connected."""
-        self._signed_in_username = await self._commands.sign_in(username, password)
+    async def sign_in(
+        self, username: str, password: str, *, update_credential: bool = True
+    ) -> None:
+        """
+        Sign-in to the HEOS account on the device directly connected.
 
-    async def sign_out(self) -> None:
-        """Sign-out of the HEOS account on the device directly connected."""
+        Args:
+            username: The username of the HEOS account.
+            password: The password of the HEOS account.
+            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
+        """
+        self._signed_in_username = await self._commands.sign_in(username, password)
+        if update_credential:
+            self._current_credential = Credentials(username, password)
+
+    async def sign_out(self, *, clear_credential: bool = True) -> None:
+        """
+        Sign-out of the HEOS account on the device directly connected.
+
+        Args:
+            clear_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
+        """
         await self._commands.sign_out()
         self._signed_in_username = None
+        if clear_credential:
+            self._current_credential = None
 
     async def get_system_info(self) -> HeosSystem:
         """Get information about the HEOS system."""
