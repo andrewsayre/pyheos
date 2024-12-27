@@ -23,9 +23,19 @@ PARAM_USER_NAME: Final = "un"
 PARAM_PASSWORD: Final = "pw"
 PARAM_SIGNED_IN: Final = "signed_in"
 PARAM_SIGNED_OUT: Final = "signed_out"
+PARAM_ERROR_ID: Final = "eid"
+PARAM_TEXT: Final = "text"
+PARAM_SYSTEM_ERROR_NUMBER: Final = "syserrno"
 
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
+
+ERROR_USER_NOT_LOGGED_IN: Final = 8
+ERROR_USER_NOT_FOUND: Final = 10
+ERROR_SYSTEM_ERROR: Final = 12
+
+SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
+SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 
 STATE_CONNECTED: Final = "connected"
 STATE_DISCONNECTED: Final = "disconnected"

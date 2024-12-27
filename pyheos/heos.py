@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Final, Optional
+from typing import Any, Final
 
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
@@ -369,6 +369,6 @@ class Heos:
         return bool(self._signed_in_username)
 
     @property
-    def signed_in_username(self) -> Optional[str]:
+    def signed_in_username(self) -> str | None:
         """Return the signed-in username."""
         return self._signed_in_username

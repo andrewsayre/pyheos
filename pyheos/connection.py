@@ -77,13 +77,13 @@ class ConnectionBase:
     async def _reset(self) -> None:
         """Reset the state of the connection."""
         # Stop running tasks and clear list
-        for task in list(self._running_tasks):
+        while self._running_tasks:
+            task = self._running_tasks.pop()
             if task.cancel():
                 try:
                     await task
                 except asyncio.CancelledError:
                     pass
-        self._running_tasks.clear()
         # Close the writer
         if self._writer:
             self._writer.close()
@@ -157,7 +157,7 @@ class ConnectionBase:
                 self._register_task(self._disconnect_from_error(error))
                 message = format_error_message(error)
                 _LOGGER.debug(f"Command failed '{command.uri_masked}': {message}")
-                raise CommandError(command.uri_masked, message) from error
+                raise CommandError(command.command, message) from error
             else:
                 self._last_activity = datetime.now()
 
@@ -170,11 +170,12 @@ class ConnectionBase:
                 # Occurs when the command times out
                 _LOGGER.debug(f"Command timed out '{command.uri_masked}'")
                 raise CommandError(
-                    command.uri_masked, format_error_message(error)
+                    command.command, format_error_message(error)
                 ) from error
             finally:
                 self._pending_command_event.clear()
 
+            # The retrieved response should match the command
             assert command.command == response.command
 
             # Check the result
