@@ -9,16 +9,17 @@
 			"pid": 101,
 			"model": "HEOS Drive",
 			"version": "1.500.000",
-			"ip": "192.168.0.1",
+			"ip": "127.0.0.1",
 			"network": "wired",
-			"lineout": 1
+			"lineout": 1,
+			"serial": "B1A2C3K"
 		}, {
 			"name": "Front Porch",
 			"pid": 102,
 			"model": "HEOS Drive",
 			"version": "1.500.000",
-			"ip": "192.168.0.2",
-			"network": "wireless",
+			"ip": "127.0.0.2",
+			"network": "wifi",
 			"lineout": 1
 		}
 	]

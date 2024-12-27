@@ -13,7 +13,9 @@ async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     await heos.get_groups()
     group = heos.groups[1]
     mock_device.register(
-        const.COMMAND_SET_GROUP_VOLUME, {"level": "25", "gid": "1"}, "group.set_volume"
+        const.COMMAND_SET_GROUP_VOLUME,
+        {"level": "25", const.ATTR_GROUP_ID: "1"},
+        "group.set_volume",
     )
     with pytest.raises(ValueError):
         await group.set_volume(-1)
@@ -28,7 +30,9 @@ async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     await heos.get_groups()
     group = heos.groups[1]
     mock_device.register(
-        const.COMMAND_GROUP_VOLUME_DOWN, {"step": "6", "gid": "1"}, "group.volume_down"
+        const.COMMAND_GROUP_VOLUME_DOWN,
+        {"step": "6", const.ATTR_GROUP_ID: "1"},
+        "group.volume_down",
     )
 
     with pytest.raises(ValueError):
@@ -44,7 +48,9 @@ async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     await heos.get_groups()
     group = heos.groups[1]
     mock_device.register(
-        const.COMMAND_GROUP_VOLUME_UP, {"step": "6", "gid": "1"}, "group.volume_up"
+        const.COMMAND_GROUP_VOLUME_UP,
+        {"step": "6", const.ATTR_GROUP_ID: "1"},
+        "group.volume_up",
     )
     with pytest.raises(ValueError):
         await group.volume_up(0)
@@ -60,13 +66,15 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     group = heos.groups[1]
 
     mock_device.register(
-        const.COMMAND_SET_GROUP_MUTE, {"gid": "1", "state": "on"}, "group.set_mute"
+        const.COMMAND_SET_GROUP_MUTE,
+        {const.ATTR_GROUP_ID: "1", "state": "on"},
+        "group.set_mute",
     )
     await group.mute()
 
     mock_device.register(
         const.COMMAND_SET_GROUP_MUTE,
-        {"gid": "1", "state": "off"},
+        {const.ATTR_GROUP_ID: "1", "state": "off"},
         "group.set_mute",
         replace=True,
     )
@@ -79,6 +87,6 @@ async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     await heos.get_groups()
     group = heos.groups[1]
     mock_device.register(
-        const.COMMAND_GROUP_TOGGLE_MUTE, {"gid": "1"}, "group.toggle_mute"
+        const.COMMAND_GROUP_TOGGLE_MUTE, {const.ATTR_GROUP_ID: "1"}, "group.toggle_mute"
     )
     await group.toggle_mute()

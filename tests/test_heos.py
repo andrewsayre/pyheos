@@ -25,6 +25,32 @@ async def test_init() -> None:
 
 
 @pytest.mark.asyncio
+async def test_validate_connection(mock_device: MockHeosDevice) -> None:
+    """Test get_system_info method returns system info."""
+    system_info = await Heos.validate_connection("127.0.0.1")
+
+    assert system_info.signed_in_username == "example@example.com"
+    assert system_info.is_signed_in
+    assert system_info.host.ip_address == "127.0.0.1"
+    assert system_info.connected_to_preferred_host is True
+    assert [system_info.host] == system_info.preferred_hosts
+
+    assert system_info.hosts[0].ip_address == "127.0.0.1"
+    assert system_info.hosts[0].model == "HEOS Drive"
+    assert system_info.hosts[0].name == "Back Patio"
+    assert system_info.hosts[0].network == const.NETWORK_TYPE_WIRED
+    assert system_info.hosts[0].serial == "B1A2C3K"
+    assert system_info.hosts[0].version == "1.493.180"
+
+    assert system_info.hosts[1].ip_address == "127.0.0.2"
+    assert system_info.hosts[1].model == "HEOS Drive"
+    assert system_info.hosts[1].name == "Front Porch"
+    assert system_info.hosts[1].network == const.NETWORK_TYPE_WIFI
+    assert system_info.hosts[1].serial is None
+    assert system_info.hosts[1].version == "1.493.180"
+
+
+@pytest.mark.asyncio
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
     heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1))
@@ -61,8 +87,8 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
 async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
     """Test heos signs-in when credentials provided."""
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in")
 
@@ -82,8 +108,8 @@ async def test_connect_with_bad_credentials_raises_event(
 ) -> None:
     """Test event raised when bad credentials supplied."""
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
     mock_device.register(
@@ -341,10 +367,10 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     player = heos.players[1]
     assert player.player_id == 1
     assert player.name == "Back Patio"
-    assert player.ip_address == "192.168.0.1"
+    assert player.ip_address == "127.0.0.1"
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
-    assert player.network == "wired"
+    assert player.network == const.NETWORK_TYPE_WIRED
     assert player.state == const.PLAY_STATE_STOP
     assert player.version == "1.493.180"
     assert player.volume == 36
@@ -962,8 +988,8 @@ async def test_sign_in_and_out(
     assert heos.signed_in_username is None
 
     data = {
-        const.PARAM_USER_NAME: "example@example.com",
-        const.PARAM_PASSWORD: "example",
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
     }
 
     # Test sign-in failure
@@ -983,7 +1009,7 @@ async def test_sign_in_and_out(
         "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
-    assert heos.signed_in_username == data[const.PARAM_USER_NAME]
+    assert heos.signed_in_username == data[const.ATTR_USER_NAME]
 
 
 @pytest.mark.asyncio
@@ -1004,7 +1030,7 @@ async def test_get_groups(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test creating a group."""
-    data = {"pid": "1,2,3"}
+    data = {const.ATTR_PLAYER_ID: "1,2,3"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_create")
     await heos.create_group(1, [2, 3])
 
@@ -1012,7 +1038,7 @@ async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
-    data = {"pid": "1"}
+    data = {const.ATTR_PLAYER_ID: "1"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_remove")
     await heos.remove_group(1)
 
@@ -1020,6 +1046,6 @@ async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_update_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
-    data = {"pid": "1,2"}
+    data = {const.ATTR_PLAYER_ID: "1,2"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_update")
     await heos.update_group(1, [2])

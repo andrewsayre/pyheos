@@ -10,6 +10,7 @@ from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.message import HeosMessage
+from pyheos.system import HeosHost, HeosSystem
 
 from . import const
 from .connection import AutoReconnectingConnection
@@ -29,6 +30,7 @@ class HeosOptions:
     Args:
         host: A host name or IP address of a HEOS-capable device.
         timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+        events: Set to True to enable event updates, False to disable. The default is True.
         heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
         heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
         all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
@@ -40,6 +42,7 @@ class HeosOptions:
 
     host: str
     timeout: float = field(default=const.DEFAULT_TIMEOUT, kw_only=True)
+    events: bool = field(default=True, kw_only=True)
     all_progress_events: bool = field(default=True, kw_only=True)
     dispatcher: Dispatcher | None = field(default=None, kw_only=True)
     auto_reconnect: bool = field(default=False, kw_only=True)
@@ -65,6 +68,7 @@ class Heos:
         Args:
             host: A host name or IP address of a HEOS-capable device.
             timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+            events: Set to True to enable event updates, False to disable. The default is True.
             all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
             dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
             auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
@@ -78,6 +82,21 @@ class Heos:
         heos = Heos(HeosOptions(host, **kwargs))
         await heos.connect()
         return heos
+
+    @classmethod
+    async def validate_connection(cls, host: str) -> HeosSystem:
+        """
+        Validate the connection to the HEOS device and return information about the HEOS system.
+
+        Args:
+            host: A host name or IP address of a HEOS-capable device.
+        """
+        heos = Heos(HeosOptions(host, events=False, heart_beat=False))
+        try:
+            await heos.connect()
+            return await heos.get_system_info()
+        finally:
+            await heos.disconnect()
 
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
@@ -135,7 +154,7 @@ class Heos:
             # Determine the logged in user
             self._signed_in_username = await self._commands.check_account()
 
-        await self._commands.register_for_change_events(True)
+        await self._commands.register_for_change_events(self._options.events)
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -155,10 +174,8 @@ class Heos:
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
-            if const.PARAM_SIGNED_IN in event.message:
-                self._signed_in_username = event.get_message_value(
-                    const.PARAM_USER_NAME
-                )
+            if const.ATTR_SIGNED_IN in event.message:
+                self._signed_in_username = event.get_message_value(const.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
@@ -169,7 +186,7 @@ class Heos:
 
     async def _handle_player_event(self, event: HeosMessage) -> None:
         """Process an event about a player."""
-        player_id = event.get_message_value_int(const.PARAM_PLAYER_ID)
+        player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
         if player and (
             await player.event_update(event, self._options.all_progress_events)
@@ -179,7 +196,7 @@ class Heos:
 
     async def _handle_group_event(self, event: HeosMessage) -> None:
         """Process an event about a group."""
-        group_id = event.get_message_value_int(const.PARAM_GROUP_ID)
+        group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
         if group:
             await group.event_update(event)
@@ -206,6 +223,13 @@ class Heos:
         await self._commands.sign_out()
         self._signed_in_username = None
 
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system."""
+        payload = await self._commands.get_players()
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
+
     async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""
         new_player_ids = []
@@ -214,9 +238,9 @@ class Heos:
         payload = await self._commands.get_players()
         existing = list(self._players.values())
         for player_data in payload:
-            player_id = player_data["pid"]
-            name = player_data["name"]
-            version = player_data["version"]
+            player_id = player_data[const.ATTR_PLAYER_ID]
+            name = player_data[const.ATTR_NAME]
+            version = player_data[const.ATTR_VERSION]
             # Try finding existing player by id or match name when firmware
             # version is different because IDs change after a firmware upgrade
             player = next(

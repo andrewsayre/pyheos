@@ -146,7 +146,7 @@ class MockHeosDevice:
                 continue
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
-                enable = str(query["enable"])
+                enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == "on"
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())
@@ -194,7 +194,7 @@ class CommandMatcher:
     async def _get_response(self, response: str, query: dict) -> str:
         response = await get_fixture(response)
         keys = {
-            "pid": "{player_id}",
+            const.ATTR_PLAYER_ID: "{player_id}",
             "state": "{state}",
             "level": "{level}",
         }

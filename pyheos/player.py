@@ -158,13 +158,13 @@ class HeosPlayer:
         # pylint: disable=protected-access
         self._commands = heos._commands
 
-        self._name: str = str(data["name"])
-        self._player_id: int = int(data["pid"])
-        self._model: str = data["model"]
-        self._version: str = data["version"]
-        self._ip_address: str = data["ip"]
-        self._network: str = data["network"]
-        self._line_out: int = data["lineout"]
+        self._name: str = str(data[const.ATTR_NAME])
+        self._player_id: int = int(data[const.ATTR_PLAYER_ID])
+        self._model: str = data[const.ATTR_MODEL]
+        self._version: str = data[const.ATTR_VERSION]
+        self._ip_address: str = data[const.ATTR_IP_ADDRESS]
+        self._network: str = data[const.ATTR_NETWORK]
+        self._line_out: int = data[const.ATTR_LINE_OUT]
 
         self._state: str | None = None
         self._volume: int | None = None
@@ -189,12 +189,12 @@ class HeosPlayer:
 
     def from_data(self, data: dict[str, Any]) -> None:
         """Update the attributes from the supplied data."""
-        self._name = str(data["name"])
-        self._model = data["model"]
-        self._version = data["version"]
-        self._ip_address = data["ip"]
-        self._network = data["network"]
-        self._line_out = data["lineout"]
+        self._name = str(data[const.ATTR_NAME])
+        self._model = data[const.ATTR_MODEL]
+        self._version = data[const.ATTR_VERSION]
+        self._ip_address = data[const.ATTR_IP_ADDRESS]
+        self._network = data[const.ATTR_NETWORK]
+        self._line_out = data[const.ATTR_LINE_OUT]
 
     async def refresh(self) -> None:
         """Pull current state."""
@@ -336,7 +336,7 @@ class HeosPlayer:
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         payload = await self._commands.get_quick_selects(self._player_id)
-        return {int(data["id"]): data["name"] for data in payload}
+        return {int(data["id"]): data[const.ATTR_NAME] for data in payload}
 
     async def event_update(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""

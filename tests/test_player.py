@@ -16,14 +16,14 @@ from tests import MockHeosDevice
 async def test_str() -> None:
     """Test the __str__ function."""
     data = {
-        "name": "Back Patio",
-        "pid": 1,
-        "model": "HEOS Drive",
-        "version": "1.493.180",
-        "ip": "192.168.0.1",
-        "network": "wired",
-        "lineout": 1,
-        "serial": "1234567890",
+        const.ATTR_NAME: "Back Patio",
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_MODEL: "HEOS Drive",
+        const.ATTR_VERSION: "1.493.180",
+        const.ATTR_IP_ADDRESS: "192.168.0.1",
+        const.ATTR_NETWORK: const.NETWORK_TYPE_WIRED,
+        const.ATTR_LINE_OUT: 1,
+        const.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer(Heos(HeosOptions("None")), data)
     assert str(player) == "{Back Patio (HEOS Drive)}"
@@ -42,14 +42,14 @@ async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
     # Play
     mock_device.register(
         const.COMMAND_SET_PLAY_STATE,
-        {"pid": "1", "state": "play"},
+        {const.ATTR_PLAYER_ID: "1", "state": "play"},
         "player.set_play_state",
     )
     await player.play()
     # Pause
     mock_device.register(
         const.COMMAND_SET_PLAY_STATE,
-        {"pid": "1", "state": "pause"},
+        {const.ATTR_PLAYER_ID: "1", "state": "pause"},
         "player.set_play_state",
         replace=True,
     )
@@ -57,7 +57,7 @@ async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
     # Stop
     mock_device.register(
         const.COMMAND_SET_PLAY_STATE,
-        {"pid": "1", "state": "stop"},
+        {const.ATTR_PLAYER_ID: "1", "state": "stop"},
         "player.set_play_state",
         replace=True,
     )
@@ -76,7 +76,9 @@ async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
         await player.set_volume(101)
 
     mock_device.register(
-        const.COMMAND_SET_VOLUME, {"pid": "1", "level": "100"}, "player.set_volume"
+        const.COMMAND_SET_VOLUME,
+        {const.ATTR_PLAYER_ID: "1", "level": "100"},
+        "player.set_volume",
     )
     await player.set_volume(100)
 
@@ -88,13 +90,15 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     player = heos.players[1]
     # Mute
     mock_device.register(
-        const.COMMAND_SET_MUTE, {"pid": "1", "state": "on"}, "player.set_mute"
+        const.COMMAND_SET_MUTE,
+        {const.ATTR_PLAYER_ID: "1", "state": "on"},
+        "player.set_mute",
     )
     await player.mute()
     # Unmute
     mock_device.register(
         const.COMMAND_SET_MUTE,
-        {"pid": "1", "state": "off"},
+        {const.ATTR_PLAYER_ID: "1", "state": "off"},
         "player.set_mute",
         replace=True,
     )
@@ -106,7 +110,9 @@ async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the toggle_mute command."""
     await heos.get_players()
     player = heos.players[1]
-    mock_device.register(const.COMMAND_TOGGLE_MUTE, {"pid": "1"}, "player.toggle_mute")
+    mock_device.register(
+        const.COMMAND_TOGGLE_MUTE, {const.ATTR_PLAYER_ID: "1"}, "player.toggle_mute"
+    )
     await player.toggle_mute()
 
 
@@ -120,7 +126,9 @@ async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     with pytest.raises(ValueError):
         await player.volume_up(11)
     mock_device.register(
-        const.COMMAND_VOLUME_UP, {"pid": "1", "step": "6"}, "player.volume_up"
+        const.COMMAND_VOLUME_UP,
+        {const.ATTR_PLAYER_ID: "1", "step": "6"},
+        "player.volume_up",
     )
     await player.volume_up(6)
 
@@ -135,7 +143,9 @@ async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     with pytest.raises(ValueError):
         await player.volume_down(11)
     mock_device.register(
-        const.COMMAND_VOLUME_DOWN, {"pid": "1", "step": "6"}, "player.volume_down"
+        const.COMMAND_VOLUME_DOWN,
+        {const.ATTR_PLAYER_ID: "1", "step": "6"},
+        "player.volume_down",
     )
     await player.volume_down(6)
 
@@ -145,7 +155,7 @@ async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
     player = heos.players[1]
-    args = {"pid": "1", "repeat": const.REPEAT_ON_ALL, "shuffle": "on"}
+    args = {const.ATTR_PLAYER_ID: "1", "repeat": const.REPEAT_ON_ALL, "shuffle": "on"}
     mock_device.register(const.COMMAND_SET_PLAY_MODE, args, "player.set_play_mode")
 
     await player.set_play_mode(const.REPEAT_ON_ALL, True)
@@ -159,7 +169,7 @@ async def test_play_next_previous(mock_device: MockHeosDevice, heos: Heos) -> No
     """Test the volume commands."""
     await heos.get_players()
     player = heos.players[1]
-    args = {"pid": "1"}
+    args = {const.ATTR_PLAYER_ID: "1"}
     # Next
     mock_device.register(const.COMMAND_PLAY_NEXT, args, "player.play_next")
     await player.play_next()
@@ -173,7 +183,7 @@ async def test_clear_queue(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
     player = heos.players[1]
-    args = {"pid": "1"}
+    args = {const.ATTR_PLAYER_ID: "1"}
     mock_device.register(const.COMMAND_CLEAR_QUEUE, args, "player.clear_queue")
     await player.clear_queue()
 
@@ -199,7 +209,7 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
 
     input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
     args = {
-        "pid": "1",
+        const.ATTR_PLAYER_ID: "1",
         "spid": str(input_source.player_id),
         "input": input_source.input_name,
     }
@@ -217,7 +227,7 @@ async def test_play_favorite(mock_device: MockHeosDevice, heos: Heos) -> None:
     with pytest.raises(ValueError):
         await player.play_favorite(0)
 
-    args = {"pid": "1", "preset": "1"}
+    args = {const.ATTR_PLAYER_ID: "1", "preset": "1"}
     mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args, "browse.play_preset")
 
     await player.play_favorite(1)
@@ -229,7 +239,7 @@ async def test_play_url(mock_device: MockHeosDevice, heos: Heos) -> None:
     await heos.get_players()
     player = heos.players[1]
     url = "https://my.website.com/podcast.mp3"
-    args = {"pid": "1", "url": url}
+    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_URL: url}
     mock_device.register(const.COMMAND_BROWSE_PLAY_STREAM, args, "browse.play_stream")
 
     await player.play_url(url)
@@ -246,7 +256,7 @@ async def test_play_quick_select(mock_device: MockHeosDevice, heos: Heos) -> Non
     with pytest.raises(ValueError):
         await player.play_quick_select(7)
 
-    args = {"pid": "1", "id": "2"}
+    args = {const.ATTR_PLAYER_ID: "1", "id": "2"}
     mock_device.register(
         const.COMMAND_PLAY_QUICK_SELECT, args, "player.play_quickselect"
     )
@@ -264,7 +274,7 @@ async def test_set_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None
     with pytest.raises(ValueError):
         await player.set_quick_select(7)
 
-    args = {"pid": "1", "id": "2"}
+    args = {const.ATTR_PLAYER_ID: "1", "id": "2"}
     mock_device.register(const.COMMAND_SET_QUICK_SELECT, args, "player.set_quickselect")
     await player.set_quick_select(2)
 
@@ -274,7 +284,7 @@ async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> Non
     """Test the play favorite."""
     await heos.get_players()
     player = heos.players[1]
-    args = {"pid": "1"}
+    args = {const.ATTR_PLAYER_ID: "1"}
     mock_device.register(
         const.COMMAND_GET_QUICK_SELECTS, args, "player.get_quickselects"
     )
@@ -299,7 +309,7 @@ async def test_add_to_queue_unplayable_source(
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "Unplayable",
+            const.ATTR_NAME: "Unplayable",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "no",
@@ -320,7 +330,7 @@ async def test_add_to_queue_invalid_queue_option(
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Playlist",
+            const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
@@ -342,7 +352,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Playlist",
+            const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
@@ -352,7 +362,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
         },
     )
     args = {
-        "pid": "1",
+        const.ATTR_PLAYER_ID: "1",
         "sid": str(const.MUSIC_SOURCE_PLAYLISTS),
         "cid": "123",
         "aid": str(const.ADD_QUEUE_PLAY_NOW),
@@ -371,7 +381,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Track",
+            const.ATTR_NAME: "My Track",
             "type": const.TYPE_SONG,
             "image_url": "",
             "playable": "yes",
@@ -382,7 +392,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
         },
     )
     args = {
-        "pid": "1",
+        const.ATTR_PLAYER_ID: "1",
         "sid": str(const.MUSIC_SOURCE_PLAYLISTS),
         "cid": "123",
         "aid": str(const.ADD_QUEUE_PLAY_NOW),

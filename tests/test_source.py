@@ -2,6 +2,7 @@
 
 from unittest.mock import Mock
 
+from pyheos import const
 from pyheos.command import HeosCommands
 from pyheos.source import HeosSource, InputSource
 
@@ -9,7 +10,7 @@ from pyheos.source import HeosSource, InputSource
 def test_source_str_repr() -> None:
     """Test the __str__ function."""
     data = {
-        "name": "AUX Input",
+        const.ATTR_NAME: "AUX Input",
         "image_url": "https://production.ws.skyegloup.com:443"
         "/media/images/service/logos/musicsource_logo_aux.png",
         "type": "heos_service",
