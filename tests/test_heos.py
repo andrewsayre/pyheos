@@ -1035,7 +1035,7 @@ async def test_sign_in_and_out(
     assert heos.current_credentials.password == data[const.ATTR_PASSWORD]
 
     # Test sign-out does not clear credential
-    await heos.sign_out(clear_credential=False)
+    await heos.sign_out(update_credential=False)
     assert heos.signed_in_username is None
     assert heos.current_credentials is not None
 

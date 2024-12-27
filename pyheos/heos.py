@@ -231,16 +231,16 @@ class Heos:
         if update_credential:
             self._current_credentials = Credentials(username, password)
 
-    async def sign_out(self, *, clear_credential: bool = True) -> None:
+    async def sign_out(self, *, update_credential: bool = True) -> None:
         """
         Sign-out of the HEOS account on the device directly connected.
 
         Args:
-            clear_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
+            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
         """
         await self._commands.sign_out()
         self._signed_in_username = None
-        if clear_credential:
+        if update_credential:
             self._current_credentials = None
 
     async def get_system_info(self) -> HeosSystem:
