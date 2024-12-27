@@ -101,7 +101,7 @@ class Heos:
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
         self._options = options
-        self._current_credential = options.credentials
+        self._current_credentials = options.credentials
         self._connection = AutoReconnectingConnection(
             options.host,
             timeout=options.timeout,
@@ -138,12 +138,12 @@ class Heos:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
 
-        if self._current_credential:
+        if self._current_credentials:
             # Sign-in to the account if provided
             try:
                 self._signed_in_username = await self._commands.sign_in(
-                    self._current_credential.username,
-                    self._current_credential.password,
+                    self._current_credentials.username,
+                    self._current_credentials.password,
                 )
             except CommandError as err:
                 _LOGGER.debug(
@@ -229,7 +229,7 @@ class Heos:
         """
         self._signed_in_username = await self._commands.sign_in(username, password)
         if update_credential:
-            self._current_credential = Credentials(username, password)
+            self._current_credentials = Credentials(username, password)
 
     async def sign_out(self, *, clear_credential: bool = True) -> None:
         """
@@ -241,7 +241,7 @@ class Heos:
         await self._commands.sign_out()
         self._signed_in_username = None
         if clear_credential:
-            self._current_credential = None
+            self._current_credentials = None
 
     async def get_system_info(self) -> HeosSystem:
         """Get information about the HEOS system."""
@@ -418,6 +418,6 @@ class Heos:
         return self._signed_in_username
 
     @property
-    def current_credential(self) -> Credentials | None:
+    def current_credentials(self) -> Credentials | None:
         """Return the current credential, if any set."""
-        return self._current_credential
+        return self._current_credentials
