@@ -146,7 +146,7 @@ class MockHeosDevice:
                 continue
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
-                enable = str(query["enable"])
+                enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == "on"
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())

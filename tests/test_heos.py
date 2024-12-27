@@ -1030,7 +1030,7 @@ async def test_get_groups(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test creating a group."""
-    data = {"pid": "1,2,3"}
+    data = {const.ATTR_PLAYER_ID: "1,2,3"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_create")
     await heos.create_group(1, [2, 3])
 
@@ -1038,7 +1038,7 @@ async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
-    data = {"pid": "1"}
+    data = {const.ATTR_PLAYER_ID: "1"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_remove")
     await heos.remove_group(1)
 
@@ -1046,6 +1046,6 @@ async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
 @pytest.mark.asyncio
 async def test_update_group(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test removing a group."""
-    data = {"pid": "1,2"}
+    data = {const.ATTR_PLAYER_ID: "1,2"}
     mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_update")
     await heos.update_group(1, [2])
