@@ -416,3 +416,8 @@ class Heos:
     def signed_in_username(self) -> str | None:
         """Return the signed-in username."""
         return self._signed_in_username
+
+    @property
+    def current_credential(self) -> Credentials | None:
+        """Return the current credential, if any set."""
+        return self._current_credential
