@@ -5,8 +5,9 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from pyheos.message import HeosMessage
+
 from . import const
-from .response import HeosResponse
 from .source import HeosSource, InputSource
 
 if TYPE_CHECKING:
@@ -61,13 +62,13 @@ class HeosNowPlayingMedia:
         self.clear_progress()
 
     def event_update_progress(
-        self, event: HeosResponse, all_progress_events: bool
+        self, event: HeosMessage, all_progress_events: bool
     ) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self._current_position is None:
-            self._current_position = int(event.get_message("cur_pos"))
+            self._current_position = event.get_message_value_int("cur_pos")
             self._current_position_updated = datetime.now()
-            self._duration = int(event.get_message("duration"))
+            self._duration = event.get_message_value_int("duration")
             return True
         return False
 
@@ -155,7 +156,7 @@ class HeosPlayer:
         """Initialize a player with the data."""
         self._heos = heos
         # pylint: disable=protected-access
-        self._commands = heos._connection.commands
+        self._commands = heos._commands
 
         self._name: str = str(data["name"])
         self._player_id: int = int(data["pid"])
@@ -337,29 +338,27 @@ class HeosPlayer:
         payload = await self._commands.get_quick_selects(self._player_id)
         return {int(data["id"]): data["name"] for data in payload}
 
-    async def event_update(
-        self, event: HeosResponse, all_progress_events: bool
-    ) -> bool:
+    async def event_update(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self._now_playing_media.event_update_progress(
                 event, all_progress_events
             )
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state = event.get_message("state")
+            self._state = event.get_message_value("state")
             if self._state == const.PLAY_STATE_PLAY:
                 self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._volume = int(float(event.get_message("level")))
-            self._is_muted = event.get_message("mute") == "on"
+            self._volume = event.get_message_value_int("level")
+            self._is_muted = event.get_message_value("mute") == "on"
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self._repeat = event.get_message("repeat")
+            self._repeat = event.get_message_value("repeat")
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self._shuffle = event.get_message("shuffle") == "on"
+            self._shuffle = event.get_message_value("shuffle") == "on"
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self._playback_error = event.get_message("error")
+            self._playback_error = event.get_message_value("error")
         return True
 
     @property

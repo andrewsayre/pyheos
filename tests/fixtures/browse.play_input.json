@@ -1,1 +1,1 @@
-{"heos": {"command": "browse/play_input", "result": "success", "message": "pid=1&spid=1&input=inputs/aux_in_1&sequence={sequence}"}}
+{"heos": {"command": "browse/play_input", "result": "success", "message": "pid=1&spid=1&input=inputs/aux_in_1"}}

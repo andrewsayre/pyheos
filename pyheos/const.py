@@ -5,8 +5,37 @@ from typing import Final
 CLI_PORT: Final = 1255
 DEFAULT_TIMEOUT: Final = 10.0
 DEFAULT_RECONNECT_DELAY: Final = 10.0
+DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
+
+QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
+MASKED_PARAMS: Final = {"pw"}
+MASK: Final = "********"
+SEPARATOR: Final = "\r\n"
+SEPARATOR_BYTES: Final = SEPARATOR.encode()
+
+PARAM_ENABLE: Final = "enable"
+PARAM_URL: Final = "url"
+PARAM_PLAYER_ID: Final = "pid"
+PARAM_GROUP_ID: Final = "gid"
+PARAM_USER_NAME: Final = "un"
+PARAM_PASSWORD: Final = "pw"
+PARAM_SIGNED_IN: Final = "signed_in"
+PARAM_SIGNED_OUT: Final = "signed_out"
+PARAM_ERROR_ID: Final = "eid"
+PARAM_TEXT: Final = "text"
+PARAM_SYSTEM_ERROR_NUMBER: Final = "syserrno"
+
+VALUE_ON: Final = "on"
+VALUE_OFF: Final = "off"
+
+ERROR_USER_NOT_LOGGED_IN: Final = 8
+ERROR_USER_NOT_FOUND: Final = 10
+ERROR_SYSTEM_ERROR: Final = 12
+
+SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
+SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 
 STATE_CONNECTED: Final = "connected"
 STATE_DISCONNECTED: Final = "disconnected"
@@ -215,6 +244,7 @@ SIGNAL_CONTROLLER_EVENT: Final = "controller_event"
 SIGNAL_HEOS_EVENT: Final = "heos_event"
 EVENT_CONNECTED: Final = "connected"
 EVENT_DISCONNECTED: Final = "disconnected"
+EVENT_USER_CREDENTIALS_INVALID: Final = "user credentials invalid"
 
 BASE_URI: Final = "heos://"
 

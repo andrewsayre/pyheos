@@ -6,13 +6,14 @@ import pytest
 
 from pyheos import const
 from pyheos.command import HeosCommands
-from pyheos.heos import Heos
+from pyheos.heos import Heos, HeosOptions
 from pyheos.player import HeosPlayer
 from pyheos.source import HeosSource, InputSource
 from tests import MockHeosDevice
 
 
-def test_str() -> None:
+@pytest.mark.asyncio
+async def test_str() -> None:
     """Test the __str__ function."""
     data = {
         "name": "Back Patio",
@@ -24,7 +25,7 @@ def test_str() -> None:
         "lineout": 1,
         "serial": "1234567890",
     }
-    player = HeosPlayer(Heos("None"), data)
+    player = HeosPlayer(Heos(HeosOptions("None")), data)
     assert str(player) == "{Back Patio (HEOS Drive)}"
     assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}"
 
