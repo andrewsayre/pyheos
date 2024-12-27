@@ -103,6 +103,7 @@ class CommandFailedError(CommandError):
                 const.SYSTEM_ERROR_USER_NOT_FOUND,
             )
         return self._error_id in (
+            const.ERROR_INVALID_CREDNETIALS,
             const.ERROR_USER_NOT_LOGGED_IN,
             const.ERROR_USER_NOT_FOUND,
         )
