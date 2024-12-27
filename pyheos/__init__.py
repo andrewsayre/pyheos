@@ -8,6 +8,7 @@ from .group import HeosGroup
 from .heos import Heos, HeosOptions
 from .player import HeosNowPlayingMedia, HeosPlayer
 from .source import HeosSource, InputSource
+from .system import HeosHost, HeosSystem
 
 __all__ = [
     "const",
@@ -18,9 +19,11 @@ __all__ = [
     "Heos",
     "HeosError",
     "HeosGroup",
+    "HeosHost",
     "HeosOptions",
     "HeosPlayer",
     "HeosNowPlayingMedia",
     "HeosSource",
+    "HeosSystem",
     "InputSource",
 ]
