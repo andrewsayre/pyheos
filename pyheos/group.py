@@ -27,7 +27,7 @@ def create_group(
             members.append(player)
     if leader is None:
         raise ValueError("No leader found in group")
-    return HeosGroup(heos, data["name"], int(data["gid"]), leader, members)
+    return HeosGroup(heos, data[const.ATTR_NAME], int(data["gid"]), leader, members)
 
 
 class HeosGroup:

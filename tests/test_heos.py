@@ -370,7 +370,7 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert player.ip_address == "127.0.0.1"
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
-    assert player.network == "wired"
+    assert player.network == const.NETWORK_TYPE_WIRED
     assert player.state == const.PLAY_STATE_STOP
     assert player.version == "1.493.180"
     assert player.volume == 36

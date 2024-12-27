@@ -241,8 +241,8 @@ class Heos:
         existing = list(self._players.values())
         for player_data in payload:
             player_id = player_data["pid"]
-            name = player_data["name"]
-            version = player_data["version"]
+            name = player_data[const.ATTR_NAME]
+            version = player_data[const.ATTR_VERSION]
             # Try finding existing player by id or match name when firmware
             # version is different because IDs change after a firmware upgrade
             player = next(

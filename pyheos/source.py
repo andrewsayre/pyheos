@@ -2,6 +2,7 @@
 
 from typing import Any, Sequence
 
+from pyheos import const
 from pyheos.command import HeosCommands  # pylint: disable=unused-import
 
 
@@ -44,7 +45,7 @@ class HeosSource:
     def __init__(self, commands: HeosCommands, data: dict[str, Any]) -> None:
         """Init the source class."""
         self._commands = commands
-        self._name: str = data["name"]
+        self._name: str = data[const.ATTR_NAME]
         self._image_url: str = data["image_url"]
         self._type: str = data["type"]
         self._source_id: int | None = (

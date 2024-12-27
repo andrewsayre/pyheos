@@ -16,14 +16,14 @@ from tests import MockHeosDevice
 async def test_str() -> None:
     """Test the __str__ function."""
     data = {
-        "name": "Back Patio",
+        const.ATTR_NAME: "Back Patio",
         "pid": 1,
-        "model": "HEOS Drive",
-        "version": "1.493.180",
-        "ip": "192.168.0.1",
-        "network": "wired",
+        const.ATTR_MODEL: "HEOS Drive",
+        const.ATTR_VERSION: "1.493.180",
+        const.ATTR_IP_ADDRESS: "192.168.0.1",
+        const.ATTR_NETWORK: const.NETWORK_TYPE_WIRED,
         "lineout": 1,
-        "serial": "1234567890",
+        const.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer(Heos(HeosOptions("None")), data)
     assert str(player) == "{Back Patio (HEOS Drive)}"
@@ -299,7 +299,7 @@ async def test_add_to_queue_unplayable_source(
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "Unplayable",
+            const.ATTR_NAME: "Unplayable",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "no",
@@ -320,7 +320,7 @@ async def test_add_to_queue_invalid_queue_option(
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Playlist",
+            const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
@@ -342,7 +342,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Playlist",
+            const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
@@ -371,7 +371,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     source = HeosSource(
         Mock(HeosCommands),
         {
-            "name": "My Track",
+            const.ATTR_NAME: "My Track",
             "type": const.TYPE_SONG,
             "image_url": "",
             "playable": "yes",
