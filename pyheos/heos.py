@@ -17,7 +17,7 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
-from .source import HeosSource, InputSource
+from .source import HeosMusicSource, HeosSource, InputSource
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ class Heos:
         self._players: dict[int, HeosPlayer] = {}
         self._players_loaded = False
 
-        self._music_sources: dict[int, HeosSource] = {}
+        self._music_sources: dict[int, HeosMusicSource] = {}
         self._music_sources_loaded = False
 
         self._groups: dict[int, HeosGroup] = {}
@@ -338,14 +338,15 @@ class Heos:
         ids.extend(member_ids)
         await self._commands.set_group(ids)
 
-    async def get_music_sources(self, refresh: bool = True) -> dict[int, HeosSource]:
+    async def get_music_sources(
+        self, refresh: bool = True
+    ) -> dict[int, HeosMusicSource]:
         """Get available music sources."""
-        if not self._music_sources or refresh:
+        if not self._music_sources_loaded or refresh:
             payload = await self._commands.get_music_sources()
             self._music_sources.clear()
             for data in payload:
-                source = HeosSource(self._commands, data)
-                assert source.source_id is not None
+                source = HeosMusicSource.from_data(data)
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
@@ -398,7 +399,7 @@ class Heos:
         return self._groups
 
     @property
-    def music_sources(self) -> dict[int, HeosSource]:
+    def music_sources(self) -> dict[int, HeosMusicSource]:
         """Get available music sources."""
         return self._music_sources
 

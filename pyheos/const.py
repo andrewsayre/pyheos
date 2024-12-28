@@ -9,9 +9,11 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
+ATTR_AVAILABLE: Final = "available"
 ATTR_ENABLE: Final = "enable"
 ATTR_ERROR_ID: Final = "eid"
 ATTR_GROUP_ID: Final = "gid"
+ATTR_IMAGE_URL: Final = "image_url"
 ATTR_IP_ADDRESS: Final = "ip"
 ATTR_LINE_OUT: Final = "lineout"
 ATTR_MODEL: Final = "model"
@@ -20,10 +22,13 @@ ATTR_NETWORK: Final = "network"
 ATTR_PASSWORD: Final = "pw"
 ATTR_PLAYER_ID: Final = "pid"
 ATTR_SERIAL: Final = "serial"
+ATTR_SERVICE_USER_NAME: Final = "service_username"
+ATTR_SOURCE_ID: Final = "sid"
 ATTR_SIGNED_OUT: Final = "signed_out"
 ATTR_SIGNED_IN: Final = "signed_in"
 ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
 ATTR_TEXT: Final = "text"
+ATTR_TYPE: Final = "type"
 ATTR_URL: Final = "url"
 ATTR_USER_NAME: Final = "un"
 ATTR_VERSION: Final = "version"
@@ -36,6 +41,8 @@ SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
+VALUE_TRUE: Final = "true"
+VALUE_FALSE: Final = "false"
 
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8

@@ -10,6 +10,7 @@ from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
+from pyheos.source import MusicSourceType
 
 from . import MockHeosDevice, connect_handler, get_fixture
 
@@ -909,16 +910,14 @@ async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
     sources = await heos.get_music_sources()
     assert len(sources) == 15
     pandora = sources[const.MUSIC_SOURCE_PANDORA]
-    assert pandora.source_id == 1
+    assert pandora.source_id == const.MUSIC_SOURCE_PANDORA
     assert (
         pandora.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert pandora.type == const.TYPE_MUSIC_SERVICE
+    assert pandora.type == MusicSourceType.MUSIC_SERVICE
     assert pandora.available
     assert pandora.service_username == "test@test.com"
-    assert not pandora.container
-    assert not pandora.playable
 
 
 @pytest.mark.asyncio
