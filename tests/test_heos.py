@@ -958,7 +958,12 @@ async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     fav = sources[1]
     assert fav.playable
     assert fav.name == "Thumbprint Radio"
-    assert fav.type == const.TYPE_STATION
+    assert fav.media_id == "3790855220637622543"
+    assert (
+        fav.image_url
+        == "http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg"
+    )
+    assert fav.type == MediaType.STATION
 
 
 @pytest.mark.asyncio

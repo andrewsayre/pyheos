@@ -365,12 +365,14 @@ class Heos:
 
         return input_sources
 
-    async def get_favorites(self) -> dict[int, HeosSource]:
+    async def get_favorites(self) -> dict[int, MediaItem]:
         """Get available favorites."""
         message = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
-        payload = cast(Sequence[dict], message.payload)
-        sources = [HeosSource(self._commands, item) for item in payload]
-        return {index + 1: source for index, source in enumerate(sources)}
+        result = BrowseResult.from_data(message, self._commands)
+        return {
+            index + 1: cast(MediaItem, source)
+            for index, source in enumerate(result.items)
+        }
 
     async def get_playlists(self) -> Sequence[HeosSource]:
         """Get available playlists."""
