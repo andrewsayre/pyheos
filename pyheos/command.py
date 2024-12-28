@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any, Final, Optional, cast
 
 from pyheos.connection import ConnectionBase, HeosCommand
+from pyheos.message import HeosMessage
 
 from . import const
 
@@ -174,7 +175,7 @@ class HeosCommands:
         container_id: str | None = None,
         range_start: int | None = None,
         range_end: int | None = None,
-    ) -> Sequence[dict]:
+    ) -> HeosMessage:
         """Browse a music source."""
         params: dict[str, Any] = {const.ATTR_SOURCE_ID: source_id}
         if container_id:
@@ -183,10 +184,9 @@ class HeosCommands:
         if isinstance(range_start, int) and isinstance(range_end, int):
             params[const.ATTR_RANGE] = f"{range_start},{range_end}"
 
-        response = await self._connection.command(
+        return await self._connection.command(
             HeosCommand(const.COMMAND_BROWSE_BROWSE, params)
         )
-        return cast(Sequence[dict], response.payload)
 
     async def play_input(
         self, player_id: int, input_name: str, *, source_player_id: int | None = None

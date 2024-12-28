@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
@@ -354,7 +354,8 @@ class Heos:
 
     async def get_input_sources(self) -> Sequence[InputSource]:
         """Get available input sources."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        message = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        payload = cast(Sequence[dict], message.payload)
         sources = [HeosSource(self._commands, item) for item in payload]
         input_sources = []
         for source in sources:
@@ -371,13 +372,15 @@ class Heos:
 
     async def get_favorites(self) -> dict[int, HeosSource]:
         """Get available favorites."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
+        message = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
+        payload = cast(Sequence[dict], message.payload)
         sources = [HeosSource(self._commands, item) for item in payload]
         return {index + 1: source for index, source in enumerate(sources)}
 
     async def get_playlists(self) -> Sequence[HeosSource]:
         """Get available playlists."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        message = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        payload = cast(Sequence[dict], message.payload)
         playlists = []
         for item in payload:
             item["sid"] = const.MUSIC_SOURCE_PLAYLISTS

@@ -1,11 +1,13 @@
 """ "Define the media module."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 
 from pyheos import const
 from pyheos.command import HeosCommands
+from pyheos.message import HeosMessage
 
 
 class MediaType(StrEnum):
@@ -104,13 +106,13 @@ class MediaContainer(MediaPlayable):
         self,
         range_start: int | None = None,
         range_end: int | None = None,
-    ) -> list[Media]:
+    ) -> "BrowseResult":
         """Browse the contents of the current source."""
         assert self._commands is not None
-        items = await self._commands.browse(
+        message = await self._commands.browse(
             self.source_id, self.container_id, range_start, range_end
         )
-        return [Media.from_data(item, self._commands, self.source_id) for item in items]
+        return BrowseResult.from_data(message, self._commands)
 
 
 @dataclass
@@ -157,11 +159,11 @@ class MediaSource(Media):
             _commands=commands,
         )
 
-    async def browse(self) -> list[Media]:
+    async def browse(self) -> "BrowseResult":
         """Browse the contents of the current source."""
         assert self._commands is not None
-        items = await self._commands.browse(self.source_id)
-        return [Media.from_data(item, self._commands, self.source_id) for item in items]
+        message = await self._commands.browse(self.source_id)
+        return BrowseResult.from_data(message, self._commands)
 
 
 @dataclass
@@ -242,4 +244,32 @@ class MediaSong(MediaItem):
             album_id=data[const.ATTR_ALBUM_ID],
             source_id=source_id,
             _commands=commands,
+        )
+
+
+@dataclass
+class BrowseResult:
+    """Define the result of a browse operation."""
+
+    count: int
+    returned: int
+    source_id: int
+    items: Sequence[Media]
+
+    @classmethod
+    def from_data(
+        cls, message: HeosMessage, commands: HeosCommands | None = None
+    ) -> "BrowseResult":
+        """Create a new instance from the provided data."""
+        source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
+        return cls(
+            count=message.get_message_value_int(const.ATTR_COUNT),
+            returned=message.get_message_value_int(const.ATTR_RETURNED),
+            source_id=source_id,
+            items=list(
+                [
+                    Media.from_data(item, commands, source_id)
+                    for item in cast(Sequence[dict], message.payload)
+                ]
+            ),
         )

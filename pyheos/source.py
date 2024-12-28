@@ -1,7 +1,8 @@
 """Define the heos source module."""
 
+from collections.abc import Sequence
 from enum import StrEnum
-from typing import Any, Sequence
+from typing import Any, cast
 
 from pyheos import const
 from pyheos.command import HeosCommands
@@ -80,8 +81,9 @@ class HeosSource:
         """Browse the contents of the current source."""
         if not self._source_id:
             raise ValueError("Source is not browsable.")
-        items = await self._commands.browse(self._source_id)
-        return [HeosSource(self._commands, item) for item in items]
+        message = await self._commands.browse(self._source_id)
+        payload = cast(Sequence[dict], message.payload)
+        return [HeosSource(self._commands, item) for item in payload]
 
     @property
     def name(self) -> str:

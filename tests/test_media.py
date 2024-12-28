@@ -1,5 +1,7 @@
 """Define tests for browsing media."""
 
+from typing import cast
+
 import pytest
 
 from pyheos.error import CommandFailedError
@@ -36,19 +38,20 @@ async def print_source(source: MediaSource | MediaContainer, level: int = 0) -> 
 
     try:
         if issubclass(type(source), MediaContainer):
+            container = cast(MediaContainer, source)
             print(
-                f"{'    ' * level}{source.name} (sid={source.source_id}&cid={source.container_id}) ->"
+                f"{'    ' * level}{source.name} (sid={container.source_id}&cid={container.container_id}) ->"
             )
-            items = await source.browse(0, 5)
+            result = await container.browse(0, 5)
         else:
             print(f"{'    ' * level}{source.name} (sid={source.source_id}) ->")
-            items = await source.browse()
+            result = await source.browse()
     except CommandFailedError:
         return
 
-    for item in items:
+    for item in result.items:
         if issubclass(type(item), tuple([MediaSource, MediaContainer])):
-            await print_source(item, level + 1)
+            await print_source(item, level + 1)  # type: ignore[arg-type]
         else:
             print(f"{'    ' * (level + 1)}{item}")
     print("")
