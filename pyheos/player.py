@@ -3,13 +3,12 @@
 import asyncio
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from pyheos.media import MediaItem
+from pyheos.media import MediaContainer, MediaItem
 from pyheos.message import HeosMessage
 
 from . import const
-from .source import HeosSource
 
 if TYPE_CHECKING:
     from .heos import Heos
@@ -316,19 +315,24 @@ class HeosPlayer:
         """Play the specified quick select."""
         await self._commands.play_quick_select(self._player_id, quick_select_id)
 
-    async def add_to_queue(self, source: HeosSource, add_queue_option: int) -> None:
+    async def add_to_queue(self, media: MediaContainer, add_queue_option: int) -> None:
         """Add the specified source to the queue."""
-        if not source.playable:
-            raise ValueError(f"Source '{source}' is not playable")
-        assert source.source_id is not None
-        assert source.container_id is not None
-        await self._commands.add_to_queue(
-            self._player_id,
-            source.source_id,
-            source.container_id,
-            add_queue_option,
-            source.media_id,
-        )
+        if not media.playable:
+            raise ValueError(f"Source '{media}' is not playable")
+
+        if issubclass(type(media), MediaItem):
+            media_item = cast(MediaItem, media)
+            await self._commands.add_to_queue(
+                self.player_id,
+                media.source_id,
+                media.container_id,
+                add_queue_option,
+                media_item.media_id,
+            )
+        else:
+            await self._commands.add_to_queue(
+                self.player_id, media.source_id, media.container_id, add_queue_option
+            )
 
     async def set_quick_select(self, quick_select_id: int) -> None:
         """Set the specified quick select to the current source."""

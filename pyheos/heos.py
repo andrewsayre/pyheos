@@ -352,7 +352,7 @@ class Heos:
             payload = await self._commands.get_music_sources()
             self._music_sources.clear()
             for data in payload:
-                source = MediaMusicSource.from_data(data, self._commands)
+                source = MediaMusicSource.from_data(data, commands=self._commands)
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources

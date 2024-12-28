@@ -40,56 +40,107 @@ class Media:
     @staticmethod
     def from_data(
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
         source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
     ) -> "Media":
         """Create a new instance from the provided data."""
 
         type = MediaType(data[const.ATTR_TYPE])
         match type:
             case MediaType.ALBUM:
-                return MediaAlbum.from_data(data, commands, source_id)
+                return MediaAlbum.from_data(data, source_id, container_id, commands)
             case MediaType.ARTIST:
-                return MediaContainer.from_data(data, commands, source_id)
+                return MediaContainer.from_data(data, source_id, container_id, commands)
             case MediaType.CONTAINER:
-                return MediaContainer.from_data(data, commands, source_id)
+                return MediaContainer.from_data(data, source_id, container_id, commands)
             case MediaType.DLNA_SERVER:
                 raise NotImplementedError()
             case MediaType.GENRE:
-                return MediaContainer.from_data(data, commands, source_id)
+                return MediaContainer.from_data(data, source_id, container_id, commands)
             case MediaType.HEOS_SERVER:
-                return MediaSource.from_data(data, commands, source_id)
+                return MediaSource.from_data(data, source_id, container_id, commands)
             case MediaType.HEOS_SERVICE:
-                return MediaSource.from_data(data, commands, source_id)
+                return MediaSource.from_data(data, source_id, container_id, commands)
             case MediaType.MUSIC_SERVICE:
                 raise NotImplementedError()
             case MediaType.PLAYLIST:
-                return MediaContainer.from_data(data, commands, source_id)
+                return MediaContainer.from_data(data, source_id, container_id, commands)
             case MediaType.SONG:
-                return MediaSong.from_data(data, commands, source_id)
+                return MediaSong.from_data(data, source_id, container_id, commands)
             case MediaType.STATION:
-                return MediaItem.from_data(data, commands, source_id)
+                return MediaItem.from_data(data, source_id, container_id, commands)
 
 
 @dataclass
-class MediaPlayable(Media):
-    """Define a playable media item."""
+class MediaSource(Media):
+    """Define a media source."""
 
-    playable: bool
+    @classmethod
+    def from_data(
+        cls,
+        data: dict[str, Any],
+        source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
+    ) -> "MediaSource":
+        """Create a new instance from the provided data."""
+        return cls(
+            name=data[const.ATTR_NAME],
+            type=MediaType(data[const.ATTR_TYPE]),
+            image_url=data[const.ATTR_IMAGE_URL],
+            source_id=int(data[const.ATTR_SOURCE_ID]),
+            _commands=commands,
+        )
+
+    async def browse(self) -> "BrowseResult":
+        """Browse the contents of the current source."""
+        assert self._commands is not None
+        message = await self._commands.browse(self.source_id)
+        return BrowseResult.from_data(message, self._commands)
 
 
 @dataclass
-class MediaContainer(MediaPlayable):
+class MediaMusicSource(MediaSource):
+    """Define a music source."""
+
+    available: bool
+    service_username: str | None
+
+    @classmethod
+    def from_data(
+        cls,
+        data: dict[str, Any],
+        source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
+    ) -> "MediaMusicSource":
+        """Create a new instance from the provided data."""
+        return cls(
+            name=data[const.ATTR_NAME],
+            type=MediaType(data[const.ATTR_TYPE]),
+            image_url=data[const.ATTR_IMAGE_URL],
+            source_id=int(data[const.ATTR_SOURCE_ID]),
+            available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
+            service_username=data.get(const.ATTR_SERVICE_USER_NAME),
+            _commands=commands,
+        )
+
+
+@dataclass
+class MediaContainer(Media):
     """Define a media container."""
 
+    playable: bool
     container_id: str
 
     @classmethod
     def from_data(
         cls,
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
         source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
     ) -> "MediaContainer":
         """Create a new instance from the provided data."""
         return MediaContainer(
@@ -123,8 +174,9 @@ class MediaAlbum(MediaContainer):
     def from_data(
         cls,
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
         source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
     ) -> "MediaAlbum":
         """Create a new instance from the provided data."""
         return cls(
@@ -140,60 +192,7 @@ class MediaAlbum(MediaContainer):
 
 
 @dataclass
-class MediaSource(Media):
-    """Define a media source."""
-
-    @classmethod
-    def from_data(
-        cls,
-        data: dict[str, Any],
-        commands: HeosCommands | None = None,
-        source_id: int = 0,
-    ) -> "MediaSource":
-        """Create a new instance from the provided data."""
-        return cls(
-            name=data[const.ATTR_NAME],
-            type=MediaType(data[const.ATTR_TYPE]),
-            image_url=data[const.ATTR_IMAGE_URL],
-            source_id=int(data[const.ATTR_SOURCE_ID]),
-            _commands=commands,
-        )
-
-    async def browse(self) -> "BrowseResult":
-        """Browse the contents of the current source."""
-        assert self._commands is not None
-        message = await self._commands.browse(self.source_id)
-        return BrowseResult.from_data(message, self._commands)
-
-
-@dataclass
-class MediaMusicSource(MediaSource):
-    """Define a music source."""
-
-    available: bool
-    service_username: str | None
-
-    @classmethod
-    def from_data(
-        cls,
-        data: dict[str, Any],
-        commands: HeosCommands | None = None,
-        source_id: int = 0,
-    ) -> "MediaMusicSource":
-        """Create a new instance from the provided data."""
-        return cls(
-            name=data[const.ATTR_NAME],
-            type=MediaType(data[const.ATTR_TYPE]),
-            image_url=data[const.ATTR_IMAGE_URL],
-            source_id=int(data[const.ATTR_SOURCE_ID]),
-            available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
-            service_username=data.get(const.ATTR_SERVICE_USER_NAME),
-            _commands=commands,
-        )
-
-
-@dataclass
-class MediaItem(MediaPlayable):
+class MediaItem(MediaContainer):
     """Define a playable media item."""
 
     media_id: str
@@ -202,8 +201,9 @@ class MediaItem(MediaPlayable):
     def from_data(
         cls,
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
         source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
     ) -> "MediaItem":
         """Create a new instance from the provided data."""
         return cls(
@@ -213,6 +213,7 @@ class MediaItem(MediaPlayable):
             playable=data[const.ATTR_PLAYABLE] == const.VALUE_YES,
             media_id=data[const.ATTR_MEDIA_ID],
             source_id=source_id,
+            container_id=container_id,
             _commands=commands,
         )
 
@@ -229,8 +230,9 @@ class MediaSong(MediaItem):
     def from_data(
         cls,
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
         source_id: int = 0,
+        container_id: str = "",
+        commands: HeosCommands | None = None,
     ) -> "MediaSong":
         """Create a new instance from the provided data."""
         return cls(
@@ -243,6 +245,7 @@ class MediaSong(MediaItem):
             album=data[const.ATTR_ALBUM],
             album_id=data[const.ATTR_ALBUM_ID],
             source_id=source_id,
+            container_id=container_id,
             _commands=commands,
         )
 
@@ -255,6 +258,7 @@ class BrowseResult:
     returned: int
     source_id: int
     items: Sequence[Media]
+    container_id: str | None = None
 
     @classmethod
     def from_data(
@@ -262,13 +266,16 @@ class BrowseResult:
     ) -> "BrowseResult":
         """Create a new instance from the provided data."""
         source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
+        container_id = message.message.get(const.ATTR_CONTAINER_ID) or ""
+
         return cls(
             count=message.get_message_value_int(const.ATTR_COUNT),
             returned=message.get_message_value_int(const.ATTR_RETURNED),
             source_id=source_id,
+            container_id=container_id,
             items=list(
                 [
-                    Media.from_data(item, commands, source_id)
+                    Media.from_data(item, source_id, container_id, commands)
                     for item in cast(Sequence[dict], message.payload)
                 ]
             ),

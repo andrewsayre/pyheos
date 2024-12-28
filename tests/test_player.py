@@ -1,15 +1,11 @@
 """Tests for the player module."""
 
-from unittest.mock import Mock
-
 import pytest
 
 from pyheos import const
-from pyheos.command import HeosCommands
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import MediaItem, MediaType
+from pyheos.media import Media, MediaItem, MediaType
 from pyheos.player import HeosPlayer
-from pyheos.source import HeosSource
 from tests import MockHeosDevice
 
 
@@ -209,7 +205,7 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
         await player.play_input("Invalid")
 
     input_source = MediaItem(
-        "AUX In 1", MediaType.STATION, "", 1, None, True, const.INPUT_AUX_IN_1
+        "AUX In 1", MediaType.STATION, "", 1, None, True, "", const.INPUT_AUX_IN_1
     )
     args = {
         const.ATTR_PLAYER_ID: "1",
@@ -309,14 +305,14 @@ async def test_add_to_queue_unplayable_source(
     """Test add to queue with unplayable source raises."""
     await heos.get_players()
     player = heos.players[1]
-    source = HeosSource(
-        Mock(HeosCommands),
+    source = Media.from_data(
         {
             const.ATTR_NAME: "Unplayable",
             "type": const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "no",
-        },
+            "cid": "123",
+        }
     )
     with pytest.raises(ValueError) as excinfo:
         await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
@@ -330,8 +326,7 @@ async def test_add_to_queue_invalid_queue_option(
     """Test add to queue with invalid option raises."""
     await heos.get_players()
     player = heos.players[1]
-    source = HeosSource(
-        Mock(HeosCommands),
+    source = Media.from_data(
         {
             const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
@@ -339,8 +334,8 @@ async def test_add_to_queue_invalid_queue_option(
             "playable": "yes",
             "container": "yes",
             "cid": "123",
-            "sid": const.MUSIC_SOURCE_PLAYLISTS,
         },
+        source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
     with pytest.raises(ValueError) as excinfo:
         await player.add_to_queue(source, 100)
@@ -352,8 +347,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     """Test adding a container to the queue."""
     await heos.get_players()
     player = heos.players[1]
-    source = HeosSource(
-        Mock(HeosCommands),
+    source = Media.from_data(
         {
             const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
@@ -361,8 +355,8 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
             "playable": "yes",
             "container": "yes",
             "cid": "123",
-            "sid": const.MUSIC_SOURCE_PLAYLISTS,
         },
+        source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
     args = {
         const.ATTR_PLAYER_ID: "1",
@@ -381,18 +375,20 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     """Test adding a track to the queue."""
     await heos.get_players()
     player = heos.players[1]
-    source = HeosSource(
-        Mock(HeosCommands),
+    source = Media.from_data(
         {
             const.ATTR_NAME: "My Track",
             "type": const.TYPE_SONG,
             "image_url": "",
             "playable": "yes",
             "container": "no",
-            "cid": "123",
-            "sid": const.MUSIC_SOURCE_PLAYLISTS,
             "mid": "456",
+            "artist": "Artist",
+            "album": "Album",
+            "album_id": "789",
         },
+        source_id=const.MUSIC_SOURCE_PLAYLISTS,
+        container_id="123",
     )
     args = {
         const.ATTR_PLAYER_ID: "1",

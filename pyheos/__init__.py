@@ -13,13 +13,11 @@ from .media import (
     MediaContainer,
     MediaItem,
     MediaMusicSource,
-    MediaPlayable,
     MediaSong,
     MediaSource,
     MediaType,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer
-from .source import HeosSource
 from .system import HeosHost, HeosSystem
 
 __all__ = [
@@ -36,14 +34,12 @@ __all__ = [
     "HeosOptions",
     "HeosPlayer",
     "HeosNowPlayingMedia",
-    "HeosSource",
     "HeosSystem",
     "Media",
     "MediaAlbum",
     "MediaContainer",
     "MediaItem",
     "MediaMusicSource",
-    "MediaPlayable",
     "MediaSong",
     "MediaType",
     "MediaSource",
