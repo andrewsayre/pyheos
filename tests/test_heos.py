@@ -978,6 +978,25 @@ async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
 
 
 @pytest.mark.asyncio
+async def test_sign_in_does_not_update_credentials(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test sign-in does not update existing credentials."""
+    assert heos.current_credentials is None
+    data = {
+        const.ATTR_USER_NAME: "example@example.com",
+        const.ATTR_PASSWORD: "example",
+    }
+    # Sign-in, do not update credentials
+    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
+    await heos.sign_in(
+        data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD], update_credential=False
+    )
+    assert heos.signed_in_username == data[const.ATTR_USER_NAME]
+    assert heos.current_credentials is None
+
+
+@pytest.mark.asyncio
 async def test_sign_in_and_out(
     mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
 ) -> None:
@@ -995,21 +1014,30 @@ async def test_sign_in_and_out(
     # Test sign-in failure
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
     with pytest.raises(CommandFailedError, match="User not found"):
-        await heos.sign_in("example@example.com", "example")
+        await heos.sign_in(data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD])
     assert (
         "Command failed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
+    assert heos.current_credentials is None
     assert heos.signed_in_username is None
 
-    # Test sign-in success
+    # Test sign-in success and credential set
     mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
-    await heos.sign_in("example@example.com", "example")
+    await heos.sign_in(data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD])
     assert (
         "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
     assert heos.signed_in_username == data[const.ATTR_USER_NAME]
+    assert heos.current_credentials is not None
+    assert heos.current_credentials.username == data[const.ATTR_USER_NAME]  # type: ignore[unreachable]
+    assert heos.current_credentials.password == data[const.ATTR_PASSWORD]
+
+    # Test sign-out does not clear credential
+    await heos.sign_out(update_credential=False)
+    assert heos.signed_in_username is None
+    assert heos.current_credentials is not None
 
 
 @pytest.mark.asyncio
