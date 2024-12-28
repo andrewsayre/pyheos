@@ -9,6 +9,7 @@ from typing import Any, Final
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
+from pyheos.media import MediaMusicSource
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -17,7 +18,7 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
-from .source import HeosMusicSource, HeosSource, InputSource
+from .source import HeosSource, InputSource
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -122,7 +123,7 @@ class Heos:
         self._players: dict[int, HeosPlayer] = {}
         self._players_loaded = False
 
-        self._music_sources: dict[int, HeosMusicSource] = {}
+        self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
 
         self._groups: dict[int, HeosGroup] = {}
@@ -340,13 +341,13 @@ class Heos:
 
     async def get_music_sources(
         self, refresh: bool = True
-    ) -> dict[int, HeosMusicSource]:
+    ) -> dict[int, MediaMusicSource]:
         """Get available music sources."""
         if not self._music_sources_loaded or refresh:
             payload = await self._commands.get_music_sources()
             self._music_sources.clear()
             for data in payload:
-                source = HeosMusicSource.from_data(data)
+                source = MediaMusicSource.from_data(data, self._commands)
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
@@ -399,7 +400,7 @@ class Heos:
         return self._groups
 
     @property
-    def music_sources(self) -> dict[int, HeosMusicSource]:
+    def music_sources(self) -> dict[int, MediaMusicSource]:
         """Get available music sources."""
         return self._music_sources
 

@@ -168,9 +168,21 @@ class HeosCommands:
         )
         return cast(Sequence[dict], response.payload)
 
-    async def browse(self, source_id: int) -> Sequence[dict]:
+    async def browse(
+        self,
+        source_id: int,
+        container_id: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> Sequence[dict]:
         """Browse a music source."""
-        params = {"sid": source_id}
+        params: dict[str, Any] = {const.ATTR_SOURCE_ID: source_id}
+        if container_id:
+            params[const.ATTR_CONTAINER_ID] = container_id
+
+        if isinstance(range_start, int) and isinstance(range_end, int):
+            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
+
         response = await self._connection.command(
             HeosCommand(const.COMMAND_BROWSE_BROWSE, params)
         )

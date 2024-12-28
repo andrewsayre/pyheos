@@ -1,6 +1,5 @@
 """Define the heos source module."""
 
-from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any, Sequence
 
@@ -15,30 +14,6 @@ class MusicSourceType(StrEnum):
     HEOS_SERVICE = "heos_service"
     HEOS_SERVER = "heos_server"
     DLNA_SERVER = "dlna_server"
-
-
-@dataclass
-class HeosMusicSource:
-    """Define a music source."""
-
-    name: str
-    image_url: str
-    type: MusicSourceType
-    source_id: int
-    available: bool
-    service_username: str | None
-
-    @classmethod
-    def from_data(cls, data: dict[str, Any]) -> "HeosMusicSource":
-        """Create a new instance from the provided data."""
-        return cls(
-            data[const.ATTR_NAME],
-            data[const.ATTR_IMAGE_URL],
-            MusicSourceType(data[const.ATTR_TYPE]),
-            int(str(data[const.ATTR_SOURCE_ID])),
-            data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
-            data.get(const.ATTR_SERVICE_USER_NAME),
-        )
 
 
 class InputSource:
