@@ -9,7 +9,13 @@ from typing import Any, Final, cast
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
-from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, MediaSource
+from pyheos.media import (
+    BrowseResult,
+    MediaContainer,
+    MediaItem,
+    MediaMusicSource,
+    MediaSource,
+)
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -18,7 +24,6 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
-from .source import HeosSource
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -374,15 +379,11 @@ class Heos:
             for index, source in enumerate(result.items)
         }
 
-    async def get_playlists(self) -> Sequence[HeosSource]:
+    async def get_playlists(self) -> Sequence[MediaContainer]:
         """Get available playlists."""
         message = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        payload = cast(Sequence[dict], message.payload)
-        playlists = []
-        for item in payload:
-            item["sid"] = const.MUSIC_SOURCE_PLAYLISTS
-            playlists.append(HeosSource(self._commands, item))
-        return playlists
+        result = BrowseResult.from_data(message, self._commands)
+        return cast(Sequence[MediaContainer], result.items)
 
     @property
     def dispatcher(self) -> Dispatcher:
