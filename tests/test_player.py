@@ -1,10 +1,12 @@
 """Tests for the player module."""
 
+from typing import cast
+
 import pytest
 
 from pyheos import const
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import Media, MediaItem, MediaType
+from pyheos.media import Media, MediaContainer, MediaItem, MediaSong, MediaType
 from pyheos.player import HeosPlayer
 from tests import MockHeosDevice
 
@@ -315,7 +317,9 @@ async def test_add_to_queue_unplayable_source(
         }
     )
     with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+        await player.add_to_queue(
+            cast(MediaContainer, source), const.ADD_QUEUE_PLAY_NOW
+        )
     assert str(excinfo.value) == f"Source '{source}' is not playable"
 
 
@@ -338,7 +342,7 @@ async def test_add_to_queue_invalid_queue_option(
         source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
     with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(source, 100)
+        await player.add_to_queue(cast(MediaContainer, source), 100)
     assert str(excinfo.value) == "Invalid queue options: 100"
 
 
@@ -367,7 +371,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_container"
     )
-    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(cast(MediaContainer, source), const.ADD_QUEUE_PLAY_NOW)
 
 
 @pytest.mark.asyncio
@@ -400,7 +404,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
-    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(cast(MediaSong, source), const.ADD_QUEUE_PLAY_NOW)
 
 
 @pytest.mark.asyncio
