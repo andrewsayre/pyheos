@@ -1,53 +1,10 @@
 """Define the heos source module."""
 
 from collections.abc import Sequence
-from enum import StrEnum
 from typing import Any, cast
 
 from pyheos import const
 from pyheos.command import HeosCommands
-
-
-class MusicSourceType(StrEnum):
-    """Define the music source types."""
-
-    MUSIC_SERVICE = "music_service"
-    HEOS_SERVICE = "heos_service"
-    HEOS_SERVER = "heos_server"
-    DLNA_SERVER = "dlna_server"
-
-
-class InputSource:
-    """Define an input source."""
-
-    def __init__(self, player_id: int, name: str, input_name: str) -> None:
-        """Init the source."""
-        self._player_id = player_id  # type: int
-        self._name = name  # type: str
-        self._input_name = input_name  # type: str
-
-    def __str__(self) -> str:
-        """Get a user-readable representation of the source."""
-        return f"<{self._name} ({self._input_name})>"
-
-    def __repr__(self) -> str:
-        """Get a debug representation of the source."""
-        return f"<{self._name} ({self._input_name}) on {self._player_id}>"
-
-    @property
-    def name(self) -> str:
-        """Get the friendly display name."""
-        return self._name
-
-    @property
-    def input_name(self) -> str:
-        """Get the input source name."""
-        return self._input_name
-
-    @property
-    def player_id(self) -> int:
-        """Get the player id."""
-        return self._player_id
 
 
 class HeosSource:

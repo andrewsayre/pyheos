@@ -5,10 +5,11 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
 from . import const
-from .source import HeosSource, InputSource
+from .source import HeosSource
 
 if TYPE_CHECKING:
     from .heos import Heos
@@ -297,10 +298,10 @@ class HeosPlayer:
             self._player_id, input_name, source_player_id=source_player_id
         )
 
-    async def play_input_source(self, input_source: InputSource) -> None:
+    async def play_input_source(self, input_source: MediaItem) -> None:
         """Play the specified input source."""
         await self.play_input(
-            input_source.input_name, source_player_id=input_source.player_id
+            input_source.media_id, source_player_id=input_source.source_id
         )
 
     async def play_favorite(self, preset: int) -> None:

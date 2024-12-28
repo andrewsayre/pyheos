@@ -9,7 +9,7 @@ from typing import Any, Final, cast
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
-from pyheos.media import MediaMusicSource
+from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, MediaSource
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -18,7 +18,7 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
-from .source import HeosSource, InputSource
+from .source import HeosSource
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -352,22 +352,17 @@ class Heos:
             self._music_sources_loaded = True
         return self._music_sources
 
-    async def get_input_sources(self) -> Sequence[InputSource]:
+    async def get_input_sources(self) -> Sequence[MediaItem]:
         """Get available input sources."""
         message = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        payload = cast(Sequence[dict], message.payload)
-        sources = [HeosSource(self._commands, item) for item in payload]
-        input_sources = []
-        for source in sources:
-            assert source.source_id is not None
-            player_id = source.source_id
-            items = await source.browse()
-            input_sources.extend(
-                [
-                    InputSource(player_id, item.name, str(item.media_id))
-                    for item in items
-                ]
-            )
+        result = BrowseResult.from_data(message, self._commands)
+
+        input_sources: list[MediaItem] = []
+        for item in result.items:
+            source = cast(MediaSource, item)
+            source_browse_result = await source.browse()
+            input_sources.extend(cast(Sequence[MediaItem], source_browse_result.items))
+
         return input_sources
 
     async def get_favorites(self) -> dict[int, HeosSource]:

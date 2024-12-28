@@ -7,8 +7,9 @@ import pytest
 from pyheos import const
 from pyheos.command import HeosCommands
 from pyheos.heos import Heos, HeosOptions
+from pyheos.media import MediaItem, MediaType
 from pyheos.player import HeosPlayer
-from pyheos.source import HeosSource, InputSource
+from pyheos.source import HeosSource
 from tests import MockHeosDevice
 
 
@@ -207,11 +208,13 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
     with pytest.raises(ValueError):
         await player.play_input("Invalid")
 
-    input_source = InputSource(1, "AUX In 1", const.INPUT_AUX_IN_1)
+    input_source = MediaItem(
+        "AUX In 1", MediaType.STATION, "", 1, None, True, const.INPUT_AUX_IN_1
+    )
     args = {
         const.ATTR_PLAYER_ID: "1",
-        "spid": str(input_source.player_id),
-        "input": input_source.input_name,
+        "spid": str(input_source.source_id),
+        "input": input_source.media_id,
     }
     mock_device.register(const.COMMAND_BROWSE_PLAY_INPUT, args, "browse.play_input")
     await player.play_input_source(input_source)

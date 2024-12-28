@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 from pyheos import const
 from pyheos.command import HeosCommands
-from pyheos.source import HeosSource, InputSource
+from pyheos.source import HeosSource
 
 
 def test_source_str_repr() -> None:
@@ -20,11 +20,3 @@ def test_source_str_repr() -> None:
     source = HeosSource(Mock(HeosCommands), data)
     assert str(source) == "<AUX Input (heos_service)>"
     assert repr(source) == "<AUX Input (heos_service) 1027>"
-
-
-def test_input_str_repr() -> None:
-    """Test the __str__ function."""
-    source = InputSource(1, "Test", "Input")
-    assert str(source) == "<Test (Input)>"
-
-    assert repr(source) == "<Test (Input) on 1>"

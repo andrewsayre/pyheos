@@ -31,7 +31,7 @@ class Media:
     """Define a base media item."""
 
     name: str
-    type: str
+    type: MediaType
     image_url: str
 
     source_id: int
