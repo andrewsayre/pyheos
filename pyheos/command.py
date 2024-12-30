@@ -106,7 +106,7 @@ class HeosCommands:
         """Set the mute state of the player."""
         params = {
             const.ATTR_PLAYER_ID: player_id,
-            "state": const.VALUE_ON if state else "off",
+            "state": const.VALUE_ON if state else const.VALUE_OFF,
         }
         await self._connection.command(HeosCommand(const.COMMAND_SET_MUTE, params))
 
@@ -306,7 +306,7 @@ class HeosCommands:
         """Set the mute state of the group."""
         params = {
             const.ATTR_GROUP_ID: group_id,
-            "state": const.VALUE_ON if state else "off",
+            "state": const.VALUE_ON if state else const.VALUE_OFF,
         }
         await self._connection.command(
             HeosCommand(const.COMMAND_SET_GROUP_MUTE, params)
