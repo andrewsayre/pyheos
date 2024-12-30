@@ -36,7 +36,7 @@ class HeosNowPlayingMedia:
 
     def from_data(self, data: dict) -> None:
         """Update the attributes from the supplied data."""
-        self._type = data.get("type")
+        self._type = data.get(const.ATTR_TYPE)
         self._song = data.get("song")
         self._station = data.get("station")
         self._album = data.get("album")

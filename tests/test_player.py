@@ -362,7 +362,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     source = MediaItem.from_data(
         {
             const.ATTR_NAME: "My Playlist",
-            "type": const.TYPE_PLAYLIST,
+            const.ATTR_TYPE: const.TYPE_PLAYLIST,
             "image_url": "",
             "playable": "yes",
             "container": "yes",
@@ -390,7 +390,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     source = MediaItem.from_data(
         {
             const.ATTR_NAME: "My Track",
-            "type": const.TYPE_SONG,
+            const.ATTR_TYPE: const.TYPE_SONG,
             "image_url": "",
             "playable": "yes",
             "container": "no",
