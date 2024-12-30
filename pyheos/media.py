@@ -71,7 +71,10 @@ class MediaMusicSource(Media):
 
     async def browse(self) -> "BrowseResult":
         """Browse the contents of the current source."""
-        assert self._commands is not None
+        if self._commands is None:
+            raise ValueError(
+                "Class must be initialized with the commands parameter to browse"
+            )
         message = await self._commands.browse(self.source_id)
         return BrowseResult.from_data(message, self._commands)
 
@@ -100,7 +103,7 @@ class MediaItem(Media):
 
         # Ensure we have a source_id
         if const.ATTR_SOURCE_ID not in data and not source_id:
-            raise ValueError("source_id is required when not present in the data.")
+            raise ValueError("source_id is required when not present in the data")
         new_source_id = int(data.get(const.ATTR_SOURCE_ID, source_id))
         # Items is browsable if is a media source, or if it is a container
         new_browseable = (
@@ -129,9 +132,12 @@ class MediaItem(Media):
         range_end: int | None = None,
     ) -> "BrowseResult":
         """Browse the contents of the current source."""
-        assert self._commands is not None
+        if self._commands is None:
+            raise ValueError(
+                "Class must be initialized with the commands parameter to browse"
+            )
         if not self.browsable:
-            raise ValueError("Only media sources and containers can be browsed.")
+            raise ValueError("Only media sources and containers can be browsed")
 
         message = await self._commands.browse(
             self.source_id, self.container_id, range_start, range_end
@@ -146,7 +152,7 @@ class BrowseResult:
     count: int
     returned: int
     source_id: int
-    items: Sequence[MediaItem]
+    items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
 
     @classmethod

@@ -377,11 +377,37 @@ class Heos:
         )
         return BrowseResult.from_data(message, self._commands)
 
-    async def get_input_sources(self) -> Sequence[MediaItem]:
-        """Get available input sources."""
-        message = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        result = BrowseResult.from_data(message, self._commands)
+    async def browse_media_item(
+        self,
+        media_item: MediaItem,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified media item.
 
+        Args:
+            media_item: The media item to browse.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the media item.
+        """
+        if not self.browsable:
+            raise ValueError("Only media sources and containers can be browsed")
+        return await self.browse(
+            media_item.source_id, media_item.container_id, range_start, range_end
+        )
+
+    async def get_input_sources(self) -> Sequence[MediaItem]:
+        """
+        Get available input sources.
+
+        This will browse all aux input sources and return a list of all available input sources.
+
+        Returns:
+            A sequence of MediaItem instances representing the available input sources across all aux input sources.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
         input_sources: list[MediaItem] = []
         for item in result.items:
             source_browse_result = await item.browse()
@@ -390,15 +416,27 @@ class Heos:
         return input_sources
 
     async def get_favorites(self) -> dict[int, MediaItem]:
-        """Get available favorites."""
-        message = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
-        result = BrowseResult.from_data(message, self._commands)
+        """
+        Get available favorites.
+
+        This will browse the favorites music source and return a dictionary of all available favorites.
+
+        Returns:
+            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
         return {index + 1: source for index, source in enumerate(result.items)}
 
     async def get_playlists(self) -> Sequence[MediaItem]:
-        """Get available playlists."""
-        message = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        result = BrowseResult.from_data(message, self._commands)
+        """
+        Get available playlists.
+
+        This will browse the playlists music source and return a list of all available playlists.
+
+        Returns:
+            A sequence of MediaItem instances representing the available playlists.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
         return result.items
 
     @property
