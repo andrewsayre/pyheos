@@ -180,7 +180,7 @@ class CommandMatcher:
             return False
         if self.args:
             for key, value in self.args.items():
-                if not args[key] == value:
+                if not args[key] == str(value):
                     return False
         return True
 

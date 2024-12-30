@@ -2,34 +2,67 @@
 
 import pytest
 
+from pyheos import const
 from pyheos.error import CommandFailedError
 from pyheos.heos import Heos
-from pyheos.media import MediaItem
+from pyheos.media import MediaItem, MediaMusicSource, MediaType
+from tests import MockHeosDevice
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
-async def test_browse() -> None:
-    """Test groups changed fires dispatcher."""
-    print("")
-    try:
-        heos = await Heos.create_and_connect(
-            "172.16.0.255", events=False, auto_reconnect=False, heart_beat=False
-        )
-        sources = await heos.get_music_sources()
+async def test_media_music_source_from_data() -> None:
+    """Test creating a media music source from data."""
+    data = {
+        const.ATTR_NAME: "Pandora",
+        const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
+        const.ATTR_TYPE: MediaType.MUSIC_SERVICE,
+        const.ATTR_SOURCE_ID: 1,
+        const.ATTR_AVAILABLE: const.VALUE_TRUE,
+        const.ATTR_SERVICE_USER_NAME: "test@test.com",
+    }
 
-        for source in sources.values():
-            if not source.available:
-                continue
+    source = MediaMusicSource.from_data(data)
 
-            print(f"{source.name} (sid={source.source_id}) ->")
-            result = await source.browse()
-            for item in result.items:
-                await print_source(item)
+    assert source.name == data[const.ATTR_NAME]
+    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.type == MediaType.MUSIC_SERVICE
+    assert source.source_id == data[const.ATTR_SOURCE_ID]
+    assert source.available
+    assert source.service_username == data[const.ATTR_SERVICE_USER_NAME]
+    with pytest.raises(
+        ValueError,
+        match="Must be initialized with the 'heos' parameter to browse",
+    ):
+        await source.browse()
 
-        assert sources
-    finally:
-        await heos.disconnect()
+
+@pytest.mark.asyncio
+async def test_media_music_source_browse(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test browsing a media music source."""
+    mock_device.register(
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        "browse.browse_favorites",
+    )
+    source = MediaMusicSource.from_data(
+        {
+            const.ATTR_NAME: "Favorites",
+            const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
+            const.ATTR_TYPE: MediaType.HEOS_SERVICE,
+            const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES,
+            const.ATTR_AVAILABLE: const.VALUE_TRUE,
+            const.ATTR_SERVICE_USER_NAME: "test@test.com",
+        },
+        heos,
+    )
+
+    result = await source.browse()
+
+    assert result.returned == 3
+    assert result.source_id == const.MUSIC_SOURCE_FAVORITES
+    # further testing of the result is done in test_browse_result_from_data
 
 
 @pytest.mark.skip

@@ -3,11 +3,13 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import const
-from pyheos.command import HeosCommands
 from pyheos.message import HeosMessage
+
+if TYPE_CHECKING:
+    from . import Heos
 
 
 class MediaType(StrEnum):
@@ -38,7 +40,7 @@ class Media:
     name: str
     type: MediaType
     image_url: str
-    _commands: HeosCommands | None = field(repr=False, hash=False, compare=False)
+    _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
 
 @dataclass
@@ -46,7 +48,7 @@ class MediaMusicSource(Media):
     """
     Define a music source.
 
-    A Music Source is a top-level music source, different than other media items returned from browse commands.
+    A Music Source is a top-level music source, only returned from get_music_sources.
     """
 
     available: bool
@@ -56,7 +58,7 @@ class MediaMusicSource(Media):
     def from_data(
         cls,
         data: dict[str, Any],
-        commands: HeosCommands | None = None,
+        heos: Optional["Heos"] = None,
     ) -> "MediaMusicSource":
         """Create a new instance from the provided data."""
         return cls(
@@ -66,7 +68,7 @@ class MediaMusicSource(Media):
             image_url=data[const.ATTR_IMAGE_URL],
             available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
             service_username=data.get(const.ATTR_SERVICE_USER_NAME),
-            _commands=commands,
+            _heos=heos,
         )
 
     async def browse(self) -> "BrowseResult":
@@ -74,12 +76,11 @@ class MediaMusicSource(Media):
 
         Returns:
             A BrowseResult instance containing the items in this source."""
-        if self._commands is None:
-            raise ValueError(
-                "Class must be initialized with the commands parameter to browse"
-            )
-        message = await self._commands.browse(self.source_id)
-        return BrowseResult.from_data(message, self._commands)
+        if not self.available:
+            raise ValueError("Source is not available to browse")
+        if self._heos is None:
+            raise ValueError("Must be initialized with the 'heos' parameter to browse")
+        return await self._heos.browse(self.source_id)
 
 
 @dataclass
@@ -100,13 +101,13 @@ class MediaItem(Media):
         data: dict[str, Any],
         source_id: int | None = None,
         container_id: str | None = None,
-        commands: HeosCommands | None = None,
+        heos: Optional["Heos"] = None,
     ) -> "MediaItem":
         """Create a new instance from the provided data."""
 
         # Ensure we have a source_id
         if const.ATTR_SOURCE_ID not in data and not source_id:
-            raise ValueError("source_id is required when not present in the data")
+            raise ValueError("'source_id' is required when not present in 'data'")
         new_source_id = int(data.get(const.ATTR_SOURCE_ID, source_id))
         # Items is browsable if is a media source, or if it is a container
         new_browseable = (
@@ -126,7 +127,7 @@ class MediaItem(Media):
             artist=data.get(const.ATTR_ARTIST),
             album=data.get(const.ATTR_ALBUM),
             album_id=data.get(const.ATTR_ALBUM_ID),
-            _commands=commands,
+            _heos=heos,
         )
 
     async def browse(
@@ -141,17 +142,9 @@ class MediaItem(Media):
             range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
         Returns:
             A BrowseResult instance containing the items in this media item (source or container)."""
-        if self._commands is None:
-            raise ValueError(
-                "Class must be initialized with the commands parameter to browse"
-            )
-        if not self.browsable:
-            raise ValueError("Only media sources and containers can be browsed")
-
-        message = await self._commands.browse(
-            self.source_id, self.container_id, range_start, range_end
-        )
-        return BrowseResult.from_data(message, self._commands)
+        if self._heos is None:
+            raise ValueError("Must be initialized with the 'heos' parameter to browse")
+        return await self._heos.browse_media_item(self, range_start, range_end)
 
 
 @dataclass
@@ -163,10 +156,11 @@ class BrowseResult:
     source_id: int
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
+    _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
     @classmethod
     def from_data(
-        cls, message: HeosMessage, commands: HeosCommands | None = None
+        cls, message: HeosMessage, heos: Optional["Heos"] = None
     ) -> "BrowseResult":
         """Create a new instance from the provided data."""
         source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
@@ -179,8 +173,9 @@ class BrowseResult:
             container_id=container_id,
             items=list(
                 [
-                    MediaItem.from_data(item, source_id, container_id, commands)
+                    MediaItem.from_data(item, source_id, container_id, heos)
                     for item in cast(Sequence[dict], message.payload)
                 ]
             ),
+            _heos=heos,
         )

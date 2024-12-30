@@ -215,7 +215,7 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
         browsable=False,
         source_id=1,
         media_id=const.INPUT_AUX_IN_1,
-        _commands=None,
+        _heos=None,
     )
     args = {
         const.ATTR_PLAYER_ID: "1",

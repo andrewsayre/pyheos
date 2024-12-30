@@ -350,7 +350,7 @@ class Heos:
             payload = await self._commands.get_music_sources()
             self._music_sources.clear()
             for data in payload:
-                source = MediaMusicSource.from_data(data, commands=self._commands)
+                source = MediaMusicSource.from_data(data, self)
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
@@ -375,7 +375,7 @@ class Heos:
         message = await self._commands.browse(
             source_id, container_id, range_start, range_end
         )
-        return BrowseResult.from_data(message, self._commands)
+        return BrowseResult.from_data(message, self)
 
     async def browse_media_item(
         self,
