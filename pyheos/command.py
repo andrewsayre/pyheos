@@ -133,7 +133,7 @@ class HeosCommands:
             HeosCommand(const.COMMAND_GET_PLAY_MODE, params)
         )
         repeat = const.RepeatType(response.get_message_value(const.ATTR_REPEAT))
-        shuffle = str(response.message.get("shuffle")) == "on"
+        shuffle = response.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
         return repeat, shuffle
 
     async def set_play_mode(
@@ -143,7 +143,7 @@ class HeosCommands:
         params = {
             const.ATTR_PLAYER_ID: player_id,
             const.ATTR_REPEAT: repeat,
-            "shuffle": "on" if shuffle else "off",
+            const.ATTR_SHUFFLE: const.VALUE_ON if shuffle else const.VALUE_OFF,
         }
         await self._connection.command(HeosCommand(const.COMMAND_SET_PLAY_MODE, params))
 

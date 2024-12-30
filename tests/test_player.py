@@ -157,7 +157,7 @@ async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     args = {
         const.ATTR_PLAYER_ID: "1",
         const.ATTR_REPEAT: const.RepeatType.ON_ALL,
-        "shuffle": "on",
+        const.ATTR_SHUFFLE: const.VALUE_ON,
     }
     mock_device.register(const.COMMAND_SET_PLAY_MODE, args, "player.set_play_mode")
 

@@ -170,7 +170,7 @@ class HeosPlayer:
         self._volume: int | None = None
         self._is_muted: bool | None = None
         self._repeat: const.RepeatType = const.RepeatType.OFF
-        self._shuffle: bool | None = None
+        self._shuffle: bool = False
         self._playback_error: str | None = None
         self._now_playing_media: HeosNowPlayingMedia = HeosNowPlayingMedia()
         self._available: bool = True
@@ -356,7 +356,9 @@ class HeosPlayer:
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
             self._repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self._shuffle = event.get_message_value("shuffle") == "on"
+            self._shuffle = (
+                event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
+            )
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
             self._playback_error = event.get_message_value("error")
         return True
@@ -422,7 +424,7 @@ class HeosPlayer:
         return self._repeat
 
     @property
-    def shuffle(self) -> bool | None:
+    def shuffle(self) -> bool:
         """Get if shuffle is active."""
         return self._shuffle
 
