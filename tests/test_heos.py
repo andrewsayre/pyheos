@@ -10,7 +10,6 @@ from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import MediaType
 
 from . import MockHeosDevice, connect_handler, get_fixture
 
@@ -915,7 +914,7 @@ async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
         pandora.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert pandora.type == MediaType.MUSIC_SERVICE
+    assert pandora.type == const.MediaType.MUSIC_SERVICE
     assert pandora.available
     assert pandora.service_username == "test@test.com"
 
@@ -924,22 +923,26 @@ async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
 async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get input sources method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1027"}, "browse.browse_aux_input"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1027"},
+        "browse.browse_aux_input",
     )
     mock_device.register(
         const.COMMAND_BROWSE_BROWSE,
-        {"sid": "546978854"},
+        {const.ATTR_SOURCE_ID: "546978854"},
         "browse.browse_theater_receiver",
     )
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "-263109739"}, "browse.browse_heos_drive"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "-263109739"},
+        "browse.browse_heos_drive",
     )
 
     sources = await heos.get_input_sources()
     assert len(sources) == 18
     source = sources[0]
     assert source.playable
-    assert source.type == MediaType.STATION
+    assert source.type == const.MediaType.STATION
     assert source.name == "Theater Receiver - CBL/SAT"
     assert source.media_id == const.INPUT_CABLE_SAT
     assert source.source_id == 546978854
@@ -949,7 +952,9 @@ async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
 async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get favorites method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1028"}, "browse.browse_favorites"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1028"},
+        "browse.browse_favorites",
     )
 
     sources = await heos.get_favorites()
@@ -963,14 +968,16 @@ async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
         fav.image_url
         == "http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg"
     )
-    assert fav.type == MediaType.STATION
+    assert fav.type == const.MediaType.STATION
 
 
 @pytest.mark.asyncio
 async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get playlists method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1025"}, "browse.browse_playlists"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1025"},
+        "browse.browse_playlists",
     )
     sources = await heos.get_playlists()
     assert len(sources) == 1
@@ -979,7 +986,7 @@ async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert playlist.container_id == "171566"
     assert playlist.name == "Rockin Songs"
     assert playlist.image_url == ""
-    assert playlist.type == MediaType.PLAYLIST
+    assert playlist.type == const.MediaType.PLAYLIST
     assert playlist.source_id == const.MUSIC_SOURCE_PLAYLISTS
 
 

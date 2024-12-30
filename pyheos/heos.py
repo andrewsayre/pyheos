@@ -377,26 +377,31 @@ class Heos:
         )
         return BrowseResult.from_data(message, self)
 
-    async def browse_media_item(
+    async def browse_media(
         self,
-        media_item: MediaItem,
+        media: MediaItem | MediaMusicSource,
         range_start: int | None = None,
         range_end: int | None = None,
     ) -> BrowseResult:
         """Browse the contents of the specified media item.
 
         Args:
-            media_item: The media item to browse.
+            media: The media item to browse, must be of type MediaItem or MediaMusicSource.
             range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
             range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
         Returns:
             A BrowseResult instance containing the items in the media item.
         """
-        if not media_item.browsable:
-            raise ValueError("Only media sources and containers can be browsed")
-        return await self.browse(
-            media_item.source_id, media_item.container_id, range_start, range_end
-        )
+        if isinstance(media, MediaMusicSource):
+            if not media.available:
+                raise ValueError("Source is not available to browse")
+            return await self.browse(media.source_id)
+        else:
+            if not media.browsable:
+                raise ValueError("Only media sources and containers can be browsed")
+            return await self.browse(
+                media.source_id, media.container_id, range_start, range_end
+            )
 
     async def get_input_sources(self) -> Sequence[MediaItem]:
         """

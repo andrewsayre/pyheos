@@ -11,7 +11,6 @@ from .media import (
     Media,
     MediaItem,
     MediaMusicSource,
-    MediaType,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer
 from .system import HeosHost, HeosSystem
@@ -34,5 +33,4 @@ __all__ = [
     "Media",
     "MediaItem",
     "MediaMusicSource",
-    "MediaType",
 ]

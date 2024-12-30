@@ -37,19 +37,19 @@ class HeosNowPlayingMedia:
     def from_data(self, data: dict) -> None:
         """Update the attributes from the supplied data."""
         self._type = data.get(const.ATTR_TYPE)
-        self._song = data.get("song")
-        self._station = data.get("station")
-        self._album = data.get("album")
-        self._artist = data.get("artist")
-        self._image_url = data.get("image_url")
-        self._album_id = data.get("album_id")
-        self._media_id = data.get("mid")
+        self._song = data.get(const.ATTR_SONG)
+        self._station = data.get(const.ATTR_STATION)
+        self._album = data.get(const.ATTR_ALBUM)
+        self._artist = data.get(const.ATTR_ARTIST)
+        self._image_url = data.get(const.ATTR_IMAGE_URL)
+        self._album_id = data.get(const.ATTR_ALBUM_ID)
+        self._media_id = data.get(const.ATTR_MEDIA_ID)
         try:
-            self._queue_id = int(str(data.get("qid")))
+            self._queue_id = int(str(data.get(const.ATTR_QUEUE_ID)))
         except (TypeError, ValueError):
             self._queue_id = None
         try:
-            self._source_id = int(str(data.get("sid")))
+            self._source_id = int(str(data.get(const.ATTR_SOURCE_ID)))
         except (TypeError, ValueError):
             self._source_id = None
 
@@ -66,9 +66,11 @@ class HeosNowPlayingMedia:
     ) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self._current_position is None:
-            self._current_position = event.get_message_value_int("cur_pos")
+            self._current_position = event.get_message_value_int(
+                const.ATTR_CURRENT_POSITION
+            )
             self._current_position_updated = datetime.now()
-            self._duration = event.get_message_value_int("duration")
+            self._duration = event.get_message_value_int(const.ATTR_DURATION)
             return True
         return False
 
@@ -336,7 +338,7 @@ class HeosPlayer:
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         payload = await self._commands.get_quick_selects(self._player_id)
-        return {int(data["id"]): data[const.ATTR_NAME] for data in payload}
+        return {int(data[const.ATTR_ID]): data[const.ATTR_NAME] for data in payload}
 
     async def event_update(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""
@@ -345,14 +347,14 @@ class HeosPlayer:
                 event, all_progress_events
             )
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state = event.get_message_value("state")
+            self._state = event.get_message_value(const.ATTR_STATE)
             if self._state == const.PLAY_STATE_PLAY:
                 self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._volume = event.get_message_value_int("level")
-            self._is_muted = event.get_message_value("mute") == const.VALUE_ON
+            self._volume = event.get_message_value_int(const.ATTR_LEVEL)
+            self._is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
             self._repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
@@ -360,7 +362,7 @@ class HeosPlayer:
                 event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
             )
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self._playback_error = event.get_message_value("error")
+            self._playback_error = event.get_message_value(const.ATTR_ERROR)
         return True
 
     @property

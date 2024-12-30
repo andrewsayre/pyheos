@@ -17,28 +17,39 @@ ATTR_AVAILABLE: Final = "available"
 ATTR_CONTAINER: Final = "container"
 ATTR_CONTAINER_ID: Final = "cid"
 ATTR_COUNT: Final = "count"
+ATTR_CURRENT_POSITION: Final = "cur_pos"
+ATTR_DURATION: Final = "duration"
 ATTR_ENABLE: Final = "enable"
+ATTR_ERROR: Final = "error"
 ATTR_ERROR_ID: Final = "eid"
 ATTR_GROUP_ID: Final = "gid"
+ATTR_ID: Final = "id"
 ATTR_IMAGE_URL: Final = "image_url"
 ATTR_IP_ADDRESS: Final = "ip"
+ATTR_LEVEL: Final = "level"
 ATTR_LINE_OUT: Final = "lineout"
 ATTR_MEDIA_ID: Final = "mid"
 ATTR_MODEL: Final = "model"
+ATTR_MUTE: Final = "mute"
 ATTR_NAME: Final = "name"
 ATTR_NETWORK: Final = "network"
 ATTR_PASSWORD: Final = "pw"
 ATTR_PLAYABLE: Final = "playable"
 ATTR_PLAYER_ID: Final = "pid"
+ATTR_QUEUE_ID: Final = "qid"
 ATTR_RANGE: Final = "range"
 ATTR_REPEAT: Final = "repeat"
 ATTR_RETURNED: Final = "returned"
 ATTR_SERIAL: Final = "serial"
 ATTR_SERVICE_USER_NAME: Final = "service_username"
 ATTR_SHUFFLE: Final = "shuffle"
+ATTR_SONG: Final = "song"
 ATTR_SOURCE_ID: Final = "sid"
 ATTR_SIGNED_OUT: Final = "signed_out"
 ATTR_SIGNED_IN: Final = "signed_in"
+ATTR_STATE: Final = "state"
+ATTR_STATION: Final = "station"
+ATTR_STEP: Final = "step"
 ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
 ATTR_TEXT: Final = "text"
 ATTR_TYPE: Final = "type"
@@ -92,12 +103,21 @@ class RepeatType(StrEnum):
     OFF = "off"
 
 
-# Music Source Types
-TYPE_MUSIC_SERVICE: Final = "music_service"
-TYPE_STATION: Final = "station"
-TYPE_SONG: Final = "song"
-TYPE_HEOS_SERVICE: Final = "heos_service"
-TYPE_PLAYLIST: Final = "playlist"
+class MediaType(StrEnum):
+    """Define the media types."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    CONTAINER = "container"
+    DLNA_SERVER = "dlna_server"
+    GENRE = "genre"
+    HEOS_SERVER = "heos_server"
+    HEOS_SERVICE = "heos_service"
+    MUSIC_SERVICE = "music_service"
+    PLAYLIST = "playlist"
+    SONG = "song"
+    STATION = "station"
+
 
 # Music Sources
 MUSIC_SOURCE_PANDORA: Final = 1
@@ -144,30 +164,39 @@ CONTROLS_FORWARD_ONLY: Final = [
 CONTROL_PLAY_STOP: Final = [CONTROL_PLAY, CONTROL_STOP]
 
 SOURCE_CONTROLS: Final = {
-    MUSIC_SOURCE_PANDORA: {TYPE_STATION: CONTROLS_FORWARD_ONLY},
+    MUSIC_SOURCE_PANDORA: {MediaType.STATION: CONTROLS_FORWARD_ONLY},
     MUSIC_SOURCE_RHAPSODY: {
-        TYPE_SONG: CONTROLS_ALL,
-        TYPE_STATION: CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
-    MUSIC_SOURCE_TUNEIN: {TYPE_SONG: CONTROLS_ALL, TYPE_STATION: CONTROL_PLAY_STOP},
+    MUSIC_SOURCE_TUNEIN: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROL_PLAY_STOP,
+    },
     MUSIC_SOURCE_SPOTIFY: {
-        TYPE_SONG: CONTROLS_ALL,
-        TYPE_STATION: CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
-    MUSIC_SOURCE_DEEZER: {TYPE_SONG: CONTROLS_ALL, TYPE_STATION: CONTROLS_FORWARD_ONLY},
+    MUSIC_SOURCE_DEEZER: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
+    },
     MUSIC_SOURCE_NAPSTER: {
-        TYPE_SONG: CONTROLS_ALL,
-        TYPE_STATION: CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
     MUSIC_SOURCE_IHEARTRADIO: {
-        TYPE_SONG: CONTROLS_ALL,
-        TYPE_STATION: CONTROL_PLAY_STOP,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROL_PLAY_STOP,
     },
-    MUSIC_SOURCE_SIRIUSXM: {TYPE_STATION: CONTROL_PLAY_STOP},
-    MUSIC_SOURCE_SOUNDCLOUD: {TYPE_SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_TIDAL: {TYPE_SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_AMAZON: {TYPE_SONG: CONTROLS_ALL, TYPE_STATION: CONTROLS_ALL},
-    MUSIC_SOURCE_AUX_INPUT: {TYPE_STATION: CONTROL_PLAY_STOP},
+    MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: CONTROL_PLAY_STOP},
+    MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: CONTROLS_ALL},
+    MUSIC_SOURCE_TIDAL: {MediaType.SONG: CONTROLS_ALL},
+    MUSIC_SOURCE_AMAZON: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_ALL,
+    },
+    MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROL_PLAY_STOP},
 }
 
 

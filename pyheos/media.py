@@ -2,7 +2,6 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import const
@@ -10,22 +9,6 @@ from pyheos.message import HeosMessage
 
 if TYPE_CHECKING:
     from . import Heos
-
-
-class MediaType(StrEnum):
-    """Define the media types."""
-
-    ALBUM = "album"
-    ARTIST = "artist"
-    CONTAINER = "container"
-    DLNA_SERVER = "dlna_server"
-    GENRE = "genre"
-    HEOS_SERVER = "heos_server"
-    HEOS_SERVICE = "heos_service"
-    MUSIC_SERVICE = "music_service"
-    PLAYLIST = "playlist"
-    SONG = "song"
-    STATION = "station"
 
 
 @dataclass(init=False)
@@ -38,7 +21,7 @@ class Media:
 
     source_id: int
     name: str
-    type: MediaType
+    type: const.MediaType
     image_url: str
     _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
@@ -64,7 +47,7 @@ class MediaMusicSource(Media):
         return cls(
             source_id=int(data[const.ATTR_SOURCE_ID]),
             name=data[const.ATTR_NAME],
-            type=MediaType(data[const.ATTR_TYPE]),
+            type=const.MediaType(data[const.ATTR_TYPE]),
             image_url=data[const.ATTR_IMAGE_URL],
             available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
             service_username=data.get(const.ATTR_SERVICE_USER_NAME),
@@ -76,11 +59,9 @@ class MediaMusicSource(Media):
 
         Returns:
             A BrowseResult instance containing the items in this source."""
-        if not self.available:
-            raise ValueError("Source is not available to browse")
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to browse")
-        return await self._heos.browse(self.source_id)
+        return await self._heos.browse_media(self)
 
 
 @dataclass
@@ -120,7 +101,7 @@ class MediaItem(Media):
             container_id=data.get(const.ATTR_CONTAINER_ID, container_id),
             browsable=new_browseable,
             name=data[const.ATTR_NAME],
-            type=MediaType(data[const.ATTR_TYPE]),
+            type=const.MediaType(data[const.ATTR_TYPE]),
             image_url=data[const.ATTR_IMAGE_URL],
             playable=data.get(const.ATTR_PLAYABLE) == const.VALUE_YES,
             media_id=data.get(const.ATTR_MEDIA_ID),
@@ -144,7 +125,7 @@ class MediaItem(Media):
             A BrowseResult instance containing the items in this media item (source or container)."""
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to browse")
-        return await self._heos.browse_media_item(self, range_start, range_end)
+        return await self._heos.browse_media(self, range_start, range_end)
 
 
 @dataclass

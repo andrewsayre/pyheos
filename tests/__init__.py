@@ -195,8 +195,8 @@ class CommandMatcher:
         response = await get_fixture(response)
         keys = {
             const.ATTR_PLAYER_ID: "{player_id}",
-            "state": "{state}",
-            "level": "{level}",
+            const.ATTR_STATE: "{state}",
+            const.ATTR_LEVEL: "{level}",
         }
         for key, token in keys.items():
             value = query.get(key)
