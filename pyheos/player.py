@@ -5,10 +5,10 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
 from . import const
-from .source import HeosSource, InputSource
 
 if TYPE_CHECKING:
     from .heos import Heos
@@ -36,20 +36,20 @@ class HeosNowPlayingMedia:
 
     def from_data(self, data: dict) -> None:
         """Update the attributes from the supplied data."""
-        self._type = data.get("type")
-        self._song = data.get("song")
-        self._station = data.get("station")
-        self._album = data.get("album")
-        self._artist = data.get("artist")
-        self._image_url = data.get("image_url")
-        self._album_id = data.get("album_id")
-        self._media_id = data.get("mid")
+        self._type = data.get(const.ATTR_TYPE)
+        self._song = data.get(const.ATTR_SONG)
+        self._station = data.get(const.ATTR_STATION)
+        self._album = data.get(const.ATTR_ALBUM)
+        self._artist = data.get(const.ATTR_ARTIST)
+        self._image_url = data.get(const.ATTR_IMAGE_URL)
+        self._album_id = data.get(const.ATTR_ALBUM_ID)
+        self._media_id = data.get(const.ATTR_MEDIA_ID)
         try:
-            self._queue_id = int(str(data.get("qid")))
+            self._queue_id = int(str(data.get(const.ATTR_QUEUE_ID)))
         except (TypeError, ValueError):
             self._queue_id = None
         try:
-            self._source_id = int(str(data.get("sid")))
+            self._source_id = int(str(data.get(const.ATTR_SOURCE_ID)))
         except (TypeError, ValueError):
             self._source_id = None
 
@@ -66,9 +66,11 @@ class HeosNowPlayingMedia:
     ) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self._current_position is None:
-            self._current_position = event.get_message_value_int("cur_pos")
+            self._current_position = event.get_message_value_int(
+                const.ATTR_CURRENT_POSITION
+            )
             self._current_position_updated = datetime.now()
-            self._duration = event.get_message_value_int("duration")
+            self._duration = event.get_message_value_int(const.ATTR_DURATION)
             return True
         return False
 
@@ -169,8 +171,8 @@ class HeosPlayer:
         self._state: str | None = None
         self._volume: int | None = None
         self._is_muted: bool | None = None
-        self._repeat: str | None = None
-        self._shuffle: bool | None = None
+        self._repeat: const.RepeatType = const.RepeatType.OFF
+        self._shuffle: bool = False
         self._playback_error: str | None = None
         self._now_playing_media: HeosNowPlayingMedia = HeosNowPlayingMedia()
         self._available: bool = True
@@ -273,7 +275,7 @@ class HeosPlayer:
         """Toggle mute state."""
         await self._commands.toggle_mute(self._player_id)
 
-    async def set_play_mode(self, repeat: str, shuffle: bool) -> None:
+    async def set_play_mode(self, repeat: const.RepeatType, shuffle: bool) -> None:
         """Set the play mode of the player."""
         await self._commands.set_play_mode(self._player_id, repeat, shuffle)
 
@@ -297,10 +299,12 @@ class HeosPlayer:
             self._player_id, input_name, source_player_id=source_player_id
         )
 
-    async def play_input_source(self, input_source: InputSource) -> None:
+    async def play_input_source(self, input_source: MediaItem) -> None:
         """Play the specified input source."""
+        if not input_source.media_id:
+            raise ValueError(f"Media '{input_source}' is not playable")
         await self.play_input(
-            input_source.input_name, source_player_id=input_source.player_id
+            input_source.media_id, source_player_id=input_source.source_id
         )
 
     async def play_favorite(self, preset: int) -> None:
@@ -315,18 +319,16 @@ class HeosPlayer:
         """Play the specified quick select."""
         await self._commands.play_quick_select(self._player_id, quick_select_id)
 
-    async def add_to_queue(self, source: HeosSource, add_queue_option: int) -> None:
+    async def add_to_queue(self, media: MediaItem, add_queue_option: int) -> None:
         """Add the specified source to the queue."""
-        if not source.playable:
-            raise ValueError(f"Source '{source}' is not playable")
-        assert source.source_id is not None
-        assert source.container_id is not None
+        if not media.playable or media.container_id is None:
+            raise ValueError(f"Media '{media}' is not playable")
         await self._commands.add_to_queue(
-            self._player_id,
-            source.source_id,
-            source.container_id,
+            self.player_id,
+            media.source_id,
+            media.container_id,
             add_queue_option,
-            source.media_id,
+            media.media_id,
         )
 
     async def set_quick_select(self, quick_select_id: int) -> None:
@@ -336,7 +338,7 @@ class HeosPlayer:
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         payload = await self._commands.get_quick_selects(self._player_id)
-        return {int(data["id"]): data[const.ATTR_NAME] for data in payload}
+        return {int(data[const.ATTR_ID]): data[const.ATTR_NAME] for data in payload}
 
     async def event_update(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""
@@ -345,20 +347,22 @@ class HeosPlayer:
                 event, all_progress_events
             )
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state = event.get_message_value("state")
+            self._state = event.get_message_value(const.ATTR_STATE)
             if self._state == const.PLAY_STATE_PLAY:
                 self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self._volume = event.get_message_value_int("level")
-            self._is_muted = event.get_message_value("mute") == "on"
+            self._volume = event.get_message_value_int(const.ATTR_LEVEL)
+            self._is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self._repeat = event.get_message_value("repeat")
+            self._repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self._shuffle = event.get_message_value("shuffle") == "on"
+            self._shuffle = (
+                event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
+            )
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self._playback_error = event.get_message_value("error")
+            self._playback_error = event.get_message_value(const.ATTR_ERROR)
         return True
 
     @property
@@ -417,12 +421,12 @@ class HeosPlayer:
         return self._is_muted
 
     @property
-    def repeat(self) -> str | None:
+    def repeat(self) -> const.RepeatType:
         """Get the repeat mode."""
         return self._repeat
 
     @property
-    def shuffle(self) -> bool | None:
+    def shuffle(self) -> bool:
         """Get if shuffle is active."""
         return self._shuffle
 

@@ -147,7 +147,7 @@ class MockHeosDevice:
 
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[const.ATTR_ENABLE])
-                log.is_registered_for_events = enable == "on"
+                log.is_registered_for_events = enable == const.VALUE_ON
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
                 writer.write((response + SEPARATOR).encode())
                 await writer.drain()
@@ -180,7 +180,7 @@ class CommandMatcher:
             return False
         if self.args:
             for key, value in self.args.items():
-                if not args[key] == value:
+                if not args[key] == str(value):
                     return False
         return True
 
@@ -195,8 +195,8 @@ class CommandMatcher:
         response = await get_fixture(response)
         keys = {
             const.ATTR_PLAYER_ID: "{player_id}",
-            "state": "{state}",
-            "level": "{level}",
+            const.ATTR_STATE: "{state}",
+            const.ATTR_LEVEL: "{level}",
         }
         for key, token in keys.items():
             value = query.get(key)

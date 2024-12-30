@@ -9,6 +9,11 @@ from typing import Any, Final
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
+from pyheos.media import (
+    BrowseResult,
+    MediaItem,
+    MediaMusicSource,
+)
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -17,7 +22,6 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
 from .player import HeosPlayer
-from .source import HeosSource, InputSource
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -122,7 +126,7 @@ class Heos:
         self._players: dict[int, HeosPlayer] = {}
         self._players_loaded = False
 
-        self._music_sources: dict[int, HeosSource] = {}
+        self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
 
         self._groups: dict[int, HeosGroup] = {}
@@ -338,49 +342,107 @@ class Heos:
         ids.extend(member_ids)
         await self._commands.set_group(ids)
 
-    async def get_music_sources(self, refresh: bool = True) -> dict[int, HeosSource]:
+    async def get_music_sources(
+        self, refresh: bool = True
+    ) -> dict[int, MediaMusicSource]:
         """Get available music sources."""
-        if not self._music_sources or refresh:
+        if not self._music_sources_loaded or refresh:
             payload = await self._commands.get_music_sources()
             self._music_sources.clear()
             for data in payload:
-                source = HeosSource(self._commands, data)
-                assert source.source_id is not None
+                source = MediaMusicSource.from_data(data, self)
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
 
-    async def get_input_sources(self) -> Sequence[InputSource]:
-        """Get available input sources."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        sources = [HeosSource(self._commands, item) for item in payload]
-        input_sources = []
-        for source in sources:
-            assert source.source_id is not None
-            player_id = source.source_id
-            items = await source.browse()
-            input_sources.extend(
-                [
-                    InputSource(player_id, item.name, str(item.media_id))
-                    for item in items
-                ]
+    async def browse(
+        self,
+        source_id: int,
+        container_id: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified source or container.
+
+        Args:
+            source_id: The identifier of the source to browse.
+            container_id: The identifier of the container to browse. If not provided, the root of the source will be expanded.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the source or container.
+        """
+        message = await self._commands.browse(
+            source_id, container_id, range_start, range_end
+        )
+        return BrowseResult.from_data(message, self)
+
+    async def browse_media(
+        self,
+        media: MediaItem | MediaMusicSource,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified media item.
+
+        Args:
+            media: The media item to browse, must be of type MediaItem or MediaMusicSource.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the media item.
+        """
+        if isinstance(media, MediaMusicSource):
+            if not media.available:
+                raise ValueError("Source is not available to browse")
+            return await self.browse(media.source_id)
+        else:
+            if not media.browsable:
+                raise ValueError("Only media sources and containers can be browsed")
+            return await self.browse(
+                media.source_id, media.container_id, range_start, range_end
             )
+
+    async def get_input_sources(self) -> Sequence[MediaItem]:
+        """
+        Get available input sources.
+
+        This will browse all aux input sources and return a list of all available input sources.
+
+        Returns:
+            A sequence of MediaItem instances representing the available input sources across all aux input sources.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        input_sources: list[MediaItem] = []
+        for item in result.items:
+            source_browse_result = await item.browse()
+            input_sources.extend(source_browse_result.items)
+
         return input_sources
 
-    async def get_favorites(self) -> dict[int, HeosSource]:
-        """Get available favorites."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
-        sources = [HeosSource(self._commands, item) for item in payload]
-        return {index + 1: source for index, source in enumerate(sources)}
+    async def get_favorites(self) -> dict[int, MediaItem]:
+        """
+        Get available favorites.
 
-    async def get_playlists(self) -> Sequence[HeosSource]:
-        """Get available playlists."""
-        payload = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        playlists = []
-        for item in payload:
-            item["sid"] = const.MUSIC_SOURCE_PLAYLISTS
-            playlists.append(HeosSource(self._commands, item))
-        return playlists
+        This will browse the favorites music source and return a dictionary of all available favorites.
+
+        Returns:
+            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
+        return {index + 1: source for index, source in enumerate(result.items)}
+
+    async def get_playlists(self) -> Sequence[MediaItem]:
+        """
+        Get available playlists.
+
+        This will browse the playlists music source and return a list of all available playlists.
+
+        Returns:
+            A sequence of MediaItem instances representing the available playlists.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        return result.items
 
     @property
     def dispatcher(self) -> Dispatcher:
@@ -398,7 +460,7 @@ class Heos:
         return self._groups
 
     @property
-    def music_sources(self) -> dict[int, HeosSource]:
+    def music_sources(self) -> dict[int, MediaMusicSource]:
         """Get available music sources."""
         return self._music_sources
 

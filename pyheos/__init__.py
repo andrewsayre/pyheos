@@ -6,11 +6,17 @@ from .dispatch import Dispatcher
 from .error import CommandError, CommandFailedError, HeosError
 from .group import HeosGroup
 from .heos import Heos, HeosOptions
+from .media import (
+    BrowseResult,
+    Media,
+    MediaItem,
+    MediaMusicSource,
+)
 from .player import HeosNowPlayingMedia, HeosPlayer
-from .source import HeosSource, InputSource
 from .system import HeosHost, HeosSystem
 
 __all__ = [
+    "BrowseResult",
     "const",
     "CommandError",
     "CommandFailedError",
@@ -23,7 +29,8 @@ __all__ = [
     "HeosOptions",
     "HeosPlayer",
     "HeosNowPlayingMedia",
-    "HeosSource",
     "HeosSystem",
-    "InputSource",
+    "Media",
+    "MediaItem",
+    "MediaMusicSource",
 ]

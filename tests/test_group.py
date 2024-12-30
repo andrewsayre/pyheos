@@ -14,7 +14,7 @@ async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     group = heos.groups[1]
     mock_device.register(
         const.COMMAND_SET_GROUP_VOLUME,
-        {"level": "25", const.ATTR_GROUP_ID: "1"},
+        {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"},
         "group.set_volume",
     )
     with pytest.raises(ValueError):
@@ -31,7 +31,7 @@ async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     group = heos.groups[1]
     mock_device.register(
         const.COMMAND_GROUP_VOLUME_DOWN,
-        {"step": "6", const.ATTR_GROUP_ID: "1"},
+        {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"},
         "group.volume_down",
     )
 
@@ -49,7 +49,7 @@ async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     group = heos.groups[1]
     mock_device.register(
         const.COMMAND_GROUP_VOLUME_UP,
-        {"step": "6", const.ATTR_GROUP_ID: "1"},
+        {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"},
         "group.volume_up",
     )
     with pytest.raises(ValueError):
@@ -67,14 +67,14 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
 
     mock_device.register(
         const.COMMAND_SET_GROUP_MUTE,
-        {const.ATTR_GROUP_ID: "1", "state": "on"},
+        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_ON},
         "group.set_mute",
     )
     await group.mute()
 
     mock_device.register(
         const.COMMAND_SET_GROUP_MUTE,
-        {const.ATTR_GROUP_ID: "1", "state": "off"},
+        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF},
         "group.set_mute",
         replace=True,
     )

@@ -10,6 +10,7 @@ from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
+from pyheos.media import MediaItem, MediaMusicSource
 
 from . import MockHeosDevice, connect_handler, get_fixture
 
@@ -375,7 +376,7 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert player.version == "1.493.180"
     assert player.volume == 36
     assert not player.is_muted
-    assert player.repeat == const.REPEAT_OFF
+    assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
@@ -519,7 +520,7 @@ async def test_player_volume_changed_event(
         (await get_fixture("event.player_volume_changed"))
         .replace("{player_id}", str(player.player_id))
         .replace("{level}", "50.0")
-        .replace("{mute}", "on")
+        .replace("{mute}", const.VALUE_ON)
     )
     await mock_device.write_event(event_to_raise)
 
@@ -618,7 +619,7 @@ async def test_repeat_mode_changed_event(
     # assert not playing
     await heos.get_players()
     player = heos.players[1]
-    assert player.repeat == const.REPEAT_OFF
+    assert player.repeat == const.RepeatType.OFF
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -637,7 +638,7 @@ async def test_repeat_mode_changed_event(
     # Wait until the signal is set
     await signal.wait()
     # Assert state changed
-    assert player.repeat == const.REPEAT_ON_ALL
+    assert player.repeat == const.RepeatType.ON_ALL  # type: ignore[comparison-overlap]
 
 
 @pytest.mark.asyncio
@@ -900,6 +901,53 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
 
 
 @pytest.mark.asyncio
+async def test_browse_music_source_unavailable_rasises(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test browse with an unavailable MediaMusicSource raises."""
+    media = MediaMusicSource.from_data(
+        {
+            const.ATTR_NAME: "Favorites",
+            const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
+            const.ATTR_TYPE: const.MediaType.HEOS_SERVICE,
+            const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES,
+            const.ATTR_AVAILABLE: const.VALUE_FALSE,
+        },
+        heos,
+    )
+
+    with pytest.raises(ValueError, match="Source is not available to browse"):
+        await heos.browse_media(media)
+
+
+@pytest.mark.asyncio
+async def test_browse_media_item_not_browsable_raises(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test browse with an not browsable MediaItem raises."""
+    media = MediaItem.from_data(
+        {
+            const.ATTR_NAME: "Song",
+            const.ATTR_IMAGE_URL: "",
+            const.ATTR_TYPE: str(const.MediaType.SONG),
+            const.ATTR_CONTAINER: const.VALUE_NO,
+            const.ATTR_MEDIA_ID: "12456",
+            const.ATTR_ARTIST: "Artist",
+            const.ATTR_ALBUM: "Album",
+            const.ATTR_ALBUM_ID: "123456",
+            const.ATTR_PLAYABLE: const.VALUE_YES,
+        },
+        source_id=1,
+        heos=heos,
+    )
+
+    with pytest.raises(
+        ValueError, match="Only media sources and containers can be browsed"
+    ):
+        await heos.browse_media(media)
+
+
+@pytest.mark.asyncio
 async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the heos connect method."""
     mock_device.register(
@@ -909,46 +957,52 @@ async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
     sources = await heos.get_music_sources()
     assert len(sources) == 15
     pandora = sources[const.MUSIC_SOURCE_PANDORA]
-    assert pandora.source_id == 1
+    assert pandora.source_id == const.MUSIC_SOURCE_PANDORA
     assert (
         pandora.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert pandora.type == const.TYPE_MUSIC_SERVICE
+    assert pandora.type == const.MediaType.MUSIC_SERVICE
     assert pandora.available
     assert pandora.service_username == "test@test.com"
-    assert not pandora.container
-    assert not pandora.playable
 
 
 @pytest.mark.asyncio
 async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get input sources method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1027"}, "browse.browse_aux_input"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1027"},
+        "browse.browse_aux_input",
     )
     mock_device.register(
         const.COMMAND_BROWSE_BROWSE,
-        {"sid": "546978854"},
+        {const.ATTR_SOURCE_ID: "546978854"},
         "browse.browse_theater_receiver",
     )
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "-263109739"}, "browse.browse_heos_drive"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "-263109739"},
+        "browse.browse_heos_drive",
     )
 
     sources = await heos.get_input_sources()
     assert len(sources) == 18
     source = sources[0]
+    assert source.playable
+    assert source.type == const.MediaType.STATION
     assert source.name == "Theater Receiver - CBL/SAT"
-    assert source.input_name == const.INPUT_CABLE_SAT
-    assert source.player_id == 546978854
+    assert source.media_id == const.INPUT_CABLE_SAT
+    assert source.source_id == 546978854
 
 
 @pytest.mark.asyncio
 async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get favorites method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1028"}, "browse.browse_favorites"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1028"},
+        "browse.browse_favorites",
     )
 
     sources = await heos.get_favorites()
@@ -957,23 +1011,30 @@ async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     fav = sources[1]
     assert fav.playable
     assert fav.name == "Thumbprint Radio"
-    assert fav.type == const.TYPE_STATION
+    assert fav.media_id == "3790855220637622543"
+    assert (
+        fav.image_url
+        == "http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg"
+    )
+    assert fav.type == const.MediaType.STATION
 
 
 @pytest.mark.asyncio
 async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the get playlists method."""
     mock_device.register(
-        const.COMMAND_BROWSE_BROWSE, {"sid": "1025"}, "browse.browse_playlists"
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: "1025"},
+        "browse.browse_playlists",
     )
     sources = await heos.get_playlists()
     assert len(sources) == 1
     playlist = sources[0]
     assert playlist.playable
-    assert playlist.container
     assert playlist.container_id == "171566"
     assert playlist.name == "Rockin Songs"
-    assert playlist.type == const.TYPE_PLAYLIST
+    assert playlist.image_url == ""
+    assert playlist.type == const.MediaType.PLAYLIST
     assert playlist.source_id == const.MUSIC_SOURCE_PLAYLISTS
 
 
