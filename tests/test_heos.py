@@ -520,7 +520,7 @@ async def test_player_volume_changed_event(
         (await get_fixture("event.player_volume_changed"))
         .replace("{player_id}", str(player.player_id))
         .replace("{level}", "50.0")
-        .replace("{mute}", "on")
+        .replace("{mute}", const.VALUE_ON)
     )
     await mock_device.write_event(event_to_raise)
 

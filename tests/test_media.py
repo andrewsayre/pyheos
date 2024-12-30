@@ -2,6 +2,7 @@
 
 import re
 from unittest.mock import Mock
+
 import pytest
 
 from pyheos import const
@@ -85,7 +86,7 @@ async def test_media_music_source_browse_unavailable_raises() -> None:
 
 
 @pytest.mark.asyncio
-async def test_browse_result_from_data():
+async def test_browse_result_from_data() -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
     message = HeosMessage(

@@ -67,7 +67,7 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
 
     mock_device.register(
         const.COMMAND_SET_GROUP_MUTE,
-        {const.ATTR_GROUP_ID: "1", "state": "on"},
+        {const.ATTR_GROUP_ID: "1", "state": const.VALUE_ON},
         "group.set_mute",
     )
     await group.mute()

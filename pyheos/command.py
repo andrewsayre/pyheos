@@ -100,11 +100,14 @@ class HeosCommands:
         response = await self._connection.command(
             HeosCommand(const.COMMAND_GET_MUTE, params)
         )
-        return str(response.message.get("state")) == "on"
+        return str(response.message.get("state")) == const.VALUE_ON
 
     async def set_mute(self, player_id: int, state: bool) -> None:
         """Set the mute state of the player."""
-        params = {const.ATTR_PLAYER_ID: player_id, "state": "on" if state else "off"}
+        params = {
+            const.ATTR_PLAYER_ID: player_id,
+            "state": const.VALUE_ON if state else "off",
+        }
         await self._connection.command(HeosCommand(const.COMMAND_SET_MUTE, params))
 
     async def volume_up(self, player_id: int, step: int = const.DEFAULT_STEP) -> None:
@@ -266,7 +269,7 @@ class HeosCommands:
         response = await self._connection.command(
             HeosCommand(const.COMMAND_GET_GROUP_MUTE, params)
         )
-        return response.get_message_value("state") == "on"
+        return response.get_message_value("state") == const.VALUE_ON
 
     async def set_group_volume(self, group_id: int, level: int) -> None:
         """Set the volume of the group."""
@@ -301,7 +304,10 @@ class HeosCommands:
 
     async def group_set_mute(self, group_id: int, state: bool) -> None:
         """Set the mute state of the group."""
-        params = {const.ATTR_GROUP_ID: group_id, "state": "on" if state else "off"}
+        params = {
+            const.ATTR_GROUP_ID: group_id,
+            "state": const.VALUE_ON if state else "off",
+        }
         await self._connection.command(
             HeosCommand(const.COMMAND_SET_GROUP_MUTE, params)
         )

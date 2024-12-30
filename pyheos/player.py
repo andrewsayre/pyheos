@@ -352,7 +352,7 @@ class HeosPlayer:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
             self._volume = event.get_message_value_int("level")
-            self._is_muted = event.get_message_value("mute") == "on"
+            self._is_muted = event.get_message_value("mute") == const.VALUE_ON
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
             self._repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:

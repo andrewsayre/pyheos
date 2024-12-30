@@ -90,7 +90,7 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     # Mute
     mock_device.register(
         const.COMMAND_SET_MUTE,
-        {const.ATTR_PLAYER_ID: "1", "state": "on"},
+        {const.ATTR_PLAYER_ID: "1", "state": const.VALUE_ON},
         "player.set_mute",
     )
     await player.mute()
