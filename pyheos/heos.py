@@ -392,7 +392,7 @@ class Heos:
         Returns:
             A BrowseResult instance containing the items in the media item.
         """
-        if not self.browsable:
+        if not media_item.browsable:
             raise ValueError("Only media sources and containers can be browsed")
         return await self.browse(
             media_item.source_id, media_item.container_id, range_start, range_end

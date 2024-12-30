@@ -169,7 +169,7 @@ class HeosPlayer:
         self._state: str | None = None
         self._volume: int | None = None
         self._is_muted: bool | None = None
-        self._repeat: str | None = None
+        self._repeat: const.RepeatType = const.RepeatType.OFF
         self._shuffle: bool | None = None
         self._playback_error: str | None = None
         self._now_playing_media: HeosNowPlayingMedia = HeosNowPlayingMedia()
@@ -273,7 +273,7 @@ class HeosPlayer:
         """Toggle mute state."""
         await self._commands.toggle_mute(self._player_id)
 
-    async def set_play_mode(self, repeat: str, shuffle: bool) -> None:
+    async def set_play_mode(self, repeat: const.RepeatType, shuffle: bool) -> None:
         """Set the play mode of the player."""
         await self._commands.set_play_mode(self._player_id, repeat, shuffle)
 
@@ -354,7 +354,7 @@ class HeosPlayer:
             self._volume = event.get_message_value_int("level")
             self._is_muted = event.get_message_value("mute") == "on"
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self._repeat = event.get_message_value("repeat")
+            self._repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
             self._shuffle = event.get_message_value("shuffle") == "on"
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
@@ -417,7 +417,7 @@ class HeosPlayer:
         return self._is_muted
 
     @property
-    def repeat(self) -> str | None:
+    def repeat(self) -> const.RepeatType:
         """Get the repeat mode."""
         return self._repeat
 

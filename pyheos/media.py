@@ -70,7 +70,10 @@ class MediaMusicSource(Media):
         )
 
     async def browse(self) -> "BrowseResult":
-        """Browse the contents of the current source."""
+        """Browse the contents of this source.
+
+        Returns:
+            A BrowseResult instance containing the items in this source."""
         if self._commands is None:
             raise ValueError(
                 "Class must be initialized with the commands parameter to browse"
@@ -131,7 +134,13 @@ class MediaItem(Media):
         range_start: int | None = None,
         range_end: int | None = None,
     ) -> "BrowseResult":
-        """Browse the contents of the current source."""
+        """Browse the contents of the current media item (source or container).
+
+        Args:
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in this media item (source or container)."""
         if self._commands is None:
             raise ValueError(
                 "Class must be initialized with the commands parameter to browse"

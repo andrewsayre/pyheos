@@ -126,23 +126,23 @@ class HeosCommands:
         params = {const.ATTR_PLAYER_ID: player_id}
         await self._connection.command(HeosCommand(const.COMMAND_TOGGLE_MUTE, params))
 
-    async def get_play_mode(self, player_id: int) -> tuple[str, bool]:
+    async def get_play_mode(self, player_id: int) -> tuple[const.RepeatType, bool]:
         """Get the current play mode."""
         params = {const.ATTR_PLAYER_ID: player_id}
         response = await self._connection.command(
             HeosCommand(const.COMMAND_GET_PLAY_MODE, params)
         )
-        repeat = str(response.message.get("repeat"))
+        repeat = const.RepeatType(response.get_message_value(const.ATTR_REPEAT))
         shuffle = str(response.message.get("shuffle")) == "on"
         return repeat, shuffle
 
-    async def set_play_mode(self, player_id: int, repeat: str, shuffle: bool) -> None:
+    async def set_play_mode(
+        self, player_id: int, repeat: const.RepeatType, shuffle: bool
+    ) -> None:
         """Set the current play mode."""
-        if repeat not in const.VALID_REPEAT_MODES:
-            raise ValueError("Invalid repeat mode: " + repeat)
         params = {
             const.ATTR_PLAYER_ID: player_id,
-            "repeat": repeat,
+            const.ATTR_REPEAT: repeat,
             "shuffle": "on" if shuffle else "off",
         }
         await self._connection.command(HeosCommand(const.COMMAND_SET_PLAY_MODE, params))

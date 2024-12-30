@@ -154,13 +154,14 @@ async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
     player = heos.players[1]
-    args = {const.ATTR_PLAYER_ID: "1", "repeat": const.REPEAT_ON_ALL, "shuffle": "on"}
+    args = {
+        const.ATTR_PLAYER_ID: "1",
+        const.ATTR_REPEAT: const.RepeatType.ON_ALL,
+        "shuffle": "on",
+    }
     mock_device.register(const.COMMAND_SET_PLAY_MODE, args, "player.set_play_mode")
 
-    await player.set_play_mode(const.REPEAT_ON_ALL, True)
-    # Assert invalid mode
-    with pytest.raises(ValueError):
-        await player.set_play_mode("repeat", True)
+    await player.set_play_mode(const.RepeatType.ON_ALL, True)
 
 
 @pytest.mark.asyncio

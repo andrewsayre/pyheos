@@ -1,5 +1,6 @@
 """Define consts for the pyheos package."""
 
+from enum import StrEnum
 from typing import Final
 
 CLI_PORT: Final = 1255
@@ -30,6 +31,7 @@ ATTR_PASSWORD: Final = "pw"
 ATTR_PLAYABLE: Final = "playable"
 ATTR_PLAYER_ID: Final = "pid"
 ATTR_RANGE: Final = "range"
+ATTR_REPEAT: Final = "repeat"
 ATTR_RETURNED: Final = "returned"
 ATTR_SERIAL: Final = "serial"
 ATTR_SERVICE_USER_NAME: Final = "service_username"
@@ -80,10 +82,14 @@ PLAY_STATE_PAUSE: Final = "pause"
 PLAY_STATE_STOP: Final = "stop"
 VALID_PLAY_STATES: Final = (PLAY_STATE_PLAY, PLAY_STATE_PAUSE, PLAY_STATE_STOP)
 
-REPEAT_ON_ALL: Final = "on_all"
-REPEAT_ON_ONE: Final = "on_one"
-REPEAT_OFF: Final = "off"
-VALID_REPEAT_MODES: Final = (REPEAT_ON_ALL, REPEAT_ON_ONE, REPEAT_OFF)
+
+class RepeatType(StrEnum):
+    """Define the repeat types."""
+
+    ON_ALL = "on_all"
+    ON_ONE = "on_one"
+    OFF = "off"
+
 
 # Music Source Types
 TYPE_MUSIC_SERVICE: Final = "music_service"

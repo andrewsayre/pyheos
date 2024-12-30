@@ -376,7 +376,7 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert player.version == "1.493.180"
     assert player.volume == 36
     assert not player.is_muted
-    assert player.repeat == const.REPEAT_OFF
+    assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
@@ -619,7 +619,7 @@ async def test_repeat_mode_changed_event(
     # assert not playing
     await heos.get_players()
     player = heos.players[1]
-    assert player.repeat == const.REPEAT_OFF
+    assert player.repeat == const.RepeatType.OFF
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -638,7 +638,7 @@ async def test_repeat_mode_changed_event(
     # Wait until the signal is set
     await signal.wait()
     # Assert state changed
-    assert player.repeat == const.REPEAT_ON_ALL
+    assert player.repeat == const.RepeatType.ON_ALL  # type: ignore[comparison-overlap]
 
 
 @pytest.mark.asyncio
