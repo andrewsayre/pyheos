@@ -10,6 +10,7 @@ from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
+from pyheos.media import MediaItem, MediaMusicSource
 
 from . import MockHeosDevice, connect_handler, get_fixture
 
@@ -897,6 +898,53 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     await signal.wait()
     assert heos.is_signed_in
     assert heos.signed_in_username == "example@example.com"  # type: ignore[unreachable]
+
+
+@pytest.mark.asyncio
+async def test_browse_music_source_unavailable_rasises(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test browse with an unavailable MediaMusicSource raises."""
+    media = MediaMusicSource.from_data(
+        {
+            const.ATTR_NAME: "Favorites",
+            const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
+            const.ATTR_TYPE: const.MediaType.HEOS_SERVICE,
+            const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES,
+            const.ATTR_AVAILABLE: const.VALUE_FALSE,
+        },
+        heos,
+    )
+
+    with pytest.raises(ValueError, match="Source is not available to browse"):
+        await heos.browse_media(media)
+
+
+@pytest.mark.asyncio
+async def test_browse_media_item_not_browsable_raises(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test browse with an not browsable MediaItem raises."""
+    media = MediaItem.from_data(
+        {
+            const.ATTR_NAME: "Song",
+            const.ATTR_IMAGE_URL: "",
+            const.ATTR_TYPE: str(const.MediaType.SONG),
+            const.ATTR_CONTAINER: const.VALUE_NO,
+            const.ATTR_MEDIA_ID: "12456",
+            const.ATTR_ARTIST: "Artist",
+            const.ATTR_ALBUM: "Album",
+            const.ATTR_ALBUM_ID: "123456",
+            const.ATTR_PLAYABLE: const.VALUE_YES,
+        },
+        source_id=1,
+        heos=heos,
+    )
+
+    with pytest.raises(
+        ValueError, match="Only media sources and containers can be browsed"
+    ):
+        await heos.browse_media(media)
 
 
 @pytest.mark.asyncio

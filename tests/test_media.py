@@ -68,13 +68,20 @@ async def test_media_music_source_browse(
     # further testing of the result is done in test_browse_result_from_data
 
 
+@pytest.mark.parametrize(
+    "raw_message",
+    [
+        (
+            '{"heos": {"command": "browse/browse", "result": "success", "message": "sid=1025&returned=1&count=1"}, '
+            '"payload": [{"container": "yes", "type": "playlist", "cid": "171566", "playable": "yes", "name": "Rockin Songs", "image_url": ""}]}'
+        )
+    ],
+)
 @pytest.mark.asyncio
-async def test_browse_result_from_data() -> None:
+async def test_browse_result_from_data(raw_message: str) -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
-    message = HeosMessage(
-        '{"heos": {"command": "browse/browse", "result": "success", "message": "sid=1025&returned=1&count=1"}, "payload": [{"container": "yes", "type": "playlist", "cid": "171566", "playable": "yes", "name": "Rockin Songs", "image_url": ""}]}'
-    )
+    message = HeosMessage(raw_message)
 
     result = BrowseResult.from_data(message, heos)
 
