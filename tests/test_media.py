@@ -1,12 +1,10 @@
 """Define tests for browsing media."""
 
-from typing import cast
-
 import pytest
 
 from pyheos.error import CommandFailedError
 from pyheos.heos import Heos
-from pyheos.media import MediaContainer, MediaSource
+from pyheos.media import MediaItem
 
 
 @pytest.mark.skip
@@ -21,8 +19,13 @@ async def test_browse() -> None:
         sources = await heos.get_music_sources()
 
         for source in sources.values():
-            if source.available:
-                await print_source(source)
+            if not source.available:
+                continue
+
+            print(f"{source.name} (sid={source.source_id}) ->")
+            result = await source.browse()
+            for item in result.items:
+                await print_source(item)
 
         assert sources
     finally:
@@ -30,28 +33,27 @@ async def test_browse() -> None:
 
 
 @pytest.mark.skip
-async def print_source(source: MediaSource | MediaContainer, level: int = 0) -> None:
+async def print_source(source: MediaItem, level: int = 0) -> None:
     """Print the source and its contents."""
     if level > 3:
         print(f"{'    ' * (level)}{source}")
         return
 
+    if source.container_id:
+        print(
+            f"{'    ' * level}{source.name} (sid={source.source_id}&cid={source.container_id}) ->"
+        )
+    else:
+        print(f"{'    ' * level}{source.name} (sid={source.source_id}) ->")
+
     try:
-        if issubclass(type(source), MediaContainer):
-            container = cast(MediaContainer, source)
-            print(
-                f"{'    ' * level}{source.name} (sid={container.source_id}&cid={container.container_id}) ->"
-            )
-            result = await container.browse(0, 5)
-        else:
-            print(f"{'    ' * level}{source.name} (sid={source.source_id}) ->")
-            result = await source.browse()
+        result = await source.browse(0, 5)
     except CommandFailedError:
         return
 
     for item in result.items:
-        if issubclass(type(item), tuple([MediaSource, MediaContainer])):
-            await print_source(item, level + 1)  # type: ignore[arg-type]
+        if item.browsable:
+            await print_source(item, level + 1)
         else:
             print(f"{'    ' * (level + 1)}{item}")
     print("")

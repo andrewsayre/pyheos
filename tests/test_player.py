@@ -1,12 +1,12 @@
 """Tests for the player module."""
 
-from typing import cast
+import re
 
 import pytest
 
 from pyheos import const
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import Media, MediaContainer, MediaItem, MediaSong, MediaType
+from pyheos.media import MediaItem, MediaType
 from pyheos.player import HeosPlayer
 from tests import MockHeosDevice
 
@@ -207,7 +207,14 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
         await player.play_input("Invalid")
 
     input_source = MediaItem(
-        "AUX In 1", MediaType.STATION, "", 1, None, True, "", const.INPUT_AUX_IN_1
+        name="AUX In 1",
+        type=MediaType.STATION,
+        image_url="",
+        playable=True,
+        browsable=False,
+        source_id=1,
+        media_id=const.INPUT_AUX_IN_1,
+        _commands=None,
     )
     args = {
         const.ATTR_PLAYER_ID: "1",
@@ -307,20 +314,20 @@ async def test_add_to_queue_unplayable_source(
     """Test add to queue with unplayable source raises."""
     await heos.get_players()
     player = heos.players[1]
-    source = Media.from_data(
+    source = MediaItem.from_data(
         {
             const.ATTR_NAME: "Unplayable",
-            "type": const.TYPE_PLAYLIST,
-            "image_url": "",
-            "playable": "no",
-            "cid": "123",
-        }
+            const.ATTR_TYPE: const.TYPE_PLAYLIST,
+            const.ATTR_IMAGE_URL: "",
+            const.ATTR_PLAYABLE: const.VALUE_NO,
+            const.ATTR_CONTAINER_ID: "123",
+        },
+        source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
-    with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(
-            cast(MediaContainer, source), const.ADD_QUEUE_PLAY_NOW
-        )
-    assert str(excinfo.value) == f"Source '{source}' is not playable"
+    with pytest.raises(
+        ValueError, match=re.escape(f"Media '{source}' is not playable")
+    ):
+        await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
 
 
 @pytest.mark.asyncio
@@ -330,19 +337,19 @@ async def test_add_to_queue_invalid_queue_option(
     """Test add to queue with invalid option raises."""
     await heos.get_players()
     player = heos.players[1]
-    source = Media.from_data(
+    source = MediaItem.from_data(
         {
             const.ATTR_NAME: "My Playlist",
-            "type": const.TYPE_PLAYLIST,
-            "image_url": "",
-            "playable": "yes",
-            "container": "yes",
-            "cid": "123",
+            const.ATTR_TYPE: const.TYPE_PLAYLIST,
+            const.ATTR_IMAGE_URL: "",
+            const.ATTR_PLAYABLE: const.VALUE_YES,
+            const.ATTR_CONTAINER: const.VALUE_YES,
+            const.ATTR_CONTAINER_ID: "123",
         },
         source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
     with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(cast(MediaContainer, source), 100)
+        await player.add_to_queue(source, 100)
     assert str(excinfo.value) == "Invalid queue options: 100"
 
 
@@ -351,7 +358,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     """Test adding a container to the queue."""
     await heos.get_players()
     player = heos.players[1]
-    source = Media.from_data(
+    source = MediaItem.from_data(
         {
             const.ATTR_NAME: "My Playlist",
             "type": const.TYPE_PLAYLIST,
@@ -371,7 +378,7 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_container"
     )
-    await player.add_to_queue(cast(MediaContainer, source), const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
 
 
 @pytest.mark.asyncio
@@ -379,7 +386,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     """Test adding a track to the queue."""
     await heos.get_players()
     player = heos.players[1]
-    source = Media.from_data(
+    source = MediaItem.from_data(
         {
             const.ATTR_NAME: "My Track",
             "type": const.TYPE_SONG,
@@ -404,7 +411,7 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
-    await player.add_to_queue(cast(MediaSong, source), const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
 
 
 @pytest.mark.asyncio

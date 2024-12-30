@@ -3,9 +3,9 @@
 import asyncio
 from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
-from pyheos.media import MediaContainer, MediaItem
+from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
 from . import const
@@ -299,6 +299,8 @@ class HeosPlayer:
 
     async def play_input_source(self, input_source: MediaItem) -> None:
         """Play the specified input source."""
+        if not input_source.media_id:
+            raise ValueError(f"Media '{input_source}' is not playable")
         await self.play_input(
             input_source.media_id, source_player_id=input_source.source_id
         )
@@ -315,24 +317,17 @@ class HeosPlayer:
         """Play the specified quick select."""
         await self._commands.play_quick_select(self._player_id, quick_select_id)
 
-    async def add_to_queue(self, media: MediaContainer, add_queue_option: int) -> None:
+    async def add_to_queue(self, media: MediaItem, add_queue_option: int) -> None:
         """Add the specified source to the queue."""
-        if not media.playable:
-            raise ValueError(f"Source '{media}' is not playable")
-
-        if issubclass(type(media), MediaItem):
-            media_item = cast(MediaItem, media)
-            await self._commands.add_to_queue(
-                self.player_id,
-                media.source_id,
-                media.container_id,
-                add_queue_option,
-                media_item.media_id,
-            )
-        else:
-            await self._commands.add_to_queue(
-                self.player_id, media.source_id, media.container_id, add_queue_option
-            )
+        if not media.playable or media.container_id is None:
+            raise ValueError(f"Media '{media}' is not playable")
+        await self._commands.add_to_queue(
+            self.player_id,
+            media.source_id,
+            media.container_id,
+            add_queue_option,
+            media.media_id,
+        )
 
     async def set_quick_select(self, quick_select_id: int) -> None:
         """Set the specified quick select to the current source."""

@@ -9,12 +9,8 @@ from .heos import Heos, HeosOptions
 from .media import (
     BrowseResult,
     Media,
-    MediaAlbum,
-    MediaContainer,
     MediaItem,
     MediaMusicSource,
-    MediaSong,
-    MediaSource,
     MediaType,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer
@@ -36,11 +32,7 @@ __all__ = [
     "HeosNowPlayingMedia",
     "HeosSystem",
     "Media",
-    "MediaAlbum",
-    "MediaContainer",
     "MediaItem",
     "MediaMusicSource",
-    "MediaSong",
     "MediaType",
-    "MediaSource",
 ]

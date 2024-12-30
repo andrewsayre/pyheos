@@ -4,17 +4,15 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Final, cast
+from typing import Any, Final
 
 from pyheos.command import HeosCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.media import (
     BrowseResult,
-    MediaContainer,
     MediaItem,
     MediaMusicSource,
-    MediaSource,
 )
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
@@ -357,6 +355,28 @@ class Heos:
             self._music_sources_loaded = True
         return self._music_sources
 
+    async def browse(
+        self,
+        source_id: int,
+        container_id: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified source or container.
+
+        Args:
+            source_id: The identifier of the source to browse.
+            container_id: The identifier of the container to browse. If not provided, the root of the source will be expanded.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the source or container.
+        """
+        message = await self._commands.browse(
+            source_id, container_id, range_start, range_end
+        )
+        return BrowseResult.from_data(message, self._commands)
+
     async def get_input_sources(self) -> Sequence[MediaItem]:
         """Get available input sources."""
         message = await self._commands.browse(const.MUSIC_SOURCE_AUX_INPUT)
@@ -364,9 +384,8 @@ class Heos:
 
         input_sources: list[MediaItem] = []
         for item in result.items:
-            source = cast(MediaSource, item)
-            source_browse_result = await source.browse()
-            input_sources.extend(cast(Sequence[MediaItem], source_browse_result.items))
+            source_browse_result = await item.browse()
+            input_sources.extend(source_browse_result.items)
 
         return input_sources
 
@@ -374,16 +393,13 @@ class Heos:
         """Get available favorites."""
         message = await self._commands.browse(const.MUSIC_SOURCE_FAVORITES)
         result = BrowseResult.from_data(message, self._commands)
-        return {
-            index + 1: cast(MediaItem, source)
-            for index, source in enumerate(result.items)
-        }
+        return {index + 1: source for index, source in enumerate(result.items)}
 
-    async def get_playlists(self) -> Sequence[MediaContainer]:
+    async def get_playlists(self) -> Sequence[MediaItem]:
         """Get available playlists."""
         message = await self._commands.browse(const.MUSIC_SOURCE_PLAYLISTS)
         result = BrowseResult.from_data(message, self._commands)
-        return cast(Sequence[MediaContainer], result.items)
+        return result.items
 
     @property
     def dispatcher(self) -> Dispatcher:
