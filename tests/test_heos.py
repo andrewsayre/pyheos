@@ -943,11 +943,12 @@ async def test_browse_media_item(
         {
             const.ATTR_SOURCE_ID: media_item_album.source_id,
             const.ATTR_CONTAINER_ID: media_item_album.container_id,
+            const.ATTR_RANGE: "0,13",
         },
         "browse.browse_album",
     )
 
-    result = await heos.browse_media(media_item_album)
+    result = await heos.browse_media(media_item_album, 0, 13)
 
     assert result.source_id == media_item_album.source_id
     assert result.container_id == media_item_album.container_id

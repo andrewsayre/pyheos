@@ -42,6 +42,7 @@ ATTR_PRESET: Final = "preset"
 ATTR_QUEUE_ID: Final = "qid"
 ATTR_RANGE: Final = "range"
 ATTR_REPEAT: Final = "repeat"
+ATTR_RESULT: Final = "result"
 ATTR_RETURNED: Final = "returned"
 ATTR_SERIAL: Final = "serial"
 ATTR_SERVICE_USER_NAME: Final = "service_username"
@@ -73,6 +74,7 @@ VALUE_TRUE: Final = "true"
 VALUE_FALSE: Final = "false"
 VALUE_YES: Final = "yes"
 VALUE_NO: Final = "no"
+VALUE_SUCCESS: Final = "success"
 
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8

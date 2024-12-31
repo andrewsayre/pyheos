@@ -19,14 +19,6 @@ class HeosCommand:
     command: str
     parameters: dict[str, Any] = field(default_factory=dict)
 
-    def __str__(self) -> str:
-        """Get a user-readable representation of the command."""
-        return self.uri_masked
-
-    def __repr__(self) -> str:
-        """Get a debug representation of the command."""
-        return self.uri_masked
-
     @property
     def uri(self) -> str:
         """Get the command as a URI string that can be sent to the controller."""
@@ -72,14 +64,6 @@ class HeosMessage:
 
     raw_message: str
 
-    def __str__(self) -> str:
-        """Get a user-readable representation of the message."""
-        return str(self.raw_message)
-
-    def __repr__(self) -> str:
-        """Get a debug representation of the message."""
-        return str(self.raw_message)
-
     @cached_property
     def container(self) -> dict[str, Any]:
         """Get the entire message as a dictionary."""
@@ -120,9 +104,9 @@ class HeosMessage:
     @cached_property
     def result(self) -> bool:
         """Return True if the message represents a successful command. If not present in the response, True is returned."""
-        if raw_result := self.heos.get("result"):
-            return str(raw_result) == "success"
-        return True
+        return (
+            self.heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
+        )
 
     def get_message_value(self, key: str) -> str:
         """Get a message parameter as a string."""
