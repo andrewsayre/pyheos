@@ -922,21 +922,11 @@ async def test_browse_music_source_unavailable_rasises(
 
 @pytest.mark.asyncio
 async def test_browse_media_item_not_browsable_raises(
-    mock_device: MockHeosDevice, heos: Heos
+    mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
 ) -> None:
     """Test browse with an not browsable MediaItem raises."""
     media = MediaItem.from_data(
-        {
-            const.ATTR_NAME: "Song",
-            const.ATTR_IMAGE_URL: "",
-            const.ATTR_TYPE: str(const.MediaType.SONG),
-            const.ATTR_CONTAINER: const.VALUE_NO,
-            const.ATTR_MEDIA_ID: "12456",
-            const.ATTR_ARTIST: "Artist",
-            const.ATTR_ALBUM: "Album",
-            const.ATTR_ALBUM_ID: "123456",
-            const.ATTR_PLAYABLE: const.VALUE_YES,
-        },
+        media_item_song_data,
         source_id=1,
         heos=heos,
     )

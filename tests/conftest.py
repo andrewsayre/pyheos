@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 import pytest_asyncio
 
+from pyheos import const
 from pyheos.heos import Heos
 
 from . import MockHeosDevice
@@ -57,3 +58,18 @@ def async_handler() -> Callable[..., Coroutine]:
 
     target.fired = False  # type: ignore[attr-defined]
     return target
+
+
+@pytest.fixture
+def media_item_song_data() -> dict[str, str]:
+    return {
+        const.ATTR_NAME: "Imaginary Parties",
+        const.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
+        const.ATTR_TYPE: str(const.MediaType.SONG),
+        const.ATTR_CONTAINER: const.VALUE_NO,
+        const.ATTR_MEDIA_ID: "78374741",
+        const.ATTR_ARTIST: "Superfruit",
+        const.ATTR_ALBUM: "Future Friends",
+        const.ATTR_ALBUM_ID: "78374740",
+        const.ATTR_PLAYABLE: const.VALUE_YES,
+    }

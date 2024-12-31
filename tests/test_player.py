@@ -345,22 +345,14 @@ async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> 
 
 
 @pytest.mark.asyncio
-async def test_play_media_track(mock_device: MockHeosDevice, heos: Heos) -> None:
+async def test_play_media_track(
+    mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
+) -> None:
     """Test adding a track to the queue."""
     await heos.get_players()
     player = heos.players[1]
     source = MediaItem.from_data(
-        {
-            const.ATTR_NAME: "My Track",
-            const.ATTR_TYPE: const.MediaType.SONG,
-            const.ATTR_IMAGE_URL: "",
-            const.ATTR_PLAYABLE: const.VALUE_YES,
-            const.ATTR_CONTAINER: const.VALUE_NO,
-            const.ATTR_MEDIA_ID: "456",
-            const.ATTR_ARTIST: "Artist",
-            const.ATTR_ALBUM: "Album",
-            const.ATTR_ALBUM_ID: "789",
-        },
+        media_item_song_data,
         source_id=const.MUSIC_SOURCE_PLAYLISTS,
         container_id="123",
     )
@@ -369,7 +361,7 @@ async def test_play_media_track(mock_device: MockHeosDevice, heos: Heos) -> None
         const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
         const.ATTR_CONTAINER_ID: "123",
         const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-        const.ATTR_MEDIA_ID: "456",
+        const.ATTR_MEDIA_ID: "78374741",
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
