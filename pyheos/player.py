@@ -292,7 +292,7 @@ class HeosPlayer:
         await self._commands.play_previous(self._player_id)
 
     async def play_input_source(
-        self, input_name: str, *, source_player_id: int | None = None
+        self, input_name: str, source_player_id: int | None = None
     ) -> None:
         """Play the specified input."""
         await self.heos.play_input_source(self.player_id, input_name, source_player_id)

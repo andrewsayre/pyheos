@@ -479,20 +479,17 @@ class Heos:
         if not media.playable:
             raise ValueError(f"Media '{media}' is not playable")
 
-        if media.source_id == const.MUSIC_SOURCE_AUX_INPUT:
-            if media.media_id is None:
-                raise ValueError(f"Media '{media}' cannot have a None media_id")
-            await self.play_input_source(player_id, media.media_id)
+        if media.media_id in const.VALID_INPUTS:
+            await self.play_input_source(player_id, media.media_id, media.source_id)
         elif media.type == const.MediaType.STATION:
             if media.media_id is None:
                 raise ValueError(f"'Media '{media}' cannot have a None media_id")
             await self.play_station(
-                player_id == media.source_id,
+                player_id=player_id,
                 source_id=media.source_id,
                 container_id=media.container_id,
                 media_id=media.media_id,
             )
-            pass
         else:
             # Handles both songs and containers
             if media.container_id is None:
