@@ -214,6 +214,8 @@ async def test_play_input_source(
         },
         "browse.play_input",
     )
+    assert media_item_input.media_id is not None
+
     await player.play_input_source(
         media_item_input.media_id, media_item_input.source_id
     )
@@ -386,6 +388,7 @@ async def test_add_to_queue(
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
+    assert media_item_song.container_id is not None
     await player.add_to_queue(
         media_item_song.source_id,
         media_item_song.container_id,

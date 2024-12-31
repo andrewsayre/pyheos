@@ -104,7 +104,7 @@ class HeosMessage:
     @cached_property
     def result(self) -> bool:
         """Return True if the message represents a successful command. If not present in the response, True is returned."""
-        return (
+        return bool(
             self.heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
         )
 
