@@ -61,7 +61,7 @@ class MediaMusicSource(Media):
             A BrowseResult instance containing the items in this source."""
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to browse")
-        return await self._heos.browse_media(self)
+        return await self._heos.browse(self.source_id)
 
 
 @dataclass

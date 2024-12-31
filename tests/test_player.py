@@ -212,19 +212,19 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
 
 
 @pytest.mark.asyncio
-async def test_play_favorite(mock_device: MockHeosDevice, heos: Heos) -> None:
+async def test_play_preset_station(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
     player = heos.players[1]
 
     # Test invalid starting index
     with pytest.raises(ValueError):
-        await player.play_favorite(0)
+        await player.play_preset_station(0)
 
-    args = {const.ATTR_PLAYER_ID: "1", "preset": "1"}
+    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_PRESET: "1"}
     mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args, "browse.play_preset")
 
-    await player.play_favorite(1)
+    await player.play_preset_station(1)
 
 
 @pytest.mark.asyncio

@@ -3,10 +3,8 @@
 from collections.abc import Sequence
 from typing import Any, Final, Optional, cast
 
+from pyheos import const
 from pyheos.connection import ConnectionBase, HeosCommand
-from pyheos.message import HeosMessage
-
-from . import const
 
 
 class HeosCommands:
@@ -164,103 +162,6 @@ class HeosCommands:
         """Play next."""
         params = {const.ATTR_PLAYER_ID: player_id}
         await self._connection.command(HeosCommand(const.COMMAND_PLAY_PREVIOUS, params))
-
-    async def get_music_sources(self) -> Sequence[dict]:
-        """Get available music sources."""
-        response = await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_GET_SOURCES)
-        )
-        return cast(Sequence[dict], response.payload)
-
-    async def browse(
-        self,
-        source_id: int,
-        container_id: str | None = None,
-        range_start: int | None = None,
-        range_end: int | None = None,
-    ) -> HeosMessage:
-        """Browse a music source."""
-        params: dict[str, Any] = {const.ATTR_SOURCE_ID: source_id}
-        if container_id:
-            params[const.ATTR_CONTAINER_ID] = container_id
-
-        if isinstance(range_start, int) and isinstance(range_end, int):
-            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
-
-        return await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_BROWSE, params)
-        )
-
-    async def play_input(
-        self, player_id: int, input_name: str, source_player_id: int | None = None
-    ) -> None:
-        """Play the specified input source."""
-        params = {
-            const.ATTR_PLAYER_ID: player_id,
-            const.ATTR_INPUT: input_name,
-        }
-        if source_player_id is not None:
-            params[const.ATTR_SOURCE_PLAYER_ID] = source_player_id
-
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_INPUT, params)
-        )
-
-    async def play_preset(self, player_id: int, preset: int) -> None:
-        """Play the specified preset by 1-based index."""
-        if preset < 1:
-            raise ValueError("Invalid preset: " + str(preset))
-        params = {const.ATTR_PLAYER_ID: player_id, "preset": preset}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_PRESET, params)
-        )
-
-    async def play_stream_url(self, player_id: int, url: str) -> None:
-        """Play the specified URL."""
-        params = {const.ATTR_PLAYER_ID: player_id, const.ATTR_URL: url}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
-        )
-
-    async def play_stream_station(
-        self,
-        player_id: int,
-        source_id: int,
-        container_id: str | None,
-        media_id: str,
-    ) -> None:
-        """Play the specified streaming station."""
-        params = {
-            const.ATTR_PLAYER_ID: player_id,
-            const.ATTR_SOURCE_ID: source_id,
-            const.ATTR_MEDIA_ID: media_id,
-        }
-        if container_id is not None:
-            params[const.ATTR_CONTAINER_ID] = container_id
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
-        )
-
-    async def add_to_queue(
-        self,
-        player_id: int,
-        source_id: int,
-        container_id: str,
-        media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
-    ) -> None:
-        """Add the container or track to the queue."""
-        params = {
-            const.ATTR_PLAYER_ID: player_id,
-            const.ATTR_SOURCE_ID: source_id,
-            const.ATTR_CONTAINER_ID: container_id,
-            const.ATTR_ADD_CRITERIA_ID: add_criteria,
-        }
-        if media_id is not None:
-            params[const.ATTR_MEDIA_ID] = media_id
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
-        )
 
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""

@@ -297,9 +297,9 @@ class HeosPlayer:
         """Play the specified input."""
         await self.heos.play_input_source(self.player_id, input_name, source_player_id)
 
-    async def play_favorite(self, index: int) -> None:
+    async def play_preset_station(self, index: int) -> None:
         """Play the favorite by 1-based index."""
-        await self.heos.play_favorite(self.player_id, index)
+        await self.heos.play_preset_station(self.player_id, index)
 
     async def play_url(self, url: str) -> None:
         """Play the specified URL."""
