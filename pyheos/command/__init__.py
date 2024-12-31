@@ -3,10 +3,8 @@
 from collections.abc import Sequence
 from typing import Any, Final, Optional, cast
 
+from pyheos import const
 from pyheos.connection import ConnectionBase, HeosCommand
-from pyheos.message import HeosMessage
-
-from . import const
 
 
 class HeosCommands:
@@ -164,86 +162,6 @@ class HeosCommands:
         """Play next."""
         params = {const.ATTR_PLAYER_ID: player_id}
         await self._connection.command(HeosCommand(const.COMMAND_PLAY_PREVIOUS, params))
-
-    async def get_music_sources(self) -> Sequence[dict]:
-        """Get available music sources."""
-        response = await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_GET_SOURCES)
-        )
-        return cast(Sequence[dict], response.payload)
-
-    async def browse(
-        self,
-        source_id: int,
-        container_id: str | None = None,
-        range_start: int | None = None,
-        range_end: int | None = None,
-    ) -> HeosMessage:
-        """Browse a music source."""
-        params: dict[str, Any] = {const.ATTR_SOURCE_ID: source_id}
-        if container_id:
-            params[const.ATTR_CONTAINER_ID] = container_id
-
-        if isinstance(range_start, int) and isinstance(range_end, int):
-            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
-
-        return await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_BROWSE, params)
-        )
-
-    async def play_input(
-        self, player_id: int, input_name: str, *, source_player_id: int | None = None
-    ) -> None:
-        """Play the specified input source."""
-        if input_name not in const.VALID_INPUTS:
-            raise ValueError("Invalid input name: " + input_name)
-        params = {
-            const.ATTR_PLAYER_ID: player_id,
-            "spid": source_player_id or player_id,
-            "input": input_name,
-        }
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_INPUT, params)
-        )
-
-    async def play_preset(self, player_id: int, preset: int) -> None:
-        """Play the specified preset by 1-based index."""
-        if preset < 1:
-            raise ValueError("Invalid preset: " + str(preset))
-        params = {const.ATTR_PLAYER_ID: player_id, "preset": preset}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_PRESET, params)
-        )
-
-    async def play_stream(self, player_id: int, url: str) -> None:
-        """Play the specified URL."""
-        params = {const.ATTR_PLAYER_ID: player_id, const.ATTR_URL: url}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
-        )
-
-    async def add_to_queue(
-        self,
-        player_id: int,
-        source_id: int,
-        container_id: str,
-        add_queue_option: int,
-        media_id: str | None = None,
-    ) -> None:
-        """Add the container or track to the queue."""
-        if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:
-            raise ValueError(f"Invalid queue options: {add_queue_option}")
-        params = {
-            const.ATTR_PLAYER_ID: player_id,
-            const.ATTR_SOURCE_ID: source_id,
-            "cid": container_id,
-            "aid": add_queue_option,
-        }
-        if media_id is not None:
-            params[const.ATTR_MEDIA_ID] = media_id
-        await self._connection.command(
-            HeosCommand(const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
-        )
 
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""

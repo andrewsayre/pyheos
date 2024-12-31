@@ -1,6 +1,7 @@
 """Tests for the heos class."""
 
 import asyncio
+import re
 from typing import Any
 
 import pytest
@@ -901,50 +902,168 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
 
 
 @pytest.mark.asyncio
-async def test_browse_music_source_unavailable_rasises(
-    mock_device: MockHeosDevice, heos: Heos
+async def test_browse_media_music_source(
+    mock_device: MockHeosDevice,
+    heos: Heos,
+    media_music_source: MediaMusicSource,
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
-    media = MediaMusicSource.from_data(
-        {
-            const.ATTR_NAME: "Favorites",
-            const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
-            const.ATTR_TYPE: const.MediaType.HEOS_SERVICE,
-            const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES,
-            const.ATTR_AVAILABLE: const.VALUE_FALSE,
-        },
-        heos,
+    mock_device.register(
+        const.COMMAND_BROWSE_BROWSE,
+        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        "browse.browse_favorites",
     )
 
+    result = await heos.browse_media(media_music_source)
+
+    assert result.source_id == const.MUSIC_SOURCE_FAVORITES
+    assert result.returned == 3
+    assert result.count == 3
+    assert len(result.items) == 3
+
+
+@pytest.mark.asyncio
+async def test_browse_media_music_source_unavailable_rasises(
+    mock_device: MockHeosDevice,
+    heos: Heos,
+    media_music_source_unavailable: MediaMusicSource,
+) -> None:
+    """Test browse with an unavailable MediaMusicSource raises."""
     with pytest.raises(ValueError, match="Source is not available to browse"):
-        await heos.browse_media(media)
+        await heos.browse_media(media_music_source_unavailable)
+
+
+@pytest.mark.asyncio
+async def test_browse_media_item(
+    mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
+) -> None:
+    """Test browse with an not browsable MediaItem raises."""
+    mock_device.register(
+        const.COMMAND_BROWSE_BROWSE,
+        {
+            const.ATTR_SOURCE_ID: media_item_album.source_id,
+            const.ATTR_CONTAINER_ID: media_item_album.container_id,
+            const.ATTR_RANGE: "0,13",
+        },
+        "browse.browse_album",
+    )
+
+    result = await heos.browse_media(media_item_album, 0, 13)
+
+    assert result.source_id == media_item_album.source_id
+    assert result.container_id == media_item_album.container_id
+    assert result.count == 14
+    assert result.returned == 14
+    assert len(result.items) == 14
 
 
 @pytest.mark.asyncio
 async def test_browse_media_item_not_browsable_raises(
-    mock_device: MockHeosDevice, heos: Heos
+    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
 ) -> None:
     """Test browse with an not browsable MediaItem raises."""
-    media = MediaItem.from_data(
-        {
-            const.ATTR_NAME: "Song",
-            const.ATTR_IMAGE_URL: "",
-            const.ATTR_TYPE: str(const.MediaType.SONG),
-            const.ATTR_CONTAINER: const.VALUE_NO,
-            const.ATTR_MEDIA_ID: "12456",
-            const.ATTR_ARTIST: "Artist",
-            const.ATTR_ALBUM: "Album",
-            const.ATTR_ALBUM_ID: "123456",
-            const.ATTR_PLAYABLE: const.VALUE_YES,
-        },
-        source_id=1,
-        heos=heos,
-    )
-
     with pytest.raises(
         ValueError, match="Only media sources and containers can be browsed"
     ):
-        await heos.browse_media(media)
+        await heos.browse_media(media_item_song)
+
+
+@pytest.mark.asyncio
+async def test_play_media_unplayable_raises(
+    mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
+) -> None:
+    """Test play media with unplayable source raises."""
+    media_item_album.playable = False
+
+    with pytest.raises(
+        ValueError, match=re.escape(f"Media '{media_item_album}' is not playable")
+    ):
+        await heos.play_media(1, media_item_album, const.AddCriteriaType.PLAY_NOW)
+
+
+@pytest.mark.asyncio
+async def test_play_media_song(
+    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
+) -> None:
+    """Test play song succeeseds."""
+    mock_device.register(
+        const.COMMAND_BROWSE_ADD_TO_QUEUE,
+        {
+            const.ATTR_PLAYER_ID: "1",
+            const.ATTR_SOURCE_ID: str(media_item_song.source_id),
+            const.ATTR_CONTAINER_ID: media_item_song.container_id,
+            const.ATTR_MEDIA_ID: media_item_song.media_id,
+            const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
+        },
+        "browse.add_to_queue_track",
+    )
+
+    await heos.play_media(1, media_item_song)
+
+
+@pytest.mark.asyncio
+async def test_play_media_song_missing_container_raises(
+    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
+) -> None:
+    """Test play song succeeseds."""
+    media_item_song.container_id = None
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"Media '{media_item_song}' cannot have a None container_id"),
+    ):
+        await heos.play_media(1, media_item_song)
+
+
+@pytest.mark.asyncio
+async def test_play_media_input(
+    mock_device: MockHeosDevice, heos: Heos, media_item_input: MediaItem
+) -> None:
+    """Test play song succeeseds."""
+    mock_device.register(
+        const.COMMAND_BROWSE_PLAY_INPUT,
+        {
+            const.ATTR_PLAYER_ID: "1",
+            const.ATTR_INPUT: media_item_input.media_id,
+            const.ATTR_SOURCE_PLAYER_ID: media_item_input.source_id,
+        },
+        "browse.play_input",
+    )
+
+    await heos.play_media(1, media_item_input)
+
+
+@pytest.mark.asyncio
+async def test_play_media_station(
+    mock_device: MockHeosDevice, heos: Heos, media_item_station: MediaItem
+) -> None:
+    """Test play song succeeseds."""
+    mock_device.register(
+        const.COMMAND_BROWSE_PLAY_STREAM,
+        {
+            const.ATTR_PLAYER_ID: "1",
+            const.ATTR_SOURCE_ID: media_item_station.source_id,
+            const.ATTR_CONTAINER_ID: media_item_station.container_id,
+            const.ATTR_MEDIA_ID: media_item_station.media_id,
+        },
+        "browse.play_stream_station",
+    )
+
+    await heos.play_media(1, media_item_station)
+
+
+@pytest.mark.asyncio
+async def test_play_media_station_missing_media_id_raises(
+    mock_device: MockHeosDevice, heos: Heos, media_item_station: MediaItem
+) -> None:
+    """Test play song succeeseds."""
+    media_item_station.media_id = None
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(f"Media '{media_item_station}' cannot have a None media_id"),
+    ):
+        await heos.play_media(1, media_item_station)
 
 
 @pytest.mark.asyncio

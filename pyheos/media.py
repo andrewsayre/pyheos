@@ -61,7 +61,7 @@ class MediaMusicSource(Media):
             A BrowseResult instance containing the items in this source."""
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to browse")
-        return await self._heos.browse_media(self)
+        return await self._heos.browse(self.source_id)
 
 
 @dataclass
@@ -126,6 +126,20 @@ class MediaItem(Media):
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to browse")
         return await self._heos.browse_media(self, range_start, range_end)
+
+    async def play_media(
+        self,
+        player_id: int,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """Play this media item on the specified player.
+
+        Args:
+            player_id: The id of the player to play on.
+        """
+        if self._heos is None:
+            raise ValueError("Must be initialized with the 'heos' parameter to play")
+        await self._heos.play_media(player_id, self, add_criteria)
 
 
 @dataclass

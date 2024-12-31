@@ -1,6 +1,6 @@
 """Define consts for the pyheos package."""
 
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import Final
 
 CLI_PORT: Final = 1255
@@ -10,6 +10,7 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
+ATTR_ADD_CRITERIA_ID: Final = "aid"
 ATTR_ALBUM_ID: Final = "album_id"
 ATTR_ALBUM: Final = "album"
 ATTR_ARTIST: Final = "artist"
@@ -25,6 +26,7 @@ ATTR_ERROR_ID: Final = "eid"
 ATTR_GROUP_ID: Final = "gid"
 ATTR_ID: Final = "id"
 ATTR_IMAGE_URL: Final = "image_url"
+ATTR_INPUT: Final = "input"
 ATTR_IP_ADDRESS: Final = "ip"
 ATTR_LEVEL: Final = "level"
 ATTR_LINE_OUT: Final = "lineout"
@@ -36,15 +38,18 @@ ATTR_NETWORK: Final = "network"
 ATTR_PASSWORD: Final = "pw"
 ATTR_PLAYABLE: Final = "playable"
 ATTR_PLAYER_ID: Final = "pid"
+ATTR_PRESET: Final = "preset"
 ATTR_QUEUE_ID: Final = "qid"
 ATTR_RANGE: Final = "range"
 ATTR_REPEAT: Final = "repeat"
+ATTR_RESULT: Final = "result"
 ATTR_RETURNED: Final = "returned"
 ATTR_SERIAL: Final = "serial"
 ATTR_SERVICE_USER_NAME: Final = "service_username"
 ATTR_SHUFFLE: Final = "shuffle"
 ATTR_SONG: Final = "song"
 ATTR_SOURCE_ID: Final = "sid"
+ATTR_SOURCE_PLAYER_ID: Final = "spid"
 ATTR_SIGNED_OUT: Final = "signed_out"
 ATTR_SIGNED_IN: Final = "signed_in"
 ATTR_STATE: Final = "state"
@@ -69,6 +74,7 @@ VALUE_TRUE: Final = "true"
 VALUE_FALSE: Final = "false"
 VALUE_YES: Final = "yes"
 VALUE_NO: Final = "no"
+VALUE_SUCCESS: Final = "success"
 
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8
@@ -291,18 +297,15 @@ VALID_INPUTS: Final = (
     INPUT_USB_AC,
 )
 
-# Add to Queue Options
-ADD_QUEUE_PLAY_NOW: Final = 1
-ADD_QUEUE_PLAY_NEXT: Final = 2
-ADD_QUEUE_ADD_TO_END: Final = 3
-ADD_QUEUE_REPLACE_AND_PLAY: Final = 4
 
-VALID_ADD_QUEUE_OPTIONS: Final = (
-    ADD_QUEUE_PLAY_NOW,
-    ADD_QUEUE_PLAY_NEXT,
-    ADD_QUEUE_ADD_TO_END,
-    ADD_QUEUE_REPLACE_AND_PLAY,
-)
+class AddCriteriaType(IntEnum):
+    """Define the add to queue options."""
+
+    PLAY_NOW = 1
+    PLAY_NEXT = 2
+    ADD_TO_END = 3
+    REPLACE_AND_PLAY = 4
+
 
 # Signals
 SIGNAL_PLAYER_EVENT: Final = "player_event"

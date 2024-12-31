@@ -95,41 +95,35 @@ async def test_browse_result_from_data(raw_message: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_media_item_from_data() -> None:
+async def test_media_item_from_data(media_item_song_data: dict[str, str]) -> None:
     """Test creating a MediaItem from data."""
 
     source_id = 1
     container_id = "My Music"
-    data = {
-        const.ATTR_NAME: "Imaginary Parties",
-        const.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
-        const.ATTR_TYPE: str(const.MediaType.SONG),
-        const.ATTR_CONTAINER: const.VALUE_NO,
-        const.ATTR_MEDIA_ID: "78374741",
-        const.ATTR_ARTIST: "Superfruit",
-        const.ATTR_ALBUM: "Future Friends",
-        const.ATTR_ALBUM_ID: "78374740",
-        const.ATTR_PLAYABLE: const.VALUE_YES,
-    }
 
-    source = MediaItem.from_data(data, source_id, container_id)
+    source = MediaItem.from_data(media_item_song_data, source_id, container_id)
 
-    assert source.name == data[const.ATTR_NAME]
-    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.name == media_item_song_data[const.ATTR_NAME]
+    assert source.image_url == media_item_song_data[const.ATTR_IMAGE_URL]
     assert source.type == const.MediaType.SONG
     assert source.container_id == container_id
     assert source.source_id == source_id
     assert source.playable is True
     assert source.browsable is False
-    assert source.album == data[const.ATTR_ALBUM]
-    assert source.artist == data[const.ATTR_ARTIST]
-    assert source.album_id == data[const.ATTR_ALBUM_ID]
-    assert source.media_id == data[const.ATTR_MEDIA_ID]
+    assert source.album == media_item_song_data[const.ATTR_ALBUM]
+    assert source.artist == media_item_song_data[const.ATTR_ARTIST]
+    assert source.album_id == media_item_song_data[const.ATTR_ALBUM_ID]
+    assert source.media_id == media_item_song_data[const.ATTR_MEDIA_ID]
     with pytest.raises(
         ValueError,
         match="Must be initialized with the 'heos' parameter to browse",
     ):
         await source.browse()
+    with pytest.raises(
+        ValueError,
+        match="Must be initialized with the 'heos' parameter to play",
+    ):
+        await source.play_media(1)
 
 
 @pytest.mark.asyncio
@@ -230,3 +224,28 @@ async def test_media_item_browse(mock_device: MockHeosDevice, heos: Heos) -> Non
     assert result.returned == 8
     assert result.count == 8
     assert len(result.items) == 8
+
+
+@pytest.mark.asyncio
+async def test_media_item_play(
+    mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
+) -> None:
+    """Test playing a media music source."""
+    media = MediaItem.from_data(
+        media_item_song_data,
+        source_id=const.MUSIC_SOURCE_PLAYLISTS,
+        container_id="321",
+        heos=heos,
+    )
+    args = {
+        const.ATTR_PLAYER_ID: "1",
+        const.ATTR_SOURCE_ID: media.source_id,
+        const.ATTR_CONTAINER_ID: media.container_id,
+        const.ATTR_MEDIA_ID: media.media_id,
+        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.REPLACE_AND_PLAY),
+    }
+    mock_device.register(
+        const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
+    )
+
+    await media.play_media(1, const.AddCriteriaType.REPLACE_AND_PLAY)

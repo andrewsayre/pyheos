@@ -291,45 +291,48 @@ class HeosPlayer:
         """Clear the queue of the player."""
         await self._commands.play_previous(self._player_id)
 
-    async def play_input(
-        self, input_name: str, *, source_player_id: int | None = None
+    async def play_input_source(
+        self, input_name: str, source_player_id: int | None = None
     ) -> None:
         """Play the specified input."""
-        await self._commands.play_input(
-            self._player_id, input_name, source_player_id=source_player_id
-        )
+        await self.heos.play_input_source(self.player_id, input_name, source_player_id)
 
-    async def play_input_source(self, input_source: MediaItem) -> None:
-        """Play the specified input source."""
-        if not input_source.media_id:
-            raise ValueError(f"Media '{input_source}' is not playable")
-        await self.play_input(
-            input_source.media_id, source_player_id=input_source.source_id
-        )
-
-    async def play_favorite(self, preset: int) -> None:
+    async def play_preset_station(self, index: int) -> None:
         """Play the favorite by 1-based index."""
-        await self._commands.play_preset(self._player_id, preset)
+        await self.heos.play_preset_station(self.player_id, index)
 
     async def play_url(self, url: str) -> None:
         """Play the specified URL."""
-        await self._commands.play_stream(self._player_id, url)
+        await self.heos.play_url(self.player_id, url)
 
     async def play_quick_select(self, quick_select_id: int) -> None:
         """Play the specified quick select."""
         await self._commands.play_quick_select(self._player_id, quick_select_id)
 
-    async def add_to_queue(self, media: MediaItem, add_queue_option: int) -> None:
+    async def add_to_queue(
+        self,
+        source_id: int,
+        container_id: str,
+        media_id: str | None = None,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
         """Add the specified source to the queue."""
-        if not media.playable or media.container_id is None:
-            raise ValueError(f"Media '{media}' is not playable")
-        await self._commands.add_to_queue(
-            self.player_id,
-            media.source_id,
-            media.container_id,
-            add_queue_option,
-            media.media_id,
+        await self.heos.add_to_queue(
+            self.player_id, source_id, container_id, media_id, add_criteria
         )
+
+    async def play_media(
+        self,
+        media: MediaItem,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """Play the specified media.
+
+        Args:
+            media: The media item to play.
+            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        await self.heos.play_media(self.player_id, media, add_criteria)
 
     async def set_quick_select(self, quick_select_id: int) -> None:
         """Set the specified quick select to the current source."""
