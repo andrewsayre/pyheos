@@ -203,27 +203,12 @@ async def test_play_input_source(mock_device: MockHeosDevice, heos: Heos) -> Non
     await heos.get_players()
     player = heos.players[1]
 
-    # Test invalid input_name
-    with pytest.raises(ValueError):
-        await player.play_input("Invalid")
-
-    input_source = MediaItem(
-        name="AUX In 1",
-        type=const.MediaType.STATION,
-        image_url="",
-        playable=True,
-        browsable=False,
-        source_id=1,
-        media_id=const.INPUT_AUX_IN_1,
-        _heos=None,
-    )
     args = {
         const.ATTR_PLAYER_ID: "1",
-        "spid": str(input_source.source_id),
-        "input": input_source.media_id,
+        const.ATTR_INPUT: const.INPUT_AUX_IN_1,
     }
     mock_device.register(const.COMMAND_BROWSE_PLAY_INPUT, args, "browse.play_input")
-    await player.play_input_source(input_source)
+    await player.play_input_source(const.INPUT_AUX_IN_1)
 
 
 @pytest.mark.asyncio
@@ -309,7 +294,7 @@ async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> Non
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_unplayable_source(
+async def test_play_media_unplayable_source(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
     """Test add to queue with unplayable source raises."""
@@ -328,11 +313,11 @@ async def test_add_to_queue_unplayable_source(
     with pytest.raises(
         ValueError, match=re.escape(f"Media '{source}' is not playable")
     ):
-        await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
+        await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -> None:
+async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test adding a container to the queue."""
     await heos.get_players()
     player = heos.players[1]
@@ -343,24 +328,24 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
             const.ATTR_IMAGE_URL: "",
             "playable": "yes",
             "container": "yes",
-            "cid": "123",
+            const.ATTR_CONTAINER_ID: "123",
         },
         source_id=const.MUSIC_SOURCE_PLAYLISTS,
     )
     args = {
         const.ATTR_PLAYER_ID: "1",
         const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
-        "cid": "123",
-        "aid": str(const.AddCriteriaType.PLAY_NOW),
+        const.ATTR_CONTAINER_ID: "123",
+        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_container"
     )
-    await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
+    await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio
-async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> None:
+async def test_play_media_track(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test adding a track to the queue."""
     await heos.get_players()
     player = heos.players[1]
@@ -382,14 +367,14 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
     args = {
         const.ATTR_PLAYER_ID: "1",
         const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
-        "cid": "123",
-        "aid": str(const.AddCriteriaType.PLAY_NOW),
+        const.ATTR_CONTAINER_ID: "123",
+        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
         const.ATTR_MEDIA_ID: "456",
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
-    await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
+    await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio

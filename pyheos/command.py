@@ -192,16 +192,16 @@ class HeosCommands:
         )
 
     async def play_input(
-        self, player_id: int, input_name: str, *, source_player_id: int | None = None
+        self, player_id: int, input_name: str, source_player_id: int | None = None
     ) -> None:
         """Play the specified input source."""
-        if input_name not in const.VALID_INPUTS:
-            raise ValueError("Invalid input name: " + input_name)
         params = {
             const.ATTR_PLAYER_ID: player_id,
-            "spid": source_player_id or player_id,
-            "input": input_name,
+            const.ATTR_INPUT: input_name,
         }
+        if source_player_id is not None:
+            params[const.ATTR_SOURCE_PLAYER_ID] = source_player_id
+
         await self._connection.command(
             HeosCommand(const.COMMAND_BROWSE_PLAY_INPUT, params)
         )
@@ -215,9 +215,28 @@ class HeosCommands:
             HeosCommand(const.COMMAND_BROWSE_PLAY_PRESET, params)
         )
 
-    async def play_stream(self, player_id: int, url: str) -> None:
+    async def play_stream_url(self, player_id: int, url: str) -> None:
         """Play the specified URL."""
         params = {const.ATTR_PLAYER_ID: player_id, const.ATTR_URL: url}
+        await self._connection.command(
+            HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
+        )
+
+    async def play_stream_station(
+        self,
+        player_id: int,
+        source_id: int,
+        container_id: str | None,
+        media_id: str,
+    ) -> None:
+        """Play the specified streaming station."""
+        params = {
+            const.ATTR_PLAYER_ID: player_id,
+            const.ATTR_SOURCE_ID: source_id,
+            const.ATTR_MEDIA_ID: media_id,
+        }
+        if container_id is not None:
+            params[const.ATTR_CONTAINER_ID] = container_id
         await self._connection.command(
             HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
         )
@@ -227,15 +246,15 @@ class HeosCommands:
         player_id: int,
         source_id: int,
         container_id: str,
-        add_queue_option: const.AddCriteriaType,
         media_id: str | None = None,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Add the container or track to the queue."""
         params = {
             const.ATTR_PLAYER_ID: player_id,
             const.ATTR_SOURCE_ID: source_id,
-            "cid": container_id,
-            "aid": add_queue_option,
+            const.ATTR_CONTAINER_ID: container_id,
+            const.ATTR_ADD_CRITERIA_ID: add_criteria,
         }
         if media_id is not None:
             params[const.ATTR_MEDIA_ID] = media_id

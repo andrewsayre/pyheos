@@ -458,14 +458,109 @@ class Heos:
             media: The media item to play.
             add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
         """
-        if media.type == const.MediaType.STATION:
-            # TODO: play_stream
+        if not media.playable:
+            raise ValueError(f"Media '{media}' is not playable")
+
+        if media.source_id == const.MUSIC_SOURCE_AUX_INPUT:
+            if media.media_id is None:
+                raise ValueError(f"Media '{media}' cannot have a None media_id")
+            await self.play_input_source(player_id, media.media_id)
+        elif media.type == const.MediaType.STATION:
+            if media.media_id is None:
+                raise ValueError(f"'Media '{media}' cannot have a None media_id")
+            await self.play_station(
+                player_id == media.source_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+            )
             pass
-        elif media.type == const.MediaType.SONG:
-            # await self._commands.add_to_queue(
-            #    player_id, media.source_id, media.container_id, media.media_id
-            # )
-            pass
+        else:
+            # Handles both songs and containers
+            if media.container_id is None:
+                raise ValueError(f"Media '{media}' cannot have a None container_id")
+            await self.add_to_queue(
+                player_id=player_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+                add_criteria=add_criteria,
+            )
+
+    async def play_input_source(
+        self, player_id: int, input: str, source_player_id: int | None = None
+    ) -> None:
+        """
+        Play the specified input source on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the input source.
+            input: The input source to play.
+            source_player_id: The identifier of the player that has the input source, if different than the player_id.
+        """
+        await self._commands.play_input(player_id, input, source_player_id)
+
+    async def play_station(
+        self, player_id: int, source_id: int, container_id: str | None, media_id: str
+    ) -> None:
+        """
+        Play the specified station on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the station.
+            source_id: The identifier of the source containing the station.
+            container_id: The identifier of the container containing the station.
+            media_id: The identifier of the station to play.
+        """
+        await self._commands.play_stream_station(
+            player_id, source_id, container_id, media_id
+        )
+
+    async def play_favorite(self, player_id: int, index: int) -> None:
+        """
+        Play the preset station (favorite) on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the favorite.
+            index: The index of the favorite to play.
+        """
+        await self._commands.play_preset(player_id, index)
+
+    async def play_url(self, player_id: int, url: str) -> None:
+        """
+        Play the specified URL on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the URL.
+            url: The URL to play.
+        """
+        await self._commands.play_stream_url(player_id, url)
+
+    async def add_to_queue(
+        self,
+        player_id: int,
+        source_id: int,
+        container_id: str,
+        media_id: str | None = None,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """
+        Add the specified media item to the queue of the specified player.
+
+        Args:
+            player_id: The identifier of the player to add the media item.
+            source_id: The identifier of the source containing the media item.
+            container_id: The identifier of the container containing the media item.
+            media_id: The identifier of the media item to add. Required for MediaType.Song.
+            add_criteria: Determines how tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        await self._commands.add_to_queue(
+            player_id=player_id,
+            source_id=source_id,
+            container_id=container_id,
+            media_id=media_id,
+            add_criteria=add_criteria,
+        )
 
     @property
     def dispatcher(self) -> Dispatcher:
