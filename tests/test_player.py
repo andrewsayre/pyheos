@@ -328,30 +328,7 @@ async def test_add_to_queue_unplayable_source(
     with pytest.raises(
         ValueError, match=re.escape(f"Media '{source}' is not playable")
     ):
-        await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
-
-
-@pytest.mark.asyncio
-async def test_add_to_queue_invalid_queue_option(
-    mock_device: MockHeosDevice, heos: Heos
-) -> None:
-    """Test add to queue with invalid option raises."""
-    await heos.get_players()
-    player = heos.players[1]
-    source = MediaItem.from_data(
-        {
-            const.ATTR_NAME: "My Playlist",
-            const.ATTR_TYPE: const.MediaType.PLAYLIST,
-            const.ATTR_IMAGE_URL: "",
-            const.ATTR_PLAYABLE: const.VALUE_YES,
-            const.ATTR_CONTAINER: const.VALUE_YES,
-            const.ATTR_CONTAINER_ID: "123",
-        },
-        source_id=const.MUSIC_SOURCE_PLAYLISTS,
-    )
-    with pytest.raises(ValueError) as excinfo:
-        await player.add_to_queue(source, 100)
-    assert str(excinfo.value) == "Invalid queue options: 100"
+        await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio
@@ -374,12 +351,12 @@ async def test_add_to_queue_container(mock_device: MockHeosDevice, heos: Heos) -
         const.ATTR_PLAYER_ID: "1",
         const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
         "cid": "123",
-        "aid": str(const.ADD_QUEUE_PLAY_NOW),
+        "aid": str(const.AddCriteriaType.PLAY_NOW),
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_container"
     )
-    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio
@@ -406,13 +383,13 @@ async def test_add_to_queue_track(mock_device: MockHeosDevice, heos: Heos) -> No
         const.ATTR_PLAYER_ID: "1",
         const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
         "cid": "123",
-        "aid": str(const.ADD_QUEUE_PLAY_NOW),
+        "aid": str(const.AddCriteriaType.PLAY_NOW),
         const.ATTR_MEDIA_ID: "456",
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
-    await player.add_to_queue(source, const.ADD_QUEUE_PLAY_NOW)
+    await player.add_to_queue(source, const.AddCriteriaType.PLAY_NOW)
 
 
 @pytest.mark.asyncio

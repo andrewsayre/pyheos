@@ -227,12 +227,10 @@ class HeosCommands:
         player_id: int,
         source_id: int,
         container_id: str,
-        add_queue_option: int,
+        add_queue_option: const.AddCriteriaType,
         media_id: str | None = None,
     ) -> None:
         """Add the container or track to the queue."""
-        if add_queue_option not in const.VALID_ADD_QUEUE_OPTIONS:
-            raise ValueError(f"Invalid queue options: {add_queue_option}")
         params = {
             const.ATTR_PLAYER_ID: player_id,
             const.ATTR_SOURCE_ID: source_id,

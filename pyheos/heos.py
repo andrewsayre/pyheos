@@ -444,6 +444,29 @@ class Heos:
         result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
         return result.items
 
+    async def play_media(
+        self,
+        player_id: int,
+        media: MediaItem,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """
+        Play the specified media item on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the media item.
+            media: The media item to play.
+            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        if media.type == const.MediaType.STATION:
+            # TODO: play_stream
+            pass
+        elif media.type == const.MediaType.SONG:
+            # await self._commands.add_to_queue(
+            #    player_id, media.source_id, media.container_id, media.media_id
+            # )
+            pass
+
     @property
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""

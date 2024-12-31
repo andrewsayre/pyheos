@@ -1,6 +1,6 @@
 """Define consts for the pyheos package."""
 
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 from typing import Final
 
 CLI_PORT: Final = 1255
@@ -291,18 +291,15 @@ VALID_INPUTS: Final = (
     INPUT_USB_AC,
 )
 
-# Add to Queue Options
-ADD_QUEUE_PLAY_NOW: Final = 1
-ADD_QUEUE_PLAY_NEXT: Final = 2
-ADD_QUEUE_ADD_TO_END: Final = 3
-ADD_QUEUE_REPLACE_AND_PLAY: Final = 4
 
-VALID_ADD_QUEUE_OPTIONS: Final = (
-    ADD_QUEUE_PLAY_NOW,
-    ADD_QUEUE_PLAY_NEXT,
-    ADD_QUEUE_ADD_TO_END,
-    ADD_QUEUE_REPLACE_AND_PLAY,
-)
+class AddCriteriaType(IntEnum):
+    """Define the add to queue options."""
+
+    PLAY_NOW = 1
+    PLAY_NEXT = 2
+    ADD_TO_END = 3
+    REPLACE_AND_PLAY = 4
+
 
 # Signals
 SIGNAL_PLAYER_EVENT: Final = "player_event"
