@@ -47,13 +47,14 @@ def calls_command(
 async def get_fixture(file: str) -> str:
     """Load a fixtures file."""
     file_name = f"tests/fixtures/{file}.json"
-
-    def read_file() -> str:
-        with open(file_name, encoding="utf-8") as open_file:
-            return open_file.read()
-
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(FILE_IO_POOL, read_file)
+    return await loop.run_in_executor(FILE_IO_POOL, lambda: read_file(file_name))
+
+
+@functools.lru_cache
+def read_file(file_name: str) -> str:
+    with open(file_name, encoding="utf-8") as open_file:
+        return open_file.read()
 
 
 def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
