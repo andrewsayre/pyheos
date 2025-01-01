@@ -26,7 +26,7 @@ def calls_command(
         async def wrapped(*args: Any, **kwargs: Any) -> Any:
             # Get the fixture command
             fixture_data = json.loads(await get_fixture(fixture))
-            command = fixture_data["heos"]["command"]
+            command = fixture_data[const.ATTR_HEOS]["command"]
 
             # Find the mock heos parameter.
             mock_heos = cast(MockHeosDevice, kwargs["heos"].device)

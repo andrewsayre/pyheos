@@ -72,7 +72,7 @@ class HeosMessage:
     @cached_property
     def heos(self) -> dict[str, Any]:
         """Get the HEOS section as a dictionary."""
-        return cast(dict[str, Any], self.container["heos"])
+        return cast(dict[str, Any], self.container[const.ATTR_HEOS])
 
     @cached_property
     def payload(self) -> dict[str, Any] | list[Any] | None:
@@ -87,7 +87,7 @@ class HeosMessage:
     @cached_property
     def message(self) -> dict[str, str]:
         """Get the message parameters as a dictionary. If not present in the message, an empty dictionary is returned."""
-        if raw_message := self.heos.get("message"):
+        if raw_message := self.heos.get(const.ATTR_MESSAGE):
             return dict(parse_qsl(raw_message, keep_blank_values=True))
         return {}
 
