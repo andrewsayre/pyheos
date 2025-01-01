@@ -11,7 +11,6 @@ from pyheos.player import HeosPlayer
 from tests import MockHeosDevice
 
 
-@pytest.mark.asyncio
 async def test_str() -> None:
     """Test the __str__ function."""
     data = {
@@ -29,7 +28,6 @@ async def test_str() -> None:
     assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}"
 
 
-@pytest.mark.asyncio
 async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play, pause, and stop commands."""
 
@@ -63,7 +61,6 @@ async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.stop()
 
 
-@pytest.mark.asyncio
 async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the set_volume command."""
     await heos.get_players()
@@ -82,7 +79,6 @@ async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.set_volume(100)
 
 
-@pytest.mark.asyncio
 async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the set_mute command."""
     await heos.get_players()
@@ -104,7 +100,6 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.unmute()
 
 
-@pytest.mark.asyncio
 async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the toggle_mute command."""
     await heos.get_players()
@@ -115,7 +110,6 @@ async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.toggle_mute()
 
 
-@pytest.mark.asyncio
 async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_up command."""
     await heos.get_players()
@@ -132,7 +126,6 @@ async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.volume_up(6)
 
 
-@pytest.mark.asyncio
 async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_down command."""
     await heos.get_players()
@@ -149,7 +142,6 @@ async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.volume_down(6)
 
 
-@pytest.mark.asyncio
 async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
@@ -164,7 +156,6 @@ async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.set_play_mode(const.RepeatType.ON_ALL, True)
 
 
-@pytest.mark.asyncio
 async def test_play_next_previous(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
@@ -178,7 +169,6 @@ async def test_play_next_previous(mock_device: MockHeosDevice, heos: Heos) -> No
     await player.play_previous()
 
 
-@pytest.mark.asyncio
 async def test_clear_queue(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume commands."""
     await heos.get_players()
@@ -197,7 +187,6 @@ async def test_clear_queue(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.clear_queue()
 
 
-@pytest.mark.asyncio
 async def test_play_input_source(
     mock_device: MockHeosDevice, heos: Heos, media_item_input: MediaItem
 ) -> None:
@@ -221,7 +210,6 @@ async def test_play_input_source(
     )
 
 
-@pytest.mark.asyncio
 async def test_play_preset_station(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
@@ -237,7 +225,6 @@ async def test_play_preset_station(mock_device: MockHeosDevice, heos: Heos) -> N
     await player.play_preset_station(1)
 
 
-@pytest.mark.asyncio
 async def test_play_url(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
@@ -249,7 +236,6 @@ async def test_play_url(mock_device: MockHeosDevice, heos: Heos) -> None:
     await player.play_url(url)
 
 
-@pytest.mark.asyncio
 async def test_play_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
@@ -267,7 +253,6 @@ async def test_play_quick_select(mock_device: MockHeosDevice, heos: Heos) -> Non
     await player.play_quick_select(2)
 
 
-@pytest.mark.asyncio
 async def test_set_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
@@ -283,7 +268,6 @@ async def test_set_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None
     await player.set_quick_select(2)
 
 
-@pytest.mark.asyncio
 async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the play favorite."""
     await heos.get_players()
@@ -303,7 +287,6 @@ async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> Non
     }
 
 
-@pytest.mark.asyncio
 async def test_play_media_unplayable_source(
     mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
 ) -> None:
@@ -318,7 +301,6 @@ async def test_play_media_unplayable_source(
         await player.play_media(media_item_album, const.AddCriteriaType.PLAY_NOW)
 
 
-@pytest.mark.asyncio
 async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test adding a container to the queue."""
     await heos.get_players()
@@ -346,7 +328,6 @@ async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> 
     await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
 
 
-@pytest.mark.asyncio
 async def test_play_media_track(
     mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
 ) -> None:
@@ -371,7 +352,6 @@ async def test_play_media_track(
     await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
 
 
-@pytest.mark.asyncio
 async def test_add_to_queue(
     mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
 ) -> None:
@@ -397,7 +377,6 @@ async def test_add_to_queue(
     )
 
 
-@pytest.mark.asyncio
 async def test_now_playing_media_unavailable(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:

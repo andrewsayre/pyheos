@@ -12,7 +12,6 @@ from pyheos.message import HeosMessage
 from tests import MockHeosDevice
 
 
-@pytest.mark.asyncio
 async def test_media_music_source_from_data() -> None:
     """Test creating a media music source from data."""
     data = {
@@ -39,7 +38,6 @@ async def test_media_music_source_from_data() -> None:
         await source.browse()
 
 
-@pytest.mark.asyncio
 async def test_media_music_source_browse(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -77,7 +75,6 @@ async def test_media_music_source_browse(
         )
     ],
 )
-@pytest.mark.asyncio
 async def test_browse_result_from_data(raw_message: str) -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
@@ -94,7 +91,6 @@ async def test_browse_result_from_data(raw_message: str) -> None:
     assert item._heos == heos
 
 
-@pytest.mark.asyncio
 async def test_media_item_from_data(media_item_song_data: dict[str, str]) -> None:
     """Test creating a MediaItem from data."""
 
@@ -126,7 +122,6 @@ async def test_media_item_from_data(media_item_song_data: dict[str, str]) -> Non
         await source.play_media(1)
 
 
-@pytest.mark.asyncio
 async def test_media_item_from_data_source_id_not_present_raises() -> None:
     """Test creating a MediaItem from data."""
 
@@ -145,7 +140,6 @@ async def test_media_item_from_data_source_id_not_present_raises() -> None:
         MediaItem.from_data(data)
 
 
-@pytest.mark.asyncio
 async def test_media_item_from_data_source() -> None:
     """Test creating a MediaItem from data."""
     data = {
@@ -170,7 +164,6 @@ async def test_media_item_from_data_source() -> None:
     assert source.media_id is None
 
 
-@pytest.mark.asyncio
 async def test_media_item_from_data_container() -> None:
     """Test creating a MediaItem from data."""
 
@@ -198,7 +191,6 @@ async def test_media_item_from_data_container() -> None:
     assert source.media_id is None
 
 
-@pytest.mark.asyncio
 async def test_media_item_browse(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test browsing a media music source."""
     source_id = -263109739
@@ -226,7 +218,6 @@ async def test_media_item_browse(mock_device: MockHeosDevice, heos: Heos) -> Non
     assert len(result.items) == 8
 
 
-@pytest.mark.asyncio
 async def test_media_item_play(
     mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
 ) -> None:

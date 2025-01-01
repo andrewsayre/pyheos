@@ -7,7 +7,6 @@ from pyheos.heos import Heos
 from tests import MockHeosDevice
 
 
-@pytest.mark.asyncio
 async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the set_volume command."""
     await heos.get_groups()
@@ -24,7 +23,6 @@ async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
     await group.set_volume(25)
 
 
-@pytest.mark.asyncio
 async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_down command."""
     await heos.get_groups()
@@ -42,7 +40,6 @@ async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
     await group.volume_down(6)
 
 
-@pytest.mark.asyncio
 async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test the volume_up command."""
     await heos.get_groups()
@@ -59,7 +56,6 @@ async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
     await group.volume_up(6)
 
 
-@pytest.mark.asyncio
 async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test mute and unmute commands."""
     await heos.get_groups()
@@ -81,7 +77,6 @@ async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     await group.unmute()
 
 
-@pytest.mark.asyncio
 async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test toggle mute command."""
     await heos.get_groups()
