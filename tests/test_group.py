@@ -4,7 +4,7 @@ import pytest
 
 from pyheos import const
 from pyheos.heos import Heos
-from tests import MockHeosDevice, calls_command
+from tests import calls_command
 
 
 @calls_command("group.set_volume", {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"})

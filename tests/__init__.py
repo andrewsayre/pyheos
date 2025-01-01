@@ -194,14 +194,21 @@ class MockHeosDevice:
                     await writer.drain()
                 continue
 
+            # Special processing for known/unknown commands
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == const.VALUE_ON
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
-                writer.write((response + SEPARATOR).encode())
-                await writer.drain()
             else:
-                assert False, f"Unrecognized command: {result}"
+                response = (
+                    (await get_fixture("unknown_command"))
+                    .replace("{command}", command)
+                    .replace("{full_command}", result)
+                )
+
+            # write the response
+            writer.write((response + SEPARATOR).encode())
+            await writer.drain()
 
         try:
             self.connections.remove(log)
