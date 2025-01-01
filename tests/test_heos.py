@@ -13,7 +13,7 @@ from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 
-from . import MockHeosDevice, connect_handler, get_fixture
+from . import MockHeosDevice, calls_command, connect_handler, get_fixture, media_items
 
 
 @pytest.mark.asyncio
@@ -148,7 +148,8 @@ async def test_heart_beat(mock_device: MockHeosDevice) -> None:
     await asyncio.sleep(0.2)
 
     connection = mock_device.connections[0]
-    assert len(connection.commands[const.COMMAND_HEART_BEAT]) == 1
+
+    connection.assert_command_called(const.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -1015,21 +1016,16 @@ async def test_play_media_song_missing_container_raises(
         await heos.play_media(1, media_item_song)
 
 
-@pytest.mark.asyncio
-async def test_play_media_input(
-    mock_device: MockHeosDevice, heos: Heos, media_item_input: MediaItem
-) -> None:
-    """Test play song succeeseds."""
-    mock_device.register(
-        const.COMMAND_BROWSE_PLAY_INPUT,
-        {
-            const.ATTR_PLAYER_ID: "1",
-            const.ATTR_INPUT: media_item_input.media_id,
-            const.ATTR_SOURCE_PLAYER_ID: media_item_input.source_id,
-        },
-        "browse.play_input",
-    )
-
+@calls_command(
+    "browse.play_input",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_INPUT: media_items.input.media_id,
+        const.ATTR_SOURCE_PLAYER_ID: str(media_items.input.source_id),
+    },
+)
+async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None:
+    """Test playing input source succeeds."""
     await heos.play_media(1, media_item_input)
 
 

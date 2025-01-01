@@ -7,10 +7,10 @@ import pytest
 import pytest_asyncio
 
 from pyheos import const
-from pyheos.heos import Heos
+from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 
-from . import MockHeosDevice
+from . import MockHeos, MockHeosDevice, media_items
 
 
 @pytest_asyncio.fixture(name="mock_device")
@@ -23,14 +23,18 @@ async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
 
 
 @pytest_asyncio.fixture(name="heos")
-async def heos_fixture() -> AsyncGenerator[Heos]:
+async def heos_fixture(mock_device: MockHeosDevice) -> AsyncGenerator[Heos]:
     """Fixture for a connected heos."""
-    heos = await Heos.create_and_connect(
-        "127.0.0.1",
-        timeout=0.1,
-        auto_reconnect_delay=0.1,
-        heart_beat=False,
+    heos = MockHeos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect_delay=0.1,
+            heart_beat=False,
+        )
     )
+    heos.device = mock_device
+    await heos.connect()
     yield heos
     await heos.disconnect()
 
@@ -138,22 +142,9 @@ def media_item_song() -> MediaItem:
     )
 
 
-@pytest.fixture
-def media_item_input() -> MediaItem:
-    return MediaItem(
-        -263109739,
-        "HEOS Drive - AUX In 1",
-        const.MediaType.STATION,
-        "",
-        None,
-        True,
-        False,
-        None,
-        "inputs/aux_in_1",
-        None,
-        None,
-        None,
-    )
+@pytest.fixture(name="media_item_input")
+def media_item_input_fixture() -> MediaItem:
+    return media_items.input
 
 
 @pytest.fixture
