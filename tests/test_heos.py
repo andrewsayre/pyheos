@@ -12,8 +12,9 @@ from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
+from tests.fixtures import MediaItems
 
-from . import MockHeosDevice, calls_command, connect_handler, get_fixture, media_items
+from . import MockHeosDevice, calls_command, connect_handler, get_fixture
 
 
 async def test_init() -> None:
@@ -980,8 +981,8 @@ async def test_play_media_song_missing_container_raises(
     "browse.play_input",
     {
         const.ATTR_PLAYER_ID: 1,
-        const.ATTR_INPUT: media_items.input.media_id,
-        const.ATTR_SOURCE_PLAYER_ID: str(media_items.input.source_id),
+        const.ATTR_INPUT: MediaItems.INPUT.media_id,
+        const.ATTR_SOURCE_PLAYER_ID: MediaItems.INPUT.source_id,
     },
 )
 async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None:

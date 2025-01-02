@@ -11,37 +11,105 @@ from urllib.parse import parse_qsl, urlparse
 
 from pyheos import Heos, const
 from pyheos.const import SEPARATOR, SEPARATOR_BYTES
-from pyheos.media import MediaItem
 
 FILE_IO_POOL = ThreadPoolExecutor()
 
 
-def calls_command(
-    fixture: str, command_args: dict[str, Any], assert_called: bool = True
-) -> Callable:
-    """Return decoraor that registers the command fixture provided."""
+@dataclass
+class CallCommand:
+    """Define a command call.
+
+    Args:
+        fixture: The name of the json fixture to load. The command will be determiend from this file.
+        command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
+        when: Only registers the command if the test method arguments match the provided values.
+        assert_called: Assert the command was called after test execution. The default is True.
+    """
+
+    fixture: str
+    command_args: dict[str, Any] | None = None
+    when: dict[str, Any] | None = None
+    assert_called: bool = True
+    command: str | None = field(init=False, default=None)
+
+
+def calls_commands(*commands: CallCommand) -> Callable:
+    """
+    Decorator that registers commands prior to test execution.
+
+    Args:
+        commands: The commands to register.
+    """
 
     def wrapper(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapped(*args: Any, **kwargs: Any) -> Any:
-            # Get the fixture command
-            fixture_data = json.loads(await get_fixture(fixture))
-            command = fixture_data[const.ATTR_HEOS]["command"]
+            # Build a list of commands that match the when conditions
+            matched_commands: list[CallCommand] = []
+            for command in commands:
+                if command.when is not None:
+                    for key, value in command.when.items():
+                        if kwargs.get(key) != value:
+                            break
+                    else:
+                        matched_commands.append(command)
+                else:
+                    matched_commands.append(command)
 
             # Find the mock heos parameter.
-            mock_heos = cast(MockHeosDevice, kwargs["heos"].device)
-            mock_heos.register(command, command_args, fixture)
+            if "mock_device" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["mock_device"])
+            elif "group" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["group"]._heos.device)
+            elif "heos" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["heos"].device)
+            else:
+                raise ValueError(
+                    "The mock device must be accessible through one of the fixture parameters."
+                )
 
+            # Register commands
+            for command in matched_commands:
+                # Get the fixture command
+                fixture_data = json.loads(await get_fixture(command.fixture))
+                command_name = fixture_data[const.ATTR_HEOS][const.ATTR_COMMAND]
+                command.command = command_name
+                mock_device.register(
+                    command_name, command.command_args, command.fixture
+                )
+
+            # Call the wrapped method
             result = await func(*args, **kwargs)
 
-            if assert_called:
-                mock_heos.assert_command_called(command)
+            # Assert the commands were called
+            for command in matched_commands:
+                if command.assert_called:
+                    assert command.command is not None
+                    mock_device.assert_command_called(command.command)
 
             return result
 
         return wrapped
 
     return wrapper
+
+
+def calls_command(
+    fixture: str,
+    command_args: dict[str, Any],
+    assert_called: bool = True,
+    when: dict[str, Any] | None = None,
+) -> Callable:
+    """
+    Decorator that registers a command prior to test execution.
+
+    Args:
+        fixture: The name of the json fixture to load. The command will be determiend from this file.
+        command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
+        when: Only registers the command if the test method arguments match the provided values.
+        assert_called: Assert the command was called after test execution. The default is True.
+    """
+    return calls_commands(CallCommand(fixture, command_args, when, assert_called))
 
 
 async def get_fixture(file: str) -> str:
@@ -306,20 +374,3 @@ class ConnectionLog:
         assert (
             False
         ), f"Command {target_command} was not called with arguments {target_args}."
-
-
-class media_items:
-    input = MediaItem(
-        -263109739,
-        "HEOS Drive - AUX In 1",
-        const.MediaType.STATION,
-        "",
-        None,
-        True,
-        False,
-        None,
-        "inputs/aux_in_1",
-        None,
-        None,
-        None,
-    )

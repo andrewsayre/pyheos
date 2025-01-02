@@ -82,7 +82,7 @@ class HeosMessage:
     @cached_property
     def command(self) -> str:
         """Get the command the message is referring to."""
-        return str(self.heos["command"])
+        return str(self.heos[const.ATTR_COMMAND])
 
     @cached_property
     def message(self) -> dict[str, str]:
