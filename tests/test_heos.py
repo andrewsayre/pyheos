@@ -12,7 +12,7 @@ from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
-from tests.fixtures import MediaItems
+from tests.common import MediaItems
 
 from . import MockHeosDevice, calls_command, connect_handler, get_fixture
 

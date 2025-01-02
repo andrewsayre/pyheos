@@ -22,7 +22,7 @@ class Media:
     source_id: int
     name: str
     type: const.MediaType
-    image_url: str
+    image_url: str = field(repr=False)
     _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
 
@@ -52,6 +52,18 @@ class MediaMusicSource(Media):
             available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
             service_username=data.get(const.ATTR_SERVICE_USER_NAME),
             _heos=heos,
+        )
+
+    def clone(self) -> "MediaMusicSource":
+        """Create a new instance from the current instance."""
+        return MediaMusicSource(
+            source_id=self.source_id,
+            name=self.name,
+            type=self.type,
+            image_url=self.image_url,
+            available=self.available,
+            service_username=self.service_username,
+            _heos=self._heos,
         )
 
     async def browse(self) -> "BrowseResult":
@@ -140,6 +152,22 @@ class MediaItem(Media):
         if self._heos is None:
             raise ValueError("Must be initialized with the 'heos' parameter to play")
         await self._heos.play_media(player_id, self, add_criteria)
+
+    def clone(self) -> "MediaItem":
+        return MediaItem(
+            source_id=self.source_id,
+            name=self.name,
+            type=self.type,
+            image_url=self.image_url,
+            playable=self.playable,
+            browsable=self.browsable,
+            container_id=self.container_id,
+            media_id=self.media_id,
+            artist=self.artist,
+            album=self.album,
+            album_id=self.album_id,
+            _heos=self._heos,
+        )
 
 
 @dataclass

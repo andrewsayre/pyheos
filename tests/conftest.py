@@ -11,7 +11,7 @@ from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import HeosPlayer
-from tests.fixtures import MediaItems
+from tests.common import MediaItems, MediaMusicSources
 
 from . import MockHeos, MockHeosDevice
 
@@ -85,87 +85,32 @@ def media_item_song_data() -> dict[str, str]:
 
 @pytest.fixture
 def media_music_source() -> MediaMusicSource:
-    return MediaMusicSource(
-        const.MUSIC_SOURCE_FAVORITES,
-        "Favorites",
-        const.MediaType.HEOS_SERVICE,
-        "",
-        None,
-        True,
-        None,
-    )
+    return MediaMusicSources.FAVORITES.clone()
 
 
 @pytest.fixture
 def media_music_source_unavailable() -> MediaMusicSource:
-    return MediaMusicSource(
-        const.MUSIC_SOURCE_PANDORA,
-        "Pandora",
-        const.MediaType.MUSIC_SERVICE,
-        "",
-        None,
-        False,
-        None,
-    )
+    return MediaMusicSources.PANDORA.clone()
 
 
 @pytest.fixture
 def media_item_album() -> MediaItem:
-    return MediaItem(
-        const.MUSIC_SOURCE_TIDAL,
-        "After Hours",
-        const.MediaType.ALBUM,
-        "http://resources.wimpmusic.com/images/bbe7f53c/44f0/41ba/873f/743e3091adde/160x160.jpg",
-        None,
-        True,
-        True,
-        "LIBALBUM-134788273",
-        None,
-        "The Weeknd",
-        None,
-        None,
-    )
+    return MediaItems.ALBUM.clone()
 
 
 @pytest.fixture
 def media_item_song() -> MediaItem:
-    return MediaItem(
-        1025,
-        "Imaginary Parties",
-        const.MediaType.SONG,
-        "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
-        None,
-        True,
-        False,
-        "123",
-        "456",
-        "Superfruit",
-        "Future Friends",
-        "78374740",
-    )
+    return MediaItems.SONG.clone()
 
 
 @pytest.fixture(name="media_item_input")
 def media_item_input_fixture() -> MediaItem:
-    return MediaItems.INPUT
+    return MediaItems.INPUT.clone()
 
 
 @pytest.fixture
 def media_item_station() -> MediaItem:
-    return MediaItem(
-        1,
-        "Cooltime Kids (Children's) Radio",
-        const.MediaType.STATION,
-        "https://content-images.p-cdn.com/images/9d/b9/b9/85/ef1146388a09ecb87153e168/_500W_500H.jpg",
-        None,
-        True,
-        False,
-        "A-Z",
-        "3853208159976579343",
-        None,
-        None,
-        None,
-    )
+    return MediaItems.STATION.clone()
 
 
 @pytest_asyncio.fixture(name="player_back_patio")

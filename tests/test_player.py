@@ -329,27 +329,23 @@ async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> 
 
 
 async def test_play_media_track(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song_data: dict[str, str]
+    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
 ) -> None:
     """Test adding a track to the queue."""
     await heos.get_players()
     player = heos.players[1]
-    source = MediaItem.from_data(
-        media_item_song_data,
-        source_id=const.MUSIC_SOURCE_PLAYLISTS,
-        container_id="123",
-    )
+
     args = {
         const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
-        const.ATTR_CONTAINER_ID: "123",
+        const.ATTR_SOURCE_ID: media_item_song.source_id,
+        const.ATTR_CONTAINER_ID: media_item_song.container_id,
         const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-        const.ATTR_MEDIA_ID: "78374741",
+        const.ATTR_MEDIA_ID: media_item_song.media_id,
     }
     mock_device.register(
         const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
     )
-    await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
+    await player.play_media(media_item_song, const.AddCriteriaType.PLAY_NOW)
 
 
 async def test_add_to_queue(
