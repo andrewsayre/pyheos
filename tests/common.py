@@ -83,6 +83,16 @@ class MediaItems:
         None,
     )
 
+    DEVICE = MediaItem(
+        -263109739,
+        "HEOS Drive",
+        const.MediaType.HEOS_SERVICE,
+        "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_aux.png",
+        None,
+        False,
+        True,
+    )
+
 
 class MediaMusicSources:
     """Define a set of media music sources for testing."""
@@ -91,7 +101,7 @@ class MediaMusicSources:
         const.MUSIC_SOURCE_FAVORITES,
         "Favorites",
         const.MediaType.HEOS_SERVICE,
-        "",
+        "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
         None,
         True,
         None,
@@ -100,8 +110,17 @@ class MediaMusicSources:
         const.MUSIC_SOURCE_PANDORA,
         "Pandora",
         const.MediaType.MUSIC_SERVICE,
-        "",
+        "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
         None,
         False,
         None,
+    )
+    TIDAL = MediaMusicSource(
+        const.MUSIC_SOURCE_TIDAL,
+        "Tidal",
+        const.MediaType.MUSIC_SERVICE,
+        "https://production.ws.skyegloup.com:443/media/images/service/logos/tidal.png",
+        None,
+        True,
+        "user@example.com",
     )

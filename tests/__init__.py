@@ -95,6 +95,18 @@ def calls_commands(*commands: CallCommand) -> Callable:
                 mock_device = cast(MockHeosDevice, kwargs["group"]._heos.device)
             elif "player" in kwargs:
                 mock_device = cast(MockHeosDevice, kwargs["player"]._heos.device)
+            elif "media_music_source" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_music_source"]._heos.device
+                )
+            elif "media_item_device" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_item_device"]._heos.device
+                )
+            elif "media_item_song" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_item_song"]._heos.device
+                )
             else:
                 raise ValueError(
                     "The mock device must be accessible through one of the fixture parameters."

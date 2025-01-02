@@ -69,53 +69,66 @@ def async_handler() -> Callable[..., Coroutine]:
 
 
 @pytest.fixture
-def media_item_song_data() -> dict[str, str]:
-    return {
-        const.ATTR_NAME: "Imaginary Parties",
-        const.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
-        const.ATTR_TYPE: str(const.MediaType.SONG),
-        const.ATTR_CONTAINER: const.VALUE_NO,
-        const.ATTR_MEDIA_ID: "78374741",
-        const.ATTR_ARTIST: "Superfruit",
-        const.ATTR_ALBUM: "Future Friends",
-        const.ATTR_ALBUM_ID: "78374740",
-        const.ATTR_PLAYABLE: const.VALUE_YES,
-    }
+def media_music_source(heos: MockHeos) -> MediaMusicSource:
+    source = MediaMusicSources.FAVORITES.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_music_source() -> MediaMusicSource:
-    return MediaMusicSources.FAVORITES.clone()
+def media_music_source_unavailable(heos: MockHeos) -> MediaMusicSource:
+    source = MediaMusicSources.PANDORA.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_music_source_unavailable() -> MediaMusicSource:
-    return MediaMusicSources.PANDORA.clone()
+def media_music_source_tidal(heos: MockHeos) -> MediaMusicSource:
+    source = MediaMusicSources.TIDAL.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_item_album() -> MediaItem:
-    return MediaItems.ALBUM.clone()
+def media_item_album(heos: MockHeos) -> MediaItem:
+    source = MediaItems.ALBUM.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_item_song() -> MediaItem:
-    return MediaItems.SONG.clone()
+def media_item_song(heos: MockHeos) -> MediaItem:
+    source = MediaItems.SONG.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture(name="media_item_input")
-def media_item_input_fixture() -> MediaItem:
-    return MediaItems.INPUT.clone()
+def media_item_input_fixture(heos: MockHeos) -> MediaItem:
+    source = MediaItems.INPUT.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_item_station() -> MediaItem:
-    return MediaItems.STATION.clone()
+def media_item_station(heos: MockHeos) -> MediaItem:
+    source = MediaItems.STATION.clone()
+    source._heos = heos
+    return source
 
 
 @pytest.fixture
-def media_item_playlist() -> MediaItem:
-    return MediaItems.PLAYLIST.clone()
+def media_item_playlist(heos: MockHeos) -> MediaItem:
+    source = MediaItems.PLAYLIST.clone()
+    source._heos = heos
+    return source
+
+
+@pytest.fixture
+def media_item_device(heos: MockHeos) -> MediaItem:
+    source = MediaItems.DEVICE.clone()
+    source._heos = heos
+    return source
 
 
 @pytest_asyncio.fixture(name="player")
