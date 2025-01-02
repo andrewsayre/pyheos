@@ -23,6 +23,21 @@ class MediaItems:
         None,
     )
 
+    PLAYLIST = MediaItem(
+        const.MUSIC_SOURCE_PLAYLISTS,
+        "My Playlist",
+        const.MediaType.PLAYLIST,
+        "",
+        None,
+        True,
+        True,
+        "123",
+        None,
+        None,
+        None,
+        None,
+    )
+
     INPUT = MediaItem(
         -263109739,
         "HEOS Drive - AUX In 1",

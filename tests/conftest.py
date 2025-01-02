@@ -113,8 +113,13 @@ def media_item_station() -> MediaItem:
     return MediaItems.STATION.clone()
 
 
-@pytest_asyncio.fixture(name="player_back_patio")
-async def player_back_patio_fixture(heos: MockHeos) -> HeosPlayer:
+@pytest.fixture
+def media_item_playlist() -> MediaItem:
+    return MediaItems.PLAYLIST.clone()
+
+
+@pytest_asyncio.fixture(name="player")
+async def player_fixture(heos: MockHeos) -> HeosPlayer:
     """Fixture for a player."""
     return HeosPlayer(
         heos,
@@ -150,12 +155,12 @@ async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
 
 @pytest_asyncio.fixture(name="group")
 async def group_fixture(
-    heos: MockHeos, player_back_patio: HeosPlayer, player_front_porch: HeosPlayer
+    heos: MockHeos, player: HeosPlayer, player_front_porch: HeosPlayer
 ) -> HeosGroup:
     return HeosGroup(
         heos,
         "Back Patio + Front Porch",
         1,
-        player_back_patio,
-        [player_back_patio, player_front_porch],
+        player,
+        [player, player_front_porch],
     )

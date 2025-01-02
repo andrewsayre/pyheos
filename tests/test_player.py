@@ -8,7 +8,8 @@ from pyheos import const
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
-from tests import MockHeosDevice
+from tests import calls_command, value
+from tests.common import MediaItems
 
 
 async def test_str() -> None:
@@ -28,254 +29,215 @@ async def test_str() -> None:
     assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}"
 
 
-async def test_set_state(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize(
+    "state", (const.PLAY_STATE_PAUSE, const.PLAY_STATE_PLAY, const.PLAY_STATE_STOP)
+)
+@calls_command(
+    "player.set_play_state",
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: value(arg_name="state")},
+)
+async def test_set_state(player: HeosPlayer, state: str) -> None:
     """Test the play, pause, and stop commands."""
+    await player.set_state(state)
 
-    await heos.get_players()
-    player = heos.players[1]
-    # Invalid
-    with pytest.raises(ValueError):
-        await player.set_state("invalid")
-    # Play
-    mock_device.register(
-        const.COMMAND_SET_PLAY_STATE,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STATE: "play"},
-        "player.set_play_state",
-    )
+
+@calls_command(
+    "player.set_play_state",
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_PLAY},
+)
+async def test_set_play(player: HeosPlayer) -> None:
+    """Test the pause commands."""
     await player.play()
-    # Pause
-    mock_device.register(
-        const.COMMAND_SET_PLAY_STATE,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STATE: "pause"},
-        "player.set_play_state",
-        replace=True,
-    )
+
+
+@calls_command(
+    "player.set_play_state",
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_PAUSE},
+)
+async def test_set_pause(player: HeosPlayer) -> None:
+    """Test the play commands."""
     await player.pause()
-    # Stop
-    mock_device.register(
-        const.COMMAND_SET_PLAY_STATE,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STATE: "stop"},
-        "player.set_play_state",
-        replace=True,
-    )
+
+
+@calls_command(
+    "player.set_play_state",
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_STOP},
+)
+async def test_set_stop(player: HeosPlayer) -> None:
+    """Test the stop commands."""
     await player.stop()
 
 
-async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("level", [-1, 101])
+async def test_set_volume_invalid_raises(player: HeosPlayer, level: int) -> None:
+    """Test the set_volume command to an invalid value raises."""
+    with pytest.raises(ValueError):
+        await player.set_volume(level)
+
+
+@calls_command("player.set_volume", {const.ATTR_PLAYER_ID: 1, const.ATTR_LEVEL: 100})
+async def test_set_volume(player: HeosPlayer) -> None:
     """Test the set_volume command."""
-    await heos.get_players()
-    player = heos.players[1]
-
-    with pytest.raises(ValueError):
-        await player.set_volume(-1)
-    with pytest.raises(ValueError):
-        await player.set_volume(101)
-
-    mock_device.register(
-        const.COMMAND_SET_VOLUME,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_LEVEL: "100"},
-        "player.set_volume",
-    )
     await player.set_volume(100)
 
 
-async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("mute", [True, False])
+@calls_command(
+    "player.set_mute",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
+    },
+)
+async def test_set_mute(player: HeosPlayer, mute: bool) -> None:
     """Test the set_mute command."""
-    await heos.get_players()
-    player = heos.players[1]
-    # Mute
-    mock_device.register(
-        const.COMMAND_SET_MUTE,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STATE: const.VALUE_ON},
-        "player.set_mute",
-    )
+    await player.set_mute(mute)
+
+
+@calls_command(
+    "player.set_mute", {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.VALUE_ON}
+)
+async def test_mute(player: HeosPlayer) -> None:
+    """Test the mute command."""
     await player.mute()
-    # Unmute
-    mock_device.register(
-        const.COMMAND_SET_MUTE,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STATE: const.VALUE_OFF},
-        "player.set_mute",
-        replace=True,
-    )
+
+
+@calls_command(
+    "player.set_mute", {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.VALUE_OFF}
+)
+async def test_unmute(player: HeosPlayer) -> None:
+    """Test the unmute command."""
     await player.unmute()
 
 
-async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("player.toggle_mute", {const.ATTR_PLAYER_ID: 1})
+async def test_toggle_mute(player: HeosPlayer) -> None:
     """Test the toggle_mute command."""
-    await heos.get_players()
-    player = heos.players[1]
-    mock_device.register(
-        const.COMMAND_TOGGLE_MUTE, {const.ATTR_PLAYER_ID: "1"}, "player.toggle_mute"
-    )
     await player.toggle_mute()
 
 
-async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("step", [0, 11])
+async def test_volume_up_invalid_step_raises(player: HeosPlayer, step: int) -> None:
+    """Test the volume_up command raises with invalid step value raises."""
+    with pytest.raises(ValueError):
+        await player.volume_up(step)
+
+
+@calls_command("player.volume_up", {const.ATTR_PLAYER_ID: 1, const.ATTR_STEP: 6})
+async def test_volume_up(player: HeosPlayer) -> None:
     """Test the volume_up command."""
-    await heos.get_players()
-    player = heos.players[1]
-    with pytest.raises(ValueError):
-        await player.volume_up(0)
-    with pytest.raises(ValueError):
-        await player.volume_up(11)
-    mock_device.register(
-        const.COMMAND_VOLUME_UP,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STEP: "6"},
-        "player.volume_up",
-    )
     await player.volume_up(6)
 
 
-async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("step", [0, 11])
+async def test_volume_down_invalid_step_raises(player: HeosPlayer, step: int) -> None:
+    """Test the volume_down command with invalid step value raises."""
+    with pytest.raises(ValueError):
+        await player.volume_down(step)
+
+
+@calls_command("player.volume_down", {const.ATTR_PLAYER_ID: 1, const.ATTR_STEP: 6})
+async def test_volume_down(player: HeosPlayer) -> None:
     """Test the volume_down command."""
-    await heos.get_players()
-    player = heos.players[1]
-    with pytest.raises(ValueError):
-        await player.volume_down(0)
-    with pytest.raises(ValueError):
-        await player.volume_down(11)
-    mock_device.register(
-        const.COMMAND_VOLUME_DOWN,
-        {const.ATTR_PLAYER_ID: "1", const.ATTR_STEP: "6"},
-        "player.volume_down",
-    )
     await player.volume_down(6)
 
 
-async def test_set_play_mode(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test the volume commands."""
-    await heos.get_players()
-    player = heos.players[1]
-    args = {
-        const.ATTR_PLAYER_ID: "1",
+@calls_command(
+    "player.set_play_mode",
+    {
+        const.ATTR_PLAYER_ID: 1,
         const.ATTR_REPEAT: const.RepeatType.ON_ALL,
         const.ATTR_SHUFFLE: const.VALUE_ON,
-    }
-    mock_device.register(const.COMMAND_SET_PLAY_MODE, args, "player.set_play_mode")
-
+    },
+)
+async def test_set_play_mode(player: HeosPlayer) -> None:
+    """Test the set play mode command."""
     await player.set_play_mode(const.RepeatType.ON_ALL, True)
 
 
-async def test_play_next_previous(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test the volume commands."""
-    await heos.get_players()
-    player = heos.players[1]
-    args = {const.ATTR_PLAYER_ID: "1"}
-    # Next
-    mock_device.register(const.COMMAND_PLAY_NEXT, args, "player.play_next")
+@calls_command("player.play_next", {const.ATTR_PLAYER_ID: 1})
+async def test_play_next(player: HeosPlayer) -> None:
+    """Test the play next command."""
     await player.play_next()
-    # Previous
-    mock_device.register(const.COMMAND_PLAY_PREVIOUS, args, "player.play_previous")
+
+
+@calls_command("player.play_previous", {const.ATTR_PLAYER_ID: 1})
+async def test_play_previous(player: HeosPlayer) -> None:
+    """Test the play previous command."""
     await player.play_previous()
 
 
-async def test_clear_queue(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test the volume commands."""
-    await heos.get_players()
-    player = heos.players[1]
-    args = {const.ATTR_PLAYER_ID: "1"}
-    mock_device.register(const.COMMAND_CLEAR_QUEUE, args, "player.clear_queue")
-    await player.clear_queue()
-
-    # Also test with a 'command under process' response
-    mock_device.register(
-        const.COMMAND_CLEAR_QUEUE,
-        args,
-        ["player.clear_queue", "player.clear_queue_processing"],
-        replace=True,
-    )
+@calls_command("player.clear_queue", {const.ATTR_PLAYER_ID: 1})
+async def test_clear_queue(player: HeosPlayer) -> None:
+    """Test the clear_queue commands."""
     await player.clear_queue()
 
 
-async def test_play_input_source(
-    mock_device: MockHeosDevice, heos: Heos, media_item_input: MediaItem
-) -> None:
+@calls_command(
+    "browse.play_input",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_INPUT: const.INPUT_AUX_IN_1,
+        const.ATTR_SOURCE_PLAYER_ID: 2,
+    },
+)
+async def test_play_input_source(player: HeosPlayer) -> None:
     """Test the play input source."""
-    await heos.get_players()
-    player = heos.players[1]
-
-    mock_device.register(
-        const.COMMAND_BROWSE_PLAY_INPUT,
-        {
-            const.ATTR_PLAYER_ID: "1",
-            const.ATTR_INPUT: const.INPUT_AUX_IN_1,
-            const.ATTR_SOURCE_PLAYER_ID: media_item_input.source_id,
-        },
-        "browse.play_input",
-    )
-    assert media_item_input.media_id is not None
-
-    await player.play_input_source(
-        media_item_input.media_id, media_item_input.source_id
-    )
+    await player.play_input_source(const.INPUT_AUX_IN_1, 2)
 
 
-async def test_play_preset_station(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("browse.play_preset", {const.ATTR_PLAYER_ID: 1, const.ATTR_PRESET: 1})
+async def test_play_preset_station(player: HeosPlayer) -> None:
     """Test the play favorite."""
-    await heos.get_players()
-    player = heos.players[1]
-
-    # Test invalid starting index
-    with pytest.raises(ValueError):
-        await player.play_preset_station(0)
-
-    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_PRESET: "1"}
-    mock_device.register(const.COMMAND_BROWSE_PLAY_PRESET, args, "browse.play_preset")
-
     await player.play_preset_station(1)
 
 
-async def test_play_url(mock_device: MockHeosDevice, heos: Heos) -> None:
+async def test_play_preset_station_invalid_index(player: HeosPlayer) -> None:
     """Test the play favorite."""
-    await heos.get_players()
-    player = heos.players[1]
-    url = "https://my.website.com/podcast.mp3"
-    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_URL: url}
-    mock_device.register(const.COMMAND_BROWSE_PLAY_STREAM, args, "browse.play_stream")
-
-    await player.play_url(url)
-
-
-async def test_play_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test the play favorite."""
-    await heos.get_players()
-    player = heos.players[1]
-
     with pytest.raises(ValueError):
-        await player.play_quick_select(0)
-    with pytest.raises(ValueError):
-        await player.play_quick_select(7)
+        await player.play_preset_station(0)
 
-    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_ID: "2"}
-    mock_device.register(
-        const.COMMAND_PLAY_QUICK_SELECT, args, "player.play_quickselect"
-    )
+
+@calls_command(
+    "browse.play_stream",
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_URL: "https://my.website.com/podcast.mp3"},
+)
+async def test_play_url(player: HeosPlayer) -> None:
+    """Test the play url."""
+    await player.play_url("https://my.website.com/podcast.mp3")
+
+
+@pytest.mark.parametrize("quick_select", [0, 7])
+async def test_play_quick_select_invalid_raises(
+    player: HeosPlayer, quick_select: int
+) -> None:
+    """Test play invalid quick select raises."""
+    with pytest.raises(ValueError):
+        await player.play_quick_select(quick_select)
+
+
+@calls_command("player.play_quickselect", {const.ATTR_PLAYER_ID: 1, const.ATTR_ID: 2})
+async def test_play_quick_select(player: HeosPlayer) -> None:
+    """Test the play quick select."""
     await player.play_quick_select(2)
 
 
-async def test_set_quick_select(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("index", [0, 7])
+async def test_set_quick_select_invalid_raises(player: HeosPlayer, index: int) -> None:
+    """Test set quick select invalid index raises."""
+    with pytest.raises(ValueError):
+        await player.set_quick_select(index)
+
+
+@calls_command("player.set_quickselect", {const.ATTR_PLAYER_ID: 1, const.ATTR_ID: 2})
+async def test_set_quick_select(player: HeosPlayer) -> None:
     """Test the play favorite."""
-    await heos.get_players()
-    player = heos.players[1]
-
-    with pytest.raises(ValueError):
-        await player.set_quick_select(0)
-    with pytest.raises(ValueError):
-        await player.set_quick_select(7)
-
-    args = {const.ATTR_PLAYER_ID: "1", const.ATTR_ID: "2"}
-    mock_device.register(const.COMMAND_SET_QUICK_SELECT, args, "player.set_quickselect")
     await player.set_quick_select(2)
 
 
-async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("player.get_quickselects", {const.ATTR_PLAYER_ID: 1})
+async def test_get_quick_selects(player: HeosPlayer) -> None:
     """Test the play favorite."""
-    await heos.get_players()
-    player = heos.players[1]
-    args = {const.ATTR_PLAYER_ID: "1"}
-    mock_device.register(
-        const.COMMAND_GET_QUICK_SELECTS, args, "player.get_quickselects"
-    )
     selects = await player.get_quick_selects()
     assert selects == {
         1: "Quick Select 1",
@@ -288,103 +250,67 @@ async def test_get_quick_selects(mock_device: MockHeosDevice, heos: Heos) -> Non
 
 
 async def test_play_media_unplayable_source(
-    mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
+    player: HeosPlayer, media_item_album: MediaItem
 ) -> None:
-    """Test add to queue with unplayable source raises."""
+    """Test play media with unplayable source raises."""
     media_item_album.playable = False
-    await heos.get_players()
-    player = heos.players[1]
-
     with pytest.raises(
         ValueError, match=re.escape(f"Media '{media_item_album}' is not playable")
     ):
         await player.play_media(media_item_album, const.AddCriteriaType.PLAY_NOW)
 
 
-async def test_play_media_container(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test adding a container to the queue."""
-    await heos.get_players()
-    player = heos.players[1]
-    source = MediaItem.from_data(
-        {
-            const.ATTR_NAME: "My Playlist",
-            const.ATTR_TYPE: const.MediaType.PLAYLIST,
-            const.ATTR_IMAGE_URL: "",
-            const.ATTR_PLAYABLE: const.VALUE_YES,
-            const.ATTR_CONTAINER: const.VALUE_YES,
-            const.ATTR_CONTAINER_ID: "123",
-        },
-        source_id=const.MUSIC_SOURCE_PLAYLISTS,
-    )
-    args = {
-        const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: str(const.MUSIC_SOURCE_PLAYLISTS),
+@calls_command(
+    "browse.add_to_queue_container",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
         const.ATTR_CONTAINER_ID: "123",
-        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-    }
-    mock_device.register(
-        const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_container"
-    )
-    await player.play_media(source, const.AddCriteriaType.PLAY_NOW)
-
-
-async def test_play_media_track(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
+        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+    },
+)
+async def test_play_media_container(
+    player: HeosPlayer, media_item_playlist: MediaItem
 ) -> None:
-    """Test adding a track to the queue."""
-    await heos.get_players()
-    player = heos.players[1]
+    """Test adding a container to the queue."""
+    await player.play_media(media_item_playlist, const.AddCriteriaType.PLAY_NOW)
 
-    args = {
-        const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: media_item_song.source_id,
-        const.ATTR_CONTAINER_ID: media_item_song.container_id,
-        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-        const.ATTR_MEDIA_ID: media_item_song.media_id,
-    }
-    mock_device.register(
-        const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
-    )
+
+@calls_command(
+    "browse.add_to_queue_track",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
+        const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
+        const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
+        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+    },
+)
+async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) -> None:
+    """Test adding a track to the queue."""
     await player.play_media(media_item_song, const.AddCriteriaType.PLAY_NOW)
 
 
-async def test_add_to_queue(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
-) -> None:
+@calls_command(
+    "browse.add_to_queue_track",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_DEEZER,
+        const.ATTR_CONTAINER_ID: "123",
+        const.ATTR_MEDIA_ID: "456",
+        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+    },
+)
+async def test_add_to_queue(player: HeosPlayer) -> None:
     """Test adding a track to the queue."""
-    await heos.get_players()
-    player = heos.players[1]
-    args = {
-        const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: media_item_song.source_id,
-        const.ATTR_CONTAINER_ID: media_item_song.container_id,
-        const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-        const.ATTR_MEDIA_ID: media_item_song.media_id,
-    }
-    mock_device.register(
-        const.COMMAND_BROWSE_ADD_TO_QUEUE, args, "browse.add_to_queue_track"
-    )
-    assert media_item_song.container_id is not None
     await player.add_to_queue(
-        media_item_song.source_id,
-        media_item_song.container_id,
-        media_item_song.media_id,
-        const.AddCriteriaType.PLAY_NOW,
+        const.MUSIC_SOURCE_DEEZER, "123", "456", const.AddCriteriaType.PLAY_NOW
     )
 
 
-async def test_now_playing_media_unavailable(
-    mock_device: MockHeosDevice, heos: Heos
-) -> None:
-    """Test edge where now_playing_media returns an empty payload."""
-    await heos.get_players()
-    player = heos.players[1]
-    mock_device.register(
-        const.COMMAND_GET_NOW_PLAYING_MEDIA,
-        None,
-        "player.get_now_playing_media_blank",
-        replace=True,
-    )
+@calls_command("player.get_now_playing_media_blank", {const.ATTR_PLAYER_ID: 1})
+async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
+    """Test edge case where now_playing_media returns an empty payload."""
     await player.refresh_now_playing_media()
     assert player.now_playing_media.supported_controls == []
     assert player.now_playing_media.type is None

@@ -30,7 +30,37 @@ class CallCommand:
     command_args: dict[str, Any] | None = None
     when: dict[str, Any] | None = None
     assert_called: bool = True
-    command: str | None = field(init=False, default=None)
+
+    def get_resolve_args(self, args: dict[str, Any]) -> dict[str, Any] | None:
+        """Resolve the arguments."""
+        if self.command_args is None:
+            return None
+        resolved_args = {}
+        for key, value in self.command_args.items():
+            if isinstance(value, ArgumentValue):
+                resolved_args[key] = value.get_value(args)
+            else:
+                resolved_args[key] = value
+        return resolved_args
+
+
+@dataclass
+class ArgumentValue:
+    """Define an argument value source."""
+
+    value: Any | None = field(default=None, kw_only=True)
+    arg_name: str | None = field(default=None, kw_only=True)
+    formatter: str | None = field(default=None, kw_only=True)
+
+    def get_value(self, args: dict[str, Any]) -> Any:
+        """Get the value."""
+        if self.value:
+            return value
+        assert self.arg_name is not None
+        arg_value = args[self.arg_name]
+        if self.formatter == "on_off":
+            return const.VALUE_ON if arg_value else const.VALUE_OFF
+        return arg_value
 
 
 def calls_commands(*commands: CallCommand) -> Callable:
@@ -59,39 +89,62 @@ def calls_commands(*commands: CallCommand) -> Callable:
             # Find the mock heos parameter.
             if "mock_device" in kwargs:
                 mock_device = cast(MockHeosDevice, kwargs["mock_device"])
-            elif "group" in kwargs:
-                mock_device = cast(MockHeosDevice, kwargs["group"]._heos.device)
             elif "heos" in kwargs:
                 mock_device = cast(MockHeosDevice, kwargs["heos"].device)
+            elif "group" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["group"]._heos.device)
+            elif "player" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["player"]._heos.device)
             else:
                 raise ValueError(
                     "The mock device must be accessible through one of the fixture parameters."
                 )
 
             # Register commands
+            assert_list: list[Callable] = []
+
             for command in matched_commands:
                 # Get the fixture command
                 fixture_data = json.loads(await get_fixture(command.fixture))
                 command_name = fixture_data[const.ATTR_HEOS][const.ATTR_COMMAND]
-                command.command = command_name
+
+                # Resolve command arguments (they may contain a ArgumentValue)
+                resolved_args = command.get_resolve_args(kwargs)
+
                 mock_device.register(
-                    command_name, command.command_args, command.fixture
+                    command_name, resolved_args, command.fixture, replace=True
                 )
+
+                # Store item to assert later (so we don't need to keep a copy of the resolved args)
+                if command.assert_called:
+                    assert_list.append(
+                        lambda: mock_device.assert_command_called(
+                            command_name, resolved_args
+                        )
+                    )
 
             # Call the wrapped method
             result = await func(*args, **kwargs)
 
             # Assert the commands were called
-            for command in matched_commands:
-                if command.assert_called:
-                    assert command.command is not None
-                    mock_device.assert_command_called(command.command)
+            for callable in assert_list:
+                callable()
 
             return result
 
         return wrapped
 
     return wrapper
+
+
+def value(
+    *,
+    value: Any | None = None,
+    arg_name: str | None = None,
+    formatter: str | None = None,
+) -> ArgumentValue:
+    """Define a value source."""
+    return ArgumentValue(value=value, arg_name=arg_name, formatter=formatter)
 
 
 def calls_command(

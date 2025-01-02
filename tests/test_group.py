@@ -5,7 +5,7 @@ import pytest
 from pyheos import const
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
-from tests import CallCommand, calls_command, calls_commands
+from tests import calls_command, value
 
 
 @calls_command("group.set_volume", {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"})
@@ -58,17 +58,12 @@ async def test_mute(group: HeosGroup) -> None:
 
 
 @pytest.mark.parametrize("mute", [True, False])
-@calls_commands(
-    CallCommand(
-        "group.set_mute",
-        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF},
-        {"mute": False},
-    ),
-    CallCommand(
-        "group.set_mute",
-        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_ON},
-        {"mute": True},
-    ),
+@calls_command(
+    "group.set_mute",
+    {
+        const.ATTR_GROUP_ID: "1",
+        const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
+    },
 )
 async def test_unmute(group: HeosGroup, mute: bool) -> None:
     """Test mute commands."""
