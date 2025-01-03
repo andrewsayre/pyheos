@@ -120,7 +120,9 @@ class ConnectionBase:
                 return
             else:
                 self._last_activity = datetime.now()
-                await self._handle_message(HeosMessage(binary_result.decode()))
+                await self._handle_message(
+                    HeosMessage.from_raw_message(binary_result.decode())
+                )
 
     async def _handle_message(self, message: HeosMessage) -> None:
         """Handle a message received from the HEOS device."""
@@ -161,6 +163,11 @@ class ConnectionBase:
                 raise CommandError(command.command, message) from error
             else:
                 self._last_activity = datetime.now()
+
+            # If the command is a reboot, we won't get a response.
+            if command.command == const.COMMAND_REBOOT:
+                _LOGGER.debug(f"Command executed '{command.uri_masked}': No response")
+                return HeosMessage(const.COMMAND_REBOOT)
 
             # Wait for the response with a timeout
             try:

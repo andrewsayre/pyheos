@@ -389,6 +389,12 @@ class MockHeosDevice:
                 continue
 
             # Special processing for known/unknown commands
+            if command == const.COMMAND_REBOOT:
+                # Simulate a reboot by shutting down the server
+                await self.stop()
+                await asyncio.sleep(0.3)
+                await self.start()
+                return
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == const.VALUE_ON

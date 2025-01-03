@@ -1199,7 +1199,28 @@ async def test_get_now_playing_media(heos: Heos) -> None:
     assert media.supported_controls == const.CONTROLS_ALL
 
 
-@calls_command("system.reboot")
-async def test_reboot(heos: Heos) -> None:
+async def test_reboot(mock_device: MockHeosDevice) -> None:
     """Test rebooting the device."""
-    await heos.reboot()
+    heos = await Heos.create_and_connect(
+        "127.0.0.1", auto_reconnect=True, auto_reconnect_delay=0.2
+    )
+
+    try:
+        disconnect_signal = connect_handler(
+            heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        )
+        connect_signal = connect_handler(
+            heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
+        )
+
+        await heos.reboot()
+
+        # wait for disconnect
+        await disconnect_signal.wait()
+        assert heos.connection_state == const.STATE_RECONNECTING
+
+        # wait for reconnect
+        await connect_signal.wait()
+        assert heos.connection_state == const.STATE_CONNECTED
+    finally:
+        await heos.disconnect()

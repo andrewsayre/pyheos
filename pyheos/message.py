@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any, cast
+from typing import Any
 from urllib.parse import parse_qsl
 
 from pyheos import const
@@ -58,38 +58,40 @@ class HeosCommand:
         return "&".join(pairs)
 
 
-@dataclass(frozen=True)
+@dataclass(repr=False)
 class HeosMessage:
     """Lower a message received from a HEOS device. This is a lower level class used internally."""
 
-    raw_message: str
+    command: str
+    result: bool = True
+    message: dict[str, str] = field(default_factory=dict)
+    payload: dict[str, Any] | list[Any] | None = None
 
-    @cached_property
-    def container(self) -> dict[str, Any]:
-        """Get the entire message as a dictionary."""
-        return cast(dict[str, Any], json.loads(self.raw_message))
+    _raw_message: str | None = field(
+        init=False, hash=False, repr=False, compare=False, default=None
+    )
 
-    @cached_property
-    def heos(self) -> dict[str, Any]:
-        """Get the HEOS section as a dictionary."""
-        return cast(dict[str, Any], self.container[const.ATTR_HEOS])
+    def __repr__(self) -> str:
+        """Get a string representaton of the message."""
+        return self._raw_message or f"{self.command} {self.message}"
 
-    @cached_property
-    def payload(self) -> dict[str, Any] | list[Any] | None:
-        """Get the payload section as a dictionary."""
-        return self.container.get("payload")
-
-    @cached_property
-    def command(self) -> str:
-        """Get the command the message is referring to."""
-        return str(self.heos[const.ATTR_COMMAND])
-
-    @cached_property
-    def message(self) -> dict[str, str]:
-        """Get the message parameters as a dictionary. If not present in the message, an empty dictionary is returned."""
-        if raw_message := self.heos.get(const.ATTR_MESSAGE):
-            return dict(parse_qsl(raw_message, keep_blank_values=True))
-        return {}
+    @classmethod
+    def from_raw_message(cls, raw_message: str) -> "HeosMessage":
+        """Create a HeosMessage from a raw message."""
+        container = json.loads(raw_message)
+        heos = container[const.ATTR_HEOS]
+        instance = cls(
+            command=str(heos[const.ATTR_COMMAND]),
+            result=bool(
+                heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
+            ),
+            message=dict(
+                parse_qsl(heos.get(const.ATTR_MESSAGE, ""), keep_blank_values=True)
+            ),
+            payload=container.get(const.ATTR_PAYLOAD),
+        )
+        instance._raw_message = raw_message
+        return instance
 
     @cached_property
     def is_under_process(self) -> bool:
@@ -100,13 +102,6 @@ class HeosMessage:
     def is_event(self) -> bool:
         """Return True if the message is an event, otherwise False."""
         return self.command.startswith("event/")
-
-    @cached_property
-    def result(self) -> bool:
-        """Return True if the message represents a successful command. If not present in the response, True is returned."""
-        return bool(
-            self.heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
-        )
 
     def get_message_value(self, key: str) -> str:
         """Get a message parameter as a string."""
