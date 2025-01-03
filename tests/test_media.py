@@ -209,6 +209,7 @@ async def test_media_item_browse(media_item_device: MediaItem) -> None:
         const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
         const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.REPLACE_AND_PLAY,
     },
+    add_command_under_process=True,
 )
 async def test_media_item_play(media_item_song: MediaItem) -> None:
     """Test playing a media music source."""

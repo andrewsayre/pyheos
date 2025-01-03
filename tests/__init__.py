@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, cast
-from urllib.parse import parse_qsl, urlparse
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
 
 from pyheos import Heos, const
 from pyheos.const import SEPARATOR, SEPARATOR_BYTES
@@ -25,6 +25,7 @@ class CallCommand:
         when: Only registers the command if the test method arguments match the provided values.
         replace: Replace any existing command matchers. The default is False.
         assert_called: Assert the command was called after test execution. The default is True.
+        add_command_under_process: When True, the under process response will be sent prior to the command response.
     """
 
     fixture: str
@@ -32,6 +33,7 @@ class CallCommand:
     when: dict[str, Any] | None = None
     replace: bool = False
     assert_called: bool = True
+    add_command_under_process: bool = False
 
     def get_resolve_args(self, args: dict[str, Any]) -> dict[str, Any] | None:
         """Resolve the arguments."""
@@ -125,10 +127,14 @@ def calls_commands(*commands: CallCommand) -> Callable:
                 # Resolve command arguments (they may contain a ArgumentValue)
                 resolved_args = command.get_resolve_args(kwargs)
 
+                fixtures: list[str] = [command.fixture]
+                if command.add_command_under_process:
+                    fixtures.insert(0, "other.command_under_process")
+
                 matcher = mock_device.register(
                     command_name,
                     resolved_args,
-                    command.fixture,
+                    fixtures,
                     replace=command.replace,
                 )
 
@@ -166,6 +172,7 @@ def calls_command(
     assert_called: bool = True,
     when: dict[str, Any] | None = None,
     replace: bool = False,
+    add_command_under_process: bool = False,
 ) -> Callable:
     """
     Decorator that registers a command prior to test execution.
@@ -176,9 +183,17 @@ def calls_command(
         when: Only registers the command if the test method arguments match the provided values.
         assert_called: Assert the command was called after test execution. The default is True.
         replace: Replace any existing command matchers. The default is False.
+        add_command_under_process: When True, the under process response will be sent prior to the command response.
     """
     return calls_commands(
-        CallCommand(fixture, command_args, when, replace, assert_called)
+        CallCommand(
+            fixture,
+            command_args,
+            when,
+            replace,
+            assert_called,
+            add_command_under_process,
+        )
     )
 
 
@@ -380,9 +395,9 @@ class MockHeosDevice:
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
             else:
                 response = (
-                    (await get_fixture("unknown_command"))
+                    (await get_fixture("other.unknown_command"))
                     .replace("{command}", command)
-                    .replace("{full_command}", result)
+                    .replace("{full_command}", quote_plus(result))
                 )
 
             # write the response
@@ -447,7 +462,11 @@ class CommandMatcher:
         for key, token in keys.items():
             value = query.get(key)
             if value is not None and token in response:
-                response = response.replace(token, value)
+                response = response.replace(token, quote_plus(value))
+
+        response = response.replace("{command}", self.command)
+        response = response.replace("{parameters}", urlencode(query))
+
         return response
 
     def assert_called(self) -> None:

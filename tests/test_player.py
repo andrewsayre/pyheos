@@ -167,7 +167,11 @@ async def test_play_previous(player: HeosPlayer) -> None:
     await player.play_previous()
 
 
-@calls_command("player.clear_queue", {const.ATTR_PLAYER_ID: 1})
+@calls_command(
+    "player.clear_queue",
+    {const.ATTR_PLAYER_ID: 1},
+    add_command_under_process=True,
+)
 async def test_clear_queue(player: HeosPlayer) -> None:
     """Test the clear_queue commands."""
     await player.clear_queue()
@@ -268,6 +272,7 @@ async def test_play_media_unplayable_source(
         const.ATTR_CONTAINER_ID: "123",
         const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
     },
+    add_command_under_process=True,
 )
 async def test_play_media_container(
     player: HeosPlayer, media_item_playlist: MediaItem
@@ -285,6 +290,7 @@ async def test_play_media_container(
         const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
         const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
     },
+    add_command_under_process=True,
 )
 async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) -> None:
     """Test adding a track to the queue."""
@@ -300,6 +306,7 @@ async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) 
         const.ATTR_MEDIA_ID: "456",
         const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
     },
+    add_command_under_process=True,
 )
 async def test_add_to_queue(player: HeosPlayer) -> None:
     """Test adding a track to the queue."""
