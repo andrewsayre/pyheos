@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
+from pyheos.command.system import SystemCommands
 from pyheos.message import HeosCommand, HeosMessage
 
 from . import const
@@ -119,7 +120,9 @@ class ConnectionBase:
                 return
             else:
                 self._last_activity = datetime.now()
-                await self._handle_message(HeosMessage(binary_result.decode()))
+                await self._handle_message(
+                    HeosMessage.from_raw_message(binary_result.decode())
+                )
 
     async def _handle_message(self, message: HeosMessage) -> None:
         """Handle a message received from the HEOS device."""
@@ -161,6 +164,11 @@ class ConnectionBase:
             else:
                 self._last_activity = datetime.now()
 
+            # If the command is a reboot, we won't get a response.
+            if command.command == const.COMMAND_REBOOT:
+                _LOGGER.debug(f"Command executed '{command.uri_masked}': No response")
+                return HeosMessage(const.COMMAND_REBOOT)
+
             # Wait for the response with a timeout
             try:
                 response = await asyncio.wait_for(
@@ -196,9 +204,7 @@ class ConnectionBase:
     async def connect(self) -> None:
         """Connect to the HEOS device."""
         if self._state is const.STATE_CONNECTED:
-            raise HeosError(
-                "Connect can only be called when the state is not connected."
-            )
+            return
         # Open the connection to the host
         try:
             reader, self._writer = await asyncio.wait_for(
@@ -259,7 +265,7 @@ class AutoReconnectingConnection(ConnectionBase):
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
                 try:
-                    await self.command(HeosCommand(const.COMMAND_HEART_BEAT))
+                    await self.command(SystemCommands.heart_beat())
                 except (CommandError, asyncio.TimeoutError):
                     # Exit the task, as the connection will be reset/closed.
                     return
@@ -314,8 +320,6 @@ class ResponseEvent:
 
     def set(self, response: HeosMessage) -> None:
         """Set the response."""
-        if response is None:
-            raise ValueError("Response must not be None")
         self._response = response
         self._event.set()
 

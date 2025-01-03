@@ -9,6 +9,7 @@ from typing import Any, Final, cast
 from pyheos.command import HeosCommands
 from pyheos.command.browse import BrowseCommands
 from pyheos.command.player import PlayerCommands
+from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.media import (
@@ -80,8 +81,90 @@ class ConnectionMixin:
         )
 
 
+class SystemMixin(ConnectionMixin):
+    """A mixin to provide access to the system commands."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(SystemMixin, self).__init__(*args, **kwargs)
+
+        self._current_credentials = self._options.credentials
+        self._signed_in_username: str | None = None
+
+    async def register_for_change_events(self, enable: bool) -> None:
+        """Register for change events.
+
+        References:
+            4.1.1 Register for Change Events"""
+        await self._connection.command(
+            SystemCommands.register_for_change_events(enable)
+        )
+
+    async def check_account(self) -> str | None:
+        """Return the logged in username.
+
+        References:
+            4.1.2 HEOS Account Check"""
+        result = await self._connection.command(SystemCommands.check_account())
+        if const.ATTR_SIGNED_IN in result.message:
+            self._signed_in_username = result.get_message_value(const.ATTR_USER_NAME)
+        else:
+            self._signed_in_username = None
+        return self._signed_in_username
+
+    async def sign_in(
+        self, username: str, password: str, *, update_credential: bool = True
+    ) -> str:
+        """Sign in to the HEOS account using the provided credential and return the user name.
+
+        Args:
+            username: The username of the HEOS account.
+            password: The password of the HEOS account.
+            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
+
+        Returns:
+            The username of the signed in account.
+
+        References:
+            4.1.3 HEOS Account Sign In"""
+        result = await self._connection.command(
+            SystemCommands.sign_in(username, password)
+        )
+        self._signed_in_username = result.get_message_value(const.ATTR_USER_NAME)
+        if update_credential:
+            self._current_credentials = Credentials(username, password)
+        return self._signed_in_username
+
+    async def sign_out(self, *, update_credential: bool = True) -> None:
+        """Sign out of the HEOS account.
+
+        Args:
+            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
+
+        References:
+            4.1.4 HEOS Account Sign Out"""
+        await self._connection.command(SystemCommands.sign_out())
+        self._signed_in_username = None
+        if update_credential:
+            self._current_credentials = None
+
+    async def heart_beat(self) -> None:
+        """Send a heart beat message to the HEOS device.
+
+        References:
+            4.1.5 HEOS System Heart Beat"""
+        await self._connection.command(SystemCommands.heart_beat())
+
+    async def reboot(self) -> None:
+        """Reboot the HEOS device.
+
+        References:
+            4.1.6 HEOS Speaker Reboot"""
+        await self._connection.command(SystemCommands.reboot())
+
+
 class BrowseMixin(ConnectionMixin):
-    "A mixin to provide access to the browse commands."
+    """A mixin to provide access to the browse commands."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init a new instance of the BrowseMixin."""
@@ -559,7 +642,7 @@ class PlayerMixin(ConnectionMixin):
         }
 
 
-class Heos(BrowseMixin, PlayerMixin):
+class Heos(SystemMixin, BrowseMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod
@@ -604,7 +687,6 @@ class Heos(BrowseMixin, PlayerMixin):
         """Init a new instance of the Heos CLI API."""
         super(Heos, self).__init__(options)
 
-        self._current_credentials = options.credentials
         self._connection.add_on_connected(self._on_connected)
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
@@ -619,8 +701,6 @@ class Heos(BrowseMixin, PlayerMixin):
         self._groups: dict[int, HeosGroup] = {}
         self._groups_loaded = False
 
-        self._signed_in_username: str | None = None
-
     async def connect(self) -> None:
         """Connect to the CLI."""
         await self._connection.connect()
@@ -632,7 +712,7 @@ class Heos(BrowseMixin, PlayerMixin):
         if self._current_credentials:
             # Sign-in to the account if provided
             try:
-                self._signed_in_username = await self._commands.sign_in(
+                await self.sign_in(
                     self._current_credentials.username,
                     self._current_credentials.password,
                 )
@@ -645,9 +725,9 @@ class Heos(BrowseMixin, PlayerMixin):
                 )
         else:
             # Determine the logged in user
-            self._signed_in_username = await self._commands.check_account()
+            await self.check_account()
 
-        await self._commands.register_for_change_events(self._options.events)
+        await self.register_for_change_events(self._options.events)
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -717,33 +797,6 @@ class Heos(BrowseMixin, PlayerMixin):
         hosts = list([HeosHost.from_data(item) for item in payload])
         host = next(host for host in hosts if host.ip_address == self._options.host)
         return HeosSystem(self._signed_in_username, host, hosts)
-
-    async def sign_in(
-        self, username: str, password: str, *, update_credential: bool = True
-    ) -> None:
-        """
-        Sign-in to the HEOS account on the device directly connected.
-
-        Args:
-            username: The username of the HEOS account.
-            password: The password of the HEOS account.
-            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
-        """
-        self._signed_in_username = await self._commands.sign_in(username, password)
-        if update_credential:
-            self._current_credentials = Credentials(username, password)
-
-    async def sign_out(self, *, update_credential: bool = True) -> None:
-        """
-        Sign-out of the HEOS account on the device directly connected.
-
-        Args:
-            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
-        """
-        await self._commands.sign_out()
-        self._signed_in_username = None
-        if update_credential:
-            self._current_credentials = None
 
     async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
         """Get available groups."""

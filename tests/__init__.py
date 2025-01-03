@@ -280,7 +280,6 @@ class MockHeosDevice:
             self._handle_connection, "127.0.0.1", const.CLI_PORT
         )
 
-        self.register(const.COMMAND_HEART_BEAT, None, "system.heart_beat")
         self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
 
     async def stop(self) -> None:
@@ -389,6 +388,12 @@ class MockHeosDevice:
                 continue
 
             # Special processing for known/unknown commands
+            if command == const.COMMAND_REBOOT:
+                # Simulate a reboot by shutting down the server
+                await self.stop()
+                await asyncio.sleep(0.3)
+                await self.start()
+                return
             if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == const.VALUE_ON
