@@ -1197,3 +1197,9 @@ async def test_get_now_playing_media(heos: Heos) -> None:
     assert media.queue_id == 1
     assert media.source_id == 13
     assert media.supported_controls == const.CONTROLS_ALL
+
+
+@calls_command("system.reboot")
+async def test_reboot(heos: Heos) -> None:
+    """Test rebooting the device."""
+    await heos.reboot()
