@@ -62,7 +62,255 @@ class HeosOptions:
     credentials: Credentials | None = field(default=None, kw_only=True)
 
 
-class Heos:
+class ConnectionMixin:
+    "A mixin to provide access to the connection."
+
+    def __init__(self, options: HeosOptions) -> None:
+        """Init a new instance of the ConnectionMixin."""
+
+        self._connection = AutoReconnectingConnection(
+            options.host,
+            timeout=options.timeout,
+            reconnect=options.auto_reconnect,
+            reconnect_delay=options.auto_reconnect_delay,
+            reconnect_max_attempts=options.auto_reconnect_max_attempts,
+            heart_beat=options.heart_beat,
+            heart_beat_interval=options.heart_beat_interval,
+        )
+
+
+class BrowseMixin(ConnectionMixin):
+    "A mixin to provide access to the browse commands."
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(BrowseMixin, self).__init__(*args, **kwargs)
+
+        self._music_sources: dict[int, MediaMusicSource] = {}
+        self._music_sources_loaded = False
+
+    @property
+    def music_sources(self) -> dict[int, MediaMusicSource]:
+        """Get available music sources."""
+        return self._music_sources
+
+    async def get_music_sources(
+        self, refresh: bool = True
+    ) -> dict[int, MediaMusicSource]:
+        """
+        Get available music sources.
+
+        References:
+            4.4.1 Get Music Sources
+        """
+        if not self._music_sources_loaded or refresh:
+            message = await self._connection.command(BrowseCommands.get_music_sources())
+            self._music_sources.clear()
+            for data in cast(Sequence[dict], message.payload):
+                source = MediaMusicSource.from_data(data, cast("Heos", self))
+                self._music_sources[source.source_id] = source
+            self._music_sources_loaded = True
+        return self._music_sources
+
+    async def browse(
+        self,
+        source_id: int,
+        container_id: str | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified source or container.
+
+        References:
+            4.4.3 Browse Source
+            4.4.4 Browse Source Containers
+            4.4.13 Get HEOS Playlists
+            4.4.16 Get HEOS History
+
+        Args:
+            source_id: The identifier of the source to browse.
+            container_id: The identifier of the container to browse. If not provided, the root of the source will be expanded.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the source or container.
+        """
+        message = await self._connection.command(
+            BrowseCommands.browse(source_id, container_id, range_start, range_end)
+        )
+        return BrowseResult.from_data(message, cast("Heos", self))
+
+    async def browse_media(
+        self,
+        media: MediaItem | MediaMusicSource,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> BrowseResult:
+        """Browse the contents of the specified media item.
+
+        References:
+            4.4.3 Browse Source
+            4.4.4 Browse Source Containers
+            4.4.13 Get HEOS Playlists
+            4.4.16 Get HEOS History
+
+        Args:
+            media: The media item to browse, must be of type MediaItem or MediaMusicSource.
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in the media item.
+        """
+        if isinstance(media, MediaMusicSource):
+            if not media.available:
+                raise ValueError("Source is not available to browse")
+            return await self.browse(media.source_id)
+        else:
+            if not media.browsable:
+                raise ValueError("Only media sources and containers can be browsed")
+            return await self.browse(
+                media.source_id, media.container_id, range_start, range_end
+            )
+
+    async def play_input_source(
+        self, player_id: int, input: str, source_player_id: int | None = None
+    ) -> None:
+        """
+        Play the specified input source on the specified player.
+
+        References:
+            4.4.9 Play Input Source
+
+        Args:
+            player_id: The identifier of the player to play the input source.
+            input: The input source to play.
+            source_player_id: The identifier of the player that has the input source, if different than the player_id.
+        """
+        await self._connection.command(
+            BrowseCommands.play_input_source(player_id, input, source_player_id)
+        )
+
+    async def play_station(
+        self, player_id: int, source_id: int, container_id: str | None, media_id: str
+    ) -> None:
+        """
+        Play the specified station on the specified player.
+
+        References:
+            4.4.7 Play Station
+
+        Args:
+            player_id: The identifier of the player to play the station.
+            source_id: The identifier of the source containing the station.
+            container_id: The identifier of the container containing the station.
+            media_id: The identifier of the station to play.
+        """
+        await self._connection.command(
+            BrowseCommands.play_station(player_id, source_id, container_id, media_id)
+        )
+
+    async def play_preset_station(self, player_id: int, index: int) -> None:
+        """
+        Play the preset station on the specified player (favorite)
+
+        References:
+            4.4.8 Play Preset Station
+
+        Args:
+            player_id: The identifier of the player to play the preset station.
+            index: The index of the preset station to play.
+        """
+        await self._connection.command(
+            BrowseCommands.play_preset_station(player_id, index)
+        )
+
+    async def play_url(self, player_id: int, url: str) -> None:
+        """
+        Play the specified URL on the specified player.
+
+        References:
+            4.4.10 Play URL
+
+        Args:
+            player_id: The identifier of the player to play the URL.
+            url: The URL to play.
+        """
+        await self._connection.command(BrowseCommands.play_url(player_id, url))
+
+    async def add_to_queue(
+        self,
+        player_id: int,
+        source_id: int,
+        container_id: str,
+        media_id: str | None = None,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """
+        Add the specified media item to the queue of the specified player.
+
+        References:
+            4.4.11 Add Container to Queue with Options
+            4.4.12 Add Track to Queue with Options
+
+        Args:
+            player_id: The identifier of the player to add the media item.
+            source_id: The identifier of the source containing the media item.
+            container_id: The identifier of the container containing the media item.
+            media_id: The identifier of the media item to add. Required for MediaType.Song.
+            add_criteria: Determines how tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        await self._connection.command(
+            BrowseCommands.add_to_queue(
+                player_id=player_id,
+                source_id=source_id,
+                container_id=container_id,
+                media_id=media_id,
+                add_criteria=add_criteria,
+            )
+        )
+
+    async def play_media(
+        self,
+        player_id: int,
+        media: MediaItem,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """
+        Play the specified media item on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the media item.
+            media: The media item to play.
+            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        if not media.playable:
+            raise ValueError(f"Media '{media}' is not playable")
+
+        if media.media_id in const.VALID_INPUTS:
+            await self.play_input_source(player_id, media.media_id, media.source_id)
+        elif media.type == const.MediaType.STATION:
+            if media.media_id is None:
+                raise ValueError(f"'Media '{media}' cannot have a None media_id")
+            await self.play_station(
+                player_id=player_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+            )
+        else:
+            # Handles both songs and containers
+            if media.container_id is None:
+                raise ValueError(f"Media '{media}' cannot have a None container_id")
+            await self.add_to_queue(
+                player_id=player_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+                add_criteria=add_criteria,
+            )
+
+
+class Heos(BrowseMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod
@@ -105,17 +353,10 @@ class Heos:
 
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
+        super(Heos, self).__init__(options)
+
         self._options = options
         self._current_credentials = options.credentials
-        self._connection = AutoReconnectingConnection(
-            options.host,
-            timeout=options.timeout,
-            reconnect=options.auto_reconnect,
-            reconnect_delay=options.auto_reconnect_delay,
-            reconnect_max_attempts=options.auto_reconnect_max_attempts,
-            heart_beat=options.heart_beat,
-            heart_beat_interval=options.heart_beat_interval,
-        )
         self._connection.add_on_connected(self._on_connected)
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
@@ -343,84 +584,6 @@ class Heos:
         ids.extend(member_ids)
         await self._commands.set_group(ids)
 
-    async def get_music_sources(
-        self, refresh: bool = True
-    ) -> dict[int, MediaMusicSource]:
-        """
-        Get available music sources.
-
-        References:
-            4.4.1 Get Music Sources
-        """
-        if not self._music_sources_loaded or refresh:
-            message = await self._connection.command(BrowseCommands.get_music_sources())
-            self._music_sources.clear()
-            for data in cast(Sequence[dict], message.payload):
-                source = MediaMusicSource.from_data(data, self)
-                self._music_sources[source.source_id] = source
-            self._music_sources_loaded = True
-        return self._music_sources
-
-    async def browse(
-        self,
-        source_id: int,
-        container_id: str | None = None,
-        range_start: int | None = None,
-        range_end: int | None = None,
-    ) -> BrowseResult:
-        """Browse the contents of the specified source or container.
-
-        References:
-            4.4.3 Browse Source
-            4.4.4 Browse Source Containers
-            4.4.13 Get HEOS Playlists
-            4.4.16 Get HEOS History
-
-        Args:
-            source_id: The identifier of the source to browse.
-            container_id: The identifier of the container to browse. If not provided, the root of the source will be expanded.
-            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
-            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
-        Returns:
-            A BrowseResult instance containing the items in the source or container.
-        """
-        message = await self._connection.command(
-            BrowseCommands.browse(source_id, container_id, range_start, range_end)
-        )
-        return BrowseResult.from_data(message, self)
-
-    async def browse_media(
-        self,
-        media: MediaItem | MediaMusicSource,
-        range_start: int | None = None,
-        range_end: int | None = None,
-    ) -> BrowseResult:
-        """Browse the contents of the specified media item.
-
-        References:
-            4.4.3 Browse Source
-            4.4.4 Browse Source Containers
-            4.4.13 Get HEOS Playlists
-            4.4.16 Get HEOS History
-
-        Args:
-            media: The media item to browse, must be of type MediaItem or MediaMusicSource.
-            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
-            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
-        Returns:
-            A BrowseResult instance containing the items in the media item.
-        """
-        if isinstance(media, MediaMusicSource):
-            if not media.available:
-                raise ValueError("Source is not available to browse")
-            return await self.browse(media.source_id)
-        else:
-            if not media.browsable:
-                raise ValueError("Only media sources and containers can be browsed")
-            return await self.browse(
-                media.source_id, media.container_id, range_start, range_end
-            )
-
     async def get_input_sources(self) -> Sequence[MediaItem]:
         """
         Get available input sources.
@@ -462,143 +625,6 @@ class Heos:
         result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
         return result.items
 
-    async def play_media(
-        self,
-        player_id: int,
-        media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
-    ) -> None:
-        """
-        Play the specified media item on the specified player.
-
-        Args:
-            player_id: The identifier of the player to play the media item.
-            media: The media item to play.
-            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
-        """
-        if not media.playable:
-            raise ValueError(f"Media '{media}' is not playable")
-
-        if media.media_id in const.VALID_INPUTS:
-            await self.play_input_source(player_id, media.media_id, media.source_id)
-        elif media.type == const.MediaType.STATION:
-            if media.media_id is None:
-                raise ValueError(f"'Media '{media}' cannot have a None media_id")
-            await self.play_station(
-                player_id=player_id,
-                source_id=media.source_id,
-                container_id=media.container_id,
-                media_id=media.media_id,
-            )
-        else:
-            # Handles both songs and containers
-            if media.container_id is None:
-                raise ValueError(f"Media '{media}' cannot have a None container_id")
-            await self.add_to_queue(
-                player_id=player_id,
-                source_id=media.source_id,
-                container_id=media.container_id,
-                media_id=media.media_id,
-                add_criteria=add_criteria,
-            )
-
-    async def play_input_source(
-        self, player_id: int, input: str, source_player_id: int | None = None
-    ) -> None:
-        """
-        Play the specified input source on the specified player.
-
-        References:
-            4.4.9 Play Input Source
-
-        Args:
-            player_id: The identifier of the player to play the input source.
-            input: The input source to play.
-            source_player_id: The identifier of the player that has the input source, if different than the player_id.
-        """
-        await self._connection.command(
-            BrowseCommands.play_input_source(player_id, input, source_player_id)
-        )
-
-    async def play_station(
-        self, player_id: int, source_id: int, container_id: str | None, media_id: str
-    ) -> None:
-        """
-        Play the specified station on the specified player.
-
-        References:
-            4.4.7 Play Station
-
-        Args:
-            player_id: The identifier of the player to play the station.
-            source_id: The identifier of the source containing the station.
-            container_id: The identifier of the container containing the station.
-            media_id: The identifier of the station to play.
-        """
-        await self._connection.command(
-            BrowseCommands.play_station(player_id, source_id, container_id, media_id)
-        )
-
-    async def play_preset_station(self, player_id: int, index: int) -> None:
-        """
-        Play the preset station on the specified player (favorite)
-
-        References:
-            4.4.8 Play Preset Station
-
-        Args:
-            player_id: The identifier of the player to play the preset station.
-            index: The index of the preset station to play.
-        """
-        await self._connection.command(
-            BrowseCommands.play_preset_station(player_id, index)
-        )
-
-    async def play_url(self, player_id: int, url: str) -> None:
-        """
-        Play the specified URL on the specified player.
-
-        References:
-            4.4.10 Play URL
-
-        Args:
-            player_id: The identifier of the player to play the URL.
-            url: The URL to play.
-        """
-        await self._connection.command(BrowseCommands.play_url(player_id, url))
-
-    async def add_to_queue(
-        self,
-        player_id: int,
-        source_id: int,
-        container_id: str,
-        media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
-    ) -> None:
-        """
-        Add the specified media item to the queue of the specified player.
-
-        References:
-            4.4.11 Add Container to Queue with Options
-            4.4.12 Add Track to Queue with Options
-
-        Args:
-            player_id: The identifier of the player to add the media item.
-            source_id: The identifier of the source containing the media item.
-            container_id: The identifier of the container containing the media item.
-            media_id: The identifier of the media item to add. Required for MediaType.Song.
-            add_criteria: Determines how tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
-        """
-        await self._connection.command(
-            BrowseCommands.add_to_queue(
-                player_id=player_id,
-                source_id=source_id,
-                container_id=container_id,
-                media_id=media_id,
-                add_criteria=add_criteria,
-            )
-        )
-
     @property
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""
@@ -613,11 +639,6 @@ class Heos:
     def groups(self) -> dict[int, HeosGroup]:
         """Get the loaded groups."""
         return self._groups
-
-    @property
-    def music_sources(self) -> dict[int, MediaMusicSource]:
-        """Get available music sources."""
-        return self._music_sources
 
     @property
     def connection_state(self) -> str:
