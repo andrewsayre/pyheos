@@ -134,8 +134,6 @@ class HeosPlayer:
     def __init__(self, heos: "Heos", data: dict[str, Any]) -> None:
         """Initialize a player with the data."""
         self._heos = heos
-        # pylint: disable=protected-access
-        self._commands = heos._commands
 
         self._name: str = str(data[const.ATTR_NAME])
         self._player_id: int = int(data[const.ATTR_PLAYER_ID])
