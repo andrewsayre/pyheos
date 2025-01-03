@@ -272,18 +272,6 @@ class MockHeosDevice:
         self.register(const.COMMAND_HEART_BEAT, None, "system.heart_beat")
         self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
 
-        # self.register(const.COMMAND_GET_PLAYERS, None, "player.get_players")
-        # self.register(const.COMMAND_GET_PLAY_STATE, None, "player.get_play_state")
-        # self.register(
-        #     const.COMMAND_GET_NOW_PLAYING_MEDIA, None, "player.get_now_playing_media"
-        # )
-        # self.register(const.COMMAND_GET_VOLUME, None, "player.get_volume")
-        # self.register(const.COMMAND_GET_MUTE, None, "player.get_mute")
-        # self.register(const.COMMAND_GET_PLAY_MODE, None, "player.get_play_mode")
-        # self.register(const.COMMAND_GET_GROUPS, None, "group.get_groups")
-        # self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
-        # self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
-
     async def stop(self) -> None:
         """Stop the heos server."""
         if not self._started:
@@ -297,8 +285,19 @@ class MockHeosDevice:
         self._server.close()
         await self._server.wait_closed()
 
-    async def write_event(self, event: str) -> None:
-        """Send an event through the event channel."""
+    async def write_event(
+        self, fixture: str, replacements: dict[str, Any] | None = None
+    ) -> None:
+        """Send an event through the event channel.
+
+        Args:
+            fixture: The name of the fixture to send.
+            replacements: The replacements to apply to the fixture.
+        """
+        event = await get_fixture(fixture)
+        if replacements:
+            for key, value in replacements.items():
+                event = event.replace("{" + key + "}", str(value))
         connection = next(
             conn for conn in self.connections if conn.is_registered_for_events
         )

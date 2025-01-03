@@ -22,7 +22,6 @@ from . import (
     calls_group_commands,
     calls_player_commands,
     connect_handler,
-    get_fixture,
 )
 
 
@@ -385,12 +384,10 @@ async def test_player_state_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = (
-        (await get_fixture("event.player_state_changed"))
-        .replace("{player_id}", str(player.player_id))
-        .replace("{state}", const.PLAY_STATE_PLAY)
+    await mock_device.write_event(
+        "event.player_state_changed",
+        {"player_id": player.player_id, "state": const.PLAY_STATE_PLAY},
     )
-    await mock_device.write_event(event_to_raise)
 
     # Wait until the signal
     await signal.wait()
@@ -437,10 +434,9 @@ async def test_player_now_playing_changed_event(
         "player.get_now_playing_media_changed",
         replace=True,
     )
-    event_to_raise = (await get_fixture("event.player_now_playing_changed")).replace(
-        "{player_id}", str(player.player_id)
+    await mock_device.write_event(
+        "event.player_now_playing_changed", {"player_id": player.player_id}
     )
-    await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set
     await signal.wait()
@@ -483,13 +479,14 @@ async def test_player_volume_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = (
-        (await get_fixture("event.player_volume_changed"))
-        .replace("{player_id}", str(player.player_id))
-        .replace("{level}", "50.0")
-        .replace("{mute}", const.VALUE_ON)
+    await mock_device.write_event(
+        "event.player_volume_changed",
+        {
+            "player_id": player.player_id,
+            "level": 50.0,
+            "mute": const.VALUE_ON,
+        },
     )
-    await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set
     await signal.wait()
@@ -523,13 +520,14 @@ async def test_player_now_playing_progress_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = (
-        (await get_fixture("event.player_now_playing_progress"))
-        .replace("{player_id}", str(player.player_id))
-        .replace("{cur_pos}", "113000")
-        .replace("{duration}", "210000")
+    await mock_device.write_event(
+        "event.player_now_playing_progress",
+        {
+            "player_id": player.player_id,
+            "cur_pos": 113000,
+            "duration": 210000,
+        },
     )
-    await mock_device.write_event(event_to_raise)
 
     # Wait until the signal is set or timeout
     await signal.wait()
@@ -562,18 +560,31 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
 
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
-    # Write event through mock device
-    event_to_raise = (
-        (await get_fixture("event.player_now_playing_progress"))
-        .replace("{player_id}", str(player.player_id))
-        .replace("{cur_pos}", "113000")
-        .replace("{duration}", "210000")
-    )
-
     # raise it multiple times.
-    await mock_device.write_event(event_to_raise)
-    await mock_device.write_event(event_to_raise)
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event(
+        "event.player_now_playing_progress",
+        {
+            "player_id": player.player_id,
+            "cur_pos": 113000,
+            "duration": 210000,
+        },
+    )
+    await mock_device.write_event(
+        "event.player_now_playing_progress",
+        {
+            "player_id": player.player_id,
+            "cur_pos": 113000,
+            "duration": 210000,
+        },
+    )
+    await mock_device.write_event(
+        "event.player_now_playing_progress",
+        {
+            "player_id": player.player_id,
+            "cur_pos": 113000,
+            "duration": 210000,
+        },
+    )
     await signal.wait()
     await heos.disconnect()
 
@@ -599,8 +610,7 @@ async def test_repeat_mode_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = await get_fixture("event.repeat_mode_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.repeat_mode_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -629,8 +639,7 @@ async def test_shuffle_mode_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = await get_fixture("event.shuffle_mode_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.shuffle_mode_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -658,8 +667,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     mock_device.register(
         const.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
     )
-    event_to_raise = await get_fixture("event.players_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.players_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -697,7 +705,7 @@ async def test_players_changed_event_new_ids(
         "player.get_players_firmware_update",
         replace=True,
     )
-    await mock_device.write_event(await get_fixture("event.players_changed"))
+    await mock_device.write_event("event.players_changed")
     await signal.wait()
     # Assert players are the same as before just updated.
     assert len(heos.players) == 2
@@ -728,8 +736,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
         "browse.get_music_sources_changed",
         replace=True,
     )
-    event_to_raise = await get_fixture("event.sources_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.sources_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -753,8 +760,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
     mock_device.register(
         const.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
     )
-    event_to_raise = await get_fixture("event.groups_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.groups_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -777,8 +783,7 @@ async def test_player_playback_error_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = await get_fixture("event.player_playback_error")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.player_playback_error")
 
     # Wait until the signal is set
     await signal.wait()
@@ -801,8 +806,7 @@ async def test_player_queue_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = await get_fixture("event.player_queue_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.player_queue_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -828,8 +832,7 @@ async def test_group_volume_changed_event(
     heos.dispatcher.connect(const.SIGNAL_GROUP_EVENT, handler)
 
     # Write event through mock device
-    event_to_raise = await get_fixture("event.group_volume_changed")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.group_volume_changed")
 
     # Wait until the signal is set
     await signal.wait()
@@ -848,16 +851,14 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Test signed out event
-    event_to_raise = await get_fixture("event.user_changed_signed_out")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.user_changed_signed_out")
     await signal.wait()
     assert not heos.is_signed_in
     assert not heos.signed_in_username
 
     # Test signed in event
     signal.clear()
-    event_to_raise = await get_fixture("event.user_changed_signed_in")
-    await mock_device.write_event(event_to_raise)
+    await mock_device.write_event("event.user_changed_signed_in")
     await signal.wait()
     assert heos.is_signed_in
     assert heos.signed_in_username == "example@example.com"  # type: ignore[unreachable]
