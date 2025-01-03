@@ -204,9 +204,7 @@ class ConnectionBase:
     async def connect(self) -> None:
         """Connect to the HEOS device."""
         if self._state is const.STATE_CONNECTED:
-            raise HeosError(
-                "Connect can only be called when the state is not connected."
-            )
+            return
         # Open the connection to the host
         try:
             reader, self._writer = await asyncio.wait_for(
@@ -322,8 +320,6 @@ class ResponseEvent:
 
     def set(self, response: HeosMessage) -> None:
         """Set the response."""
-        if response is None:
-            raise ValueError("Response must not be None")
         self._response = response
         self._event.set()
 

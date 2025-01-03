@@ -62,7 +62,11 @@ async def test_validate_connection(mock_device: MockHeosDevice) -> None:
 
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
-    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1))
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1, heart_beat=False
+        )
+    )
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     await heos.connect()
     await signal.wait()
@@ -78,7 +82,7 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
 @calls_command("system.check_account_logged_out", replace=True)
 async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
     """Test signed-in status shows correctly when logged out."""
-    heos = await Heos.create_and_connect("127.0.0.1")
+    heos = await Heos.create_and_connect("127.0.0.1", heart_beat=False)
     assert not heos.is_signed_in
     assert not heos.signed_in_username
     await heos.disconnect()
@@ -91,7 +95,9 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
 async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
     """Test heos signs-in when credentials provided."""
     credentials = Credentials("example@example.com", "example")
-    heos = await Heos.create_and_connect("127.0.0.1", credentials=credentials)
+    heos = await Heos.create_and_connect(
+        "127.0.0.1", credentials=credentials, heart_beat=False
+    )
     assert heos.is_signed_in
     assert heos.signed_in_username == "example@example.com"
     await heos.disconnect()
@@ -106,7 +112,7 @@ async def test_connect_with_bad_credentials_raises_event(
 ) -> None:
     """Test event raised when bad credentials supplied."""
     credentials = Credentials("example@example.com", "example")
-    heos = Heos(HeosOptions("127.0.0.1", credentials=credentials))
+    heos = Heos(HeosOptions("127.0.0.1", credentials=credentials, heart_beat=False))
 
     signal = asyncio.Event()
 
@@ -125,10 +131,11 @@ async def test_connect_with_bad_credentials_raises_event(
     await heos.disconnect()
 
 
-async def test_heart_beat(mock_device: MockHeosDevice) -> None:
+@calls_command("system.heart_beat")
+async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     """Test heart beat fires at interval."""
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
-    await asyncio.sleep(0.2)
+    await asyncio.sleep(0.3)
 
     mock_device.assert_command_called(const.COMMAND_HEART_BEAT)
 
@@ -137,7 +144,7 @@ async def test_heart_beat(mock_device: MockHeosDevice) -> None:
 
 async def test_connect_fails() -> None:
     """Test connect fails when host not available."""
-    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1))
+    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, heart_beat=False))
     with pytest.raises(HeosError) as e_info:
         await heos.connect()
     assert isinstance(e_info.value.__cause__, ConnectionRefusedError)
@@ -150,7 +157,7 @@ async def test_connect_fails() -> None:
 
 async def test_connect_timeout() -> None:
     """Test connect fails when host not available."""
-    heos = Heos(HeosOptions("172.0.0.1", timeout=0.1))
+    heos = Heos(HeosOptions("172.0.0.1", timeout=0.1, heart_beat=False))
     with pytest.raises(HeosError) as e_info:
         await heos.connect()
     assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
@@ -159,6 +166,24 @@ async def test_connect_timeout() -> None:
         await heos.connect()
     assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
     await heos.disconnect()
+
+
+@pytest.mark.usefixtures("mock_device")
+async def test_connect_multiple_succeeds() -> None:
+    """Test calling connect multiple times succeeds."""
+    heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, heart_beat=False))
+    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    try:
+        await heos.connect()
+        await signal.wait()
+        assert heos.connection_state == const.STATE_CONNECTED
+        signal.clear()
+
+        # Try calling again
+        await heos.connect()
+        assert not signal.is_set()
+    finally:
+        await heos.disconnect()
 
 
 async def test_disconnect(mock_device: MockHeosDevice, heos: Heos) -> None:
@@ -265,6 +290,7 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
             timeout=0.1,
             auto_reconnect=True,
             auto_reconnect_delay=0.1,
+            heart_beat=False,
         )
     )
 
@@ -284,10 +310,8 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     # Act
     await mock_device.stop()
     await mock_device.start()
-    with pytest.raises(CommandError) as e_info:
+    with pytest.raises(CommandError, match="Connection lost"):
         await heos.get_players()
-    assert str(e_info.value) == "Command timed out"
-    assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
 
     # Assert signals set
     await disconnect_signal.wait()
@@ -305,6 +329,7 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
             timeout=0.1,
             auto_reconnect=True,
             auto_reconnect_delay=0.1,
+            heart_beat=False,
         )
     )
 
@@ -549,7 +574,9 @@ async def test_player_now_playing_progress_event(
 async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> None:
     """Test progress updates only once if no other events."""
     # assert not playing
-    heos = await Heos.create_and_connect("127.0.0.1", all_progress_events=False)
+    heos = await Heos.create_and_connect(
+        "127.0.0.1", all_progress_events=False, heart_beat=False
+    )
     await heos.get_players()
     player = heos.players[1]
 
@@ -1199,10 +1226,17 @@ async def test_get_now_playing_media(heos: Heos) -> None:
     assert media.supported_controls == const.CONTROLS_ALL
 
 
-async def test_reboot(mock_device: MockHeosDevice) -> None:
+@calls_command("system.heart_beat")
+async def test_heart_beat(heos: Heos) -> None:
+    """Test the heart beat command."""
+    await heos.heart_beat()
+
+
+@pytest.mark.usefixtures("mock_device")
+async def test_reboot() -> None:
     """Test rebooting the device."""
     heos = await Heos.create_and_connect(
-        "127.0.0.1", auto_reconnect=True, auto_reconnect_delay=0.2
+        "127.0.0.1", auto_reconnect=True, auto_reconnect_delay=0.2, heart_beat=False
     )
 
     try:
