@@ -3,7 +3,7 @@
 import asyncio
 import functools
 import json
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, cast
@@ -23,12 +23,14 @@ class CallCommand:
         fixture: The name of the json fixture to load. The command will be determiend from this file.
         command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
         when: Only registers the command if the test method arguments match the provided values.
+        replace: Replace any existing command matchers. The default is False.
         assert_called: Assert the command was called after test execution. The default is True.
     """
 
     fixture: str
     command_args: dict[str, Any] | None = None
     when: dict[str, Any] | None = None
+    replace: bool = False
     assert_called: bool = True
 
     def get_resolve_args(self, args: dict[str, Any]) -> dict[str, Any] | None:
@@ -124,7 +126,10 @@ def calls_commands(*commands: CallCommand) -> Callable:
                 resolved_args = command.get_resolve_args(kwargs)
 
                 mock_device.register(
-                    command_name, resolved_args, command.fixture, replace=True
+                    command_name,
+                    resolved_args,
+                    command.fixture,
+                    replace=command.replace,
                 )
 
                 # Store item to assert later (so we don't need to keep a copy of the resolved args)
@@ -161,9 +166,10 @@ def value(
 
 def calls_command(
     fixture: str,
-    command_args: dict[str, Any],
+    command_args: dict[str, Any] | None = None,
     assert_called: bool = True,
     when: dict[str, Any] | None = None,
+    replace: bool = False,
 ) -> Callable:
     """
     Decorator that registers a command prior to test execution.
@@ -173,8 +179,46 @@ def calls_command(
         command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
         when: Only registers the command if the test method arguments match the provided values.
         assert_called: Assert the command was called after test execution. The default is True.
+        replace: Replace any existing command matchers. The default is False.
     """
-    return calls_commands(CallCommand(fixture, command_args, when, assert_called))
+    return calls_commands(
+        CallCommand(fixture, command_args, when, replace, assert_called)
+    )
+
+
+def calls_player_commands(
+    player_ids: Sequence[int] = (1, 2), *additional: CallCommand
+) -> Callable:
+    """
+    Decorator that registers player commands and any optional additional commands.
+    """
+    commands = [
+        CallCommand("player.get_players"),
+    ]
+    for player_id in player_ids:
+        commands.extend(
+            [
+                CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand(
+                    "player.get_now_playing_media", {const.ATTR_PLAYER_ID: player_id}
+                ),
+                CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: player_id}),
+            ]
+        )
+    commands.extend(additional)
+    return calls_commands(*commands)
+
+
+def calls_group_commands(*additional: CallCommand) -> Callable:
+    commands = [
+        CallCommand("group.get_groups"),
+        CallCommand("group.get_volume", {const.ATTR_GROUP_ID: 1}),
+        CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
+    ]
+    commands.extend(additional)
+    return calls_player_commands((1, 2), *commands)
 
 
 async def get_fixture(file: str) -> str:
@@ -227,17 +271,18 @@ class MockHeosDevice:
 
         self.register(const.COMMAND_HEART_BEAT, None, "system.heart_beat")
         self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
-        self.register(const.COMMAND_GET_PLAYERS, None, "player.get_players")
-        self.register(const.COMMAND_GET_PLAY_STATE, None, "player.get_play_state")
-        self.register(
-            const.COMMAND_GET_NOW_PLAYING_MEDIA, None, "player.get_now_playing_media"
-        )
-        self.register(const.COMMAND_GET_VOLUME, None, "player.get_volume")
-        self.register(const.COMMAND_GET_MUTE, None, "player.get_mute")
-        self.register(const.COMMAND_GET_PLAY_MODE, None, "player.get_play_mode")
-        self.register(const.COMMAND_GET_GROUPS, None, "group.get_groups")
-        self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
-        self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
+
+        # self.register(const.COMMAND_GET_PLAYERS, None, "player.get_players")
+        # self.register(const.COMMAND_GET_PLAY_STATE, None, "player.get_play_state")
+        # self.register(
+        #     const.COMMAND_GET_NOW_PLAYING_MEDIA, None, "player.get_now_playing_media"
+        # )
+        # self.register(const.COMMAND_GET_VOLUME, None, "player.get_volume")
+        # self.register(const.COMMAND_GET_MUTE, None, "player.get_mute")
+        # self.register(const.COMMAND_GET_PLAY_MODE, None, "player.get_play_mode")
+        # self.register(const.COMMAND_GET_GROUPS, None, "group.get_groups")
+        # self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
+        # self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
 
     async def stop(self) -> None:
         """Stop the heos server."""

@@ -14,7 +14,16 @@ from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 from tests.common import MediaItems
 
-from . import MockHeosDevice, calls_command, connect_handler, get_fixture
+from . import (
+    CallCommand,
+    MockHeosDevice,
+    calls_command,
+    calls_commands,
+    calls_group_commands,
+    calls_player_commands,
+    connect_handler,
+    get_fixture,
+)
 
 
 async def test_init() -> None:
@@ -26,6 +35,7 @@ async def test_init() -> None:
     assert heos.connection_state == const.STATE_DISCONNECTED
 
 
+@calls_command("player.get_players")
 async def test_validate_connection(mock_device: MockHeosDevice) -> None:
     """Test get_system_info method returns system info."""
     system_info = await Heos.validate_connection("127.0.0.1")
@@ -57,7 +67,6 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     await heos.connect()
     await signal.wait()
-    # Assert 1st connection is used for commands
     assert heos.connection_state == const.STATE_CONNECTED
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
@@ -67,54 +76,36 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
     await heos.disconnect()
 
 
+@calls_command("system.check_account_logged_out", replace=True)
 async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
     """Test signed-in status shows correctly when logged out."""
-    mock_device.register(
-        const.COMMAND_ACCOUNT_CHECK,
-        None,
-        "system.check_account_logged_out",
-        replace=True,
-    )
     heos = await Heos.create_and_connect("127.0.0.1")
     assert not heos.is_signed_in
     assert not heos.signed_in_username
-
     await heos.disconnect()
 
 
+@calls_command(
+    "system.sign_in",
+    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+)
 async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
     """Test heos signs-in when credentials provided."""
-    data = {
-        const.ATTR_USER_NAME: "example@example.com",
-        const.ATTR_PASSWORD: "example",
-    }
-    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in")
-
     credentials = Credentials("example@example.com", "example")
-
     heos = await Heos.create_and_connect("127.0.0.1", credentials=credentials)
-
     assert heos.is_signed_in
     assert heos.signed_in_username == "example@example.com"
-
     await heos.disconnect()
 
 
+@calls_command(
+    "system.sign_in_failure",
+    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+)
 async def test_connect_with_bad_credentials_raises_event(
     mock_device: MockHeosDevice,
 ) -> None:
     """Test event raised when bad credentials supplied."""
-    data = {
-        const.ATTR_USER_NAME: "example@example.com",
-        const.ATTR_PASSWORD: "example",
-    }
-    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
-    mock_device.register(
-        const.COMMAND_ACCOUNT_CHECK,
-        None,
-        "system.check_account_logged_out",
-        replace=True,
-    )
     credentials = Credentials("example@example.com", "example")
     heos = Heos(HeosOptions("127.0.0.1", credentials=credentials))
 
@@ -138,12 +129,9 @@ async def test_connect_with_bad_credentials_raises_event(
 async def test_heart_beat(mock_device: MockHeosDevice) -> None:
     """Test heart beat fires at interval."""
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
-
     await asyncio.sleep(0.2)
 
-    connection = mock_device.connections[0]
-
-    connection.assert_command_called(const.COMMAND_HEART_BEAT)
+    mock_device.connections[0].assert_command_called(const.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -346,7 +334,8 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     assert heos.connection_state == const.STATE_DISCONNECTED
 
 
-async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_player_commands()
+async def test_get_players(heos: Heos) -> None:
     """Test the get_players method load players."""
     await heos.get_players()
     # Assert players loaded
@@ -368,20 +357,14 @@ async def test_get_players(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert player.heos == heos
 
 
-async def test_get_players_error(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("player.get_players_error")
+async def test_get_players_error(heos: Heos) -> None:
     """Test the get_players method load players."""
-    mock_device.register(
-        const.COMMAND_GET_PLAYERS, None, "player.get_players_error", replace=True
-    )
-
-    with pytest.raises(CommandFailedError) as e_info:
+    with pytest.raises(CommandFailedError, match=re.escape("System error -519 (12)")):
         await heos.get_players()
-    assert str(e_info.value) == "System error -519 (12)"
-    assert e_info.value.command == const.COMMAND_GET_PLAYERS
-    assert e_info.value.error_id == 12
-    assert e_info.value.error_text == "System error -519"
 
 
+@calls_player_commands()
 async def test_player_state_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -416,6 +399,7 @@ async def test_player_state_changed_event(
     assert heos.players[2].state == const.PLAY_STATE_STOP
 
 
+@calls_player_commands()
 async def test_player_now_playing_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -477,6 +461,7 @@ async def test_player_now_playing_changed_event(
     assert now_playing.supported_controls == const.CONTROLS_FORWARD_ONLY
 
 
+@calls_player_commands()
 async def test_player_volume_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -515,6 +500,7 @@ async def test_player_volume_changed_event(
     assert not heos.players[2].is_muted
 
 
+@calls_player_commands()
 async def test_player_now_playing_progress_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -557,6 +543,7 @@ async def test_player_now_playing_progress_event(
     assert player2.now_playing_media.current_position_updated is None
 
 
+@calls_player_commands()
 async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> None:
     """Test progress updates only once if no other events."""
     # assert not playing
@@ -591,6 +578,7 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
     await heos.disconnect()
 
 
+@calls_player_commands()
 async def test_repeat_mode_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -620,6 +608,7 @@ async def test_repeat_mode_changed_event(
     assert player.repeat == const.RepeatType.ON_ALL  # type: ignore[comparison-overlap]
 
 
+@calls_player_commands()
 async def test_shuffle_mode_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -649,6 +638,7 @@ async def test_shuffle_mode_changed_event(
     assert player.shuffle
 
 
+@calls_player_commands((1, 2, 3))
 async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test players are resynced when event received."""
     # assert not playing
@@ -683,6 +673,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.players[1].name == "Backyard"
 
 
+@calls_player_commands()
 async def test_players_changed_event_new_ids(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -718,11 +709,9 @@ async def test_players_changed_event_new_ids(
     assert heos.players[102].name == "Front Porch"
 
 
+@calls_player_commands((1, 2), CallCommand("browse.get_music_sources"))
 async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test sources changed fires dispatcher."""
-    mock_device.register(
-        const.COMMAND_BROWSE_GET_SOURCES, None, "browse.get_music_sources"
-    )
     await heos.get_music_sources()
     signal = asyncio.Event()
 
@@ -747,6 +736,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.music_sources[const.MUSIC_SOURCE_TUNEIN].available
 
 
+@calls_group_commands()
 async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test groups changed fires dispatcher."""
     groups = await heos.get_groups()
@@ -771,6 +761,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
     assert not await heos.get_groups()
 
 
+@calls_player_commands()
 async def test_player_playback_error_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -794,6 +785,7 @@ async def test_player_playback_error_event(
     assert heos.players[1].playback_error == "Could Not Download"
 
 
+@calls_player_commands()
 async def test_player_queue_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -816,6 +808,7 @@ async def test_player_queue_changed_event(
     await signal.wait()
 
 
+@calls_group_commands()
 async def test_group_volume_changed_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -870,20 +863,15 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     assert heos.signed_in_username == "example@example.com"  # type: ignore[unreachable]
 
 
+@calls_command(
+    "browse.browse_favorites", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
+)
 async def test_browse_media_music_source(
-    mock_device: MockHeosDevice,
     heos: Heos,
     media_music_source: MediaMusicSource,
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
-        "browse.browse_favorites",
-    )
-
     result = await heos.browse_media(media_music_source)
-
     assert result.source_id == const.MUSIC_SOURCE_FAVORITES
     assert result.returned == 3
     assert result.count == 3
@@ -891,7 +879,6 @@ async def test_browse_media_music_source(
 
 
 async def test_browse_media_music_source_unavailable_rasises(
-    mock_device: MockHeosDevice,
     heos: Heos,
     media_music_source_unavailable: MediaMusicSource,
 ) -> None:
@@ -900,20 +887,16 @@ async def test_browse_media_music_source_unavailable_rasises(
         await heos.browse_media(media_music_source_unavailable)
 
 
-async def test_browse_media_item(
-    mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
-) -> None:
+@calls_command(
+    "browse.browse_album",
+    {
+        const.ATTR_SOURCE_ID: MediaItems.ALBUM.source_id,
+        const.ATTR_CONTAINER_ID: MediaItems.ALBUM.container_id,
+        const.ATTR_RANGE: "0,13",
+    },
+)
+async def test_browse_media_item(heos: Heos, media_item_album: MediaItem) -> None:
     """Test browse with an not browsable MediaItem raises."""
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {
-            const.ATTR_SOURCE_ID: media_item_album.source_id,
-            const.ATTR_CONTAINER_ID: media_item_album.container_id,
-            const.ATTR_RANGE: "0,13",
-        },
-        "browse.browse_album",
-    )
-
     result = await heos.browse_media(media_item_album, 0, 13)
 
     assert result.source_id == media_item_album.source_id
@@ -924,7 +907,7 @@ async def test_browse_media_item(
 
 
 async def test_browse_media_item_not_browsable_raises(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
+    heos: Heos, media_item_song: MediaItem
 ) -> None:
     """Test browse with an not browsable MediaItem raises."""
     with pytest.raises(
@@ -934,7 +917,7 @@ async def test_browse_media_item_not_browsable_raises(
 
 
 async def test_play_media_unplayable_raises(
-    mock_device: MockHeosDevice, heos: Heos, media_item_album: MediaItem
+    heos: Heos, media_item_album: MediaItem
 ) -> None:
     """Test play media with unplayable source raises."""
     media_item_album.playable = False
@@ -945,27 +928,23 @@ async def test_play_media_unplayable_raises(
         await heos.play_media(1, media_item_album, const.AddCriteriaType.PLAY_NOW)
 
 
-async def test_play_media_song(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
-) -> None:
+@calls_command(
+    "browse.add_to_queue_track",
+    {
+        const.ATTR_PLAYER_ID: "1",
+        const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
+        const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
+        const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
+        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+    },
+)
+async def test_play_media_song(heos: Heos, media_item_song: MediaItem) -> None:
     """Test play song succeeseds."""
-    mock_device.register(
-        const.COMMAND_BROWSE_ADD_TO_QUEUE,
-        {
-            const.ATTR_PLAYER_ID: "1",
-            const.ATTR_SOURCE_ID: str(media_item_song.source_id),
-            const.ATTR_CONTAINER_ID: media_item_song.container_id,
-            const.ATTR_MEDIA_ID: media_item_song.media_id,
-            const.ATTR_ADD_CRITERIA_ID: str(const.AddCriteriaType.PLAY_NOW),
-        },
-        "browse.add_to_queue_track",
-    )
-
     await heos.play_media(1, media_item_song)
 
 
 async def test_play_media_song_missing_container_raises(
-    mock_device: MockHeosDevice, heos: Heos, media_item_song: MediaItem
+    heos: Heos, media_item_song: MediaItem
 ) -> None:
     """Test play song succeeseds."""
     media_item_song.container_id = None
@@ -990,26 +969,22 @@ async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None
     await heos.play_media(1, media_item_input)
 
 
-async def test_play_media_station(
-    mock_device: MockHeosDevice, heos: Heos, media_item_station: MediaItem
-) -> None:
+@calls_command(
+    "browse.play_stream_station",
+    {
+        const.ATTR_PLAYER_ID: "1",
+        const.ATTR_SOURCE_ID: MediaItems.STATION.source_id,
+        const.ATTR_CONTAINER_ID: MediaItems.STATION.container_id,
+        const.ATTR_MEDIA_ID: MediaItems.STATION.media_id,
+    },
+)
+async def test_play_media_station(heos: Heos, media_item_station: MediaItem) -> None:
     """Test play song succeeseds."""
-    mock_device.register(
-        const.COMMAND_BROWSE_PLAY_STREAM,
-        {
-            const.ATTR_PLAYER_ID: "1",
-            const.ATTR_SOURCE_ID: media_item_station.source_id,
-            const.ATTR_CONTAINER_ID: media_item_station.container_id,
-            const.ATTR_MEDIA_ID: media_item_station.media_id,
-        },
-        "browse.play_stream_station",
-    )
-
     await heos.play_media(1, media_item_station)
 
 
 async def test_play_media_station_missing_media_id_raises(
-    mock_device: MockHeosDevice, heos: Heos, media_item_station: MediaItem
+    heos: Heos, media_item_station: MediaItem
 ) -> None:
     """Test play song succeeseds."""
     media_item_station.media_id = None
@@ -1021,12 +996,9 @@ async def test_play_media_station_missing_media_id_raises(
         await heos.play_media(1, media_item_station)
 
 
-async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("browse.get_music_sources")
+async def test_get_music_sources(heos: Heos) -> None:
     """Test the heos connect method."""
-    mock_device.register(
-        const.COMMAND_BROWSE_GET_SOURCES, None, "browse.get_music_sources"
-    )
-
     sources = await heos.get_music_sources()
     assert len(sources) == 15
     pandora = sources[const.MUSIC_SOURCE_PANDORA]
@@ -1040,24 +1012,15 @@ async def test_get_music_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
     assert pandora.service_username == "test@test.com"
 
 
-async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_commands(
+    CallCommand(
+        "browse.browse_aux_input", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_AUX_INPUT}
+    ),
+    CallCommand("browse.browse_theater_receiver", {const.ATTR_SOURCE_ID: 546978854}),
+    CallCommand("browse.browse_heos_drive", {const.ATTR_SOURCE_ID: -263109739}),
+)
+async def test_get_input_sources(heos: Heos) -> None:
     """Test the get input sources method."""
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: "1027"},
-        "browse.browse_aux_input",
-    )
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: "546978854"},
-        "browse.browse_theater_receiver",
-    )
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: "-263109739"},
-        "browse.browse_heos_drive",
-    )
-
     sources = await heos.get_input_sources()
     assert len(sources) == 18
     source = sources[0]
@@ -1068,14 +1031,11 @@ async def test_get_input_sources(mock_device: MockHeosDevice, heos: Heos) -> Non
     assert source.source_id == 546978854
 
 
-async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command(
+    "browse.browse_favorites", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
+)
+async def test_get_favorites(heos: Heos) -> None:
     """Test the get favorites method."""
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: "1028"},
-        "browse.browse_favorites",
-    )
-
     sources = await heos.get_favorites()
     assert len(sources) == 3
     assert sorted(sources.keys()) == [1, 2, 3]
@@ -1090,13 +1050,11 @@ async def test_get_favorites(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert fav.type == const.MediaType.STATION
 
 
-async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command(
+    "browse.browse_playlists", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS}
+)
+async def test_get_playlists(heos: Heos) -> None:
     """Test the get playlists method."""
-    mock_device.register(
-        const.COMMAND_BROWSE_BROWSE,
-        {const.ATTR_SOURCE_ID: "1025"},
-        "browse.browse_playlists",
-    )
     sources = await heos.get_playlists()
     assert len(sources) == 1
     playlist = sources[0]
@@ -1108,42 +1066,35 @@ async def test_get_playlists(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert playlist.source_id == const.MUSIC_SOURCE_PLAYLISTS
 
 
-async def test_sign_in_does_not_update_credentials(
-    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
-) -> None:
+@calls_command(
+    "system.sign_in",
+    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+)
+async def test_sign_in_does_not_update_credentials(heos: Heos) -> None:
     """Test sign-in does not update existing credentials."""
     assert heos.current_credentials is None
-    data = {
-        const.ATTR_USER_NAME: "example@example.com",
-        const.ATTR_PASSWORD: "example",
-    }
     # Sign-in, do not update credentials
-    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
-    await heos.sign_in(
-        data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD], update_credential=False
-    )
-    assert heos.signed_in_username == data[const.ATTR_USER_NAME]
+    await heos.sign_in("example@example.com", "example", update_credential=False)
+    assert heos.signed_in_username == "example@example.com"
     assert heos.current_credentials is None
 
 
-async def test_sign_in_and_out(
-    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
-) -> None:
+@calls_commands(
+    CallCommand("system.sign_out"),
+    CallCommand(
+        "system.sign_in_failure",
+        {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+    ),
+)
+async def test_sign_in_and_out(heos: Heos, caplog: pytest.LogCaptureFixture) -> None:
     """Test the sign in and sign out methods and ensure log is masked."""
     # Test sign-out (Heos will already be logged in initially)
-    mock_device.register(const.COMMAND_SIGN_OUT, None, "system.sign_out")
     await heos.sign_out()
     assert heos.signed_in_username is None
 
-    data = {
-        const.ATTR_USER_NAME: "example@example.com",
-        const.ATTR_PASSWORD: "example",
-    }
-
     # Test sign-in failure
-    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in_failure")
     with pytest.raises(CommandFailedError, match="User not found"):
-        await heos.sign_in(data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD])
+        await heos.sign_in("example@example.com", "example")
     assert (
         "Command failed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
@@ -1151,17 +1102,33 @@ async def test_sign_in_and_out(
     assert heos.current_credentials is None
     assert heos.signed_in_username is None
 
+
+@calls_commands(
+    CallCommand("system.sign_out"),
+    CallCommand(
+        "system.sign_in",
+        {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+    ),
+)
+async def test_sign_in_updates_credential(
+    heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test the credential is updated when indicated."""
+    # Test sign-out (Heos will already be logged in initially)
+    await heos.sign_out()
+    assert heos.current_credentials is None
+    assert heos.signed_in_username is None
+
     # Test sign-in success and credential set
-    mock_device.register(const.COMMAND_SIGN_IN, data, "system.sign_in", replace=True)
-    await heos.sign_in(data[const.ATTR_USER_NAME], data[const.ATTR_PASSWORD])
+    await heos.sign_in("example@example.com", "example")
     assert (
         "Command executed 'heos://system/sign_in?un=example@example.com&pw=********':"
         in caplog.text
     )
-    assert heos.signed_in_username == data[const.ATTR_USER_NAME]
+    assert heos.signed_in_username == "example@example.com"
     assert heos.current_credentials is not None
-    assert heos.current_credentials.username == data[const.ATTR_USER_NAME]  # type: ignore[unreachable]
-    assert heos.current_credentials.password == data[const.ATTR_PASSWORD]
+    assert heos.current_credentials.username == "example@example.com"  # type: ignore[unreachable]
+    assert heos.current_credentials.password == "example"
 
     # Test sign-out does not clear credential
     await heos.sign_out(update_credential=False)
@@ -1169,7 +1136,8 @@ async def test_sign_in_and_out(
     assert heos.current_credentials is not None
 
 
-async def test_get_groups(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_group_commands()
+async def test_get_groups(heos: Heos) -> None:
     """Test the get groups method."""
     groups = await heos.get_groups()
     assert len(groups) == 1
@@ -1183,22 +1151,19 @@ async def test_get_groups(mock_device: MockHeosDevice, heos: Heos) -> None:
     assert not group.is_muted
 
 
-async def test_create_group(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("group.set_group_create", {const.ATTR_PLAYER_ID: "1,2,3"})
+async def test_create_group(heos: Heos) -> None:
     """Test creating a group."""
-    data = {const.ATTR_PLAYER_ID: "1,2,3"}
-    mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_create")
     await heos.create_group(1, [2, 3])
 
 
-async def test_remove_group(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("group.set_group_remove", {const.ATTR_PLAYER_ID: 1})
+async def test_remove_group(heos: Heos) -> None:
     """Test removing a group."""
-    data = {const.ATTR_PLAYER_ID: "1"}
-    mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_remove")
     await heos.remove_group(1)
 
 
-async def test_update_group(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("group.set_group_update", {const.ATTR_PLAYER_ID: "1,2"})
+async def test_update_group(heos: Heos) -> None:
     """Test removing a group."""
-    data = {const.ATTR_PLAYER_ID: "1,2"}
-    mock_device.register(const.COMMAND_SET_GROUP, data, "group.set_group_update")
     await heos.update_group(1, [2])
