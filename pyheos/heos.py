@@ -8,6 +8,7 @@ from typing import Any, Final, cast
 
 from pyheos.command import HeosCommands
 from pyheos.command.browse import BrowseCommands
+from pyheos.command.player import PlayerCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.media import (
@@ -22,7 +23,7 @@ from . import const
 from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
-from .player import HeosPlayer
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ConnectionMixin:
 
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the ConnectionMixin."""
-
+        self._options = options
         self._connection = AutoReconnectingConnection(
             options.host,
             timeout=options.timeout,
@@ -310,7 +311,199 @@ class BrowseMixin(ConnectionMixin):
             )
 
 
-class Heos(BrowseMixin):
+class PlayerMixin(ConnectionMixin):
+    """A mixin to provide access to the player commands."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(PlayerMixin, self).__init__(*args, **kwargs)
+
+        self._players: dict[int, HeosPlayer] = {}
+        self._players_loaded = False
+
+    @property
+    def players(self) -> dict[int, HeosPlayer]:
+        """Get the loaded players."""
+        return self._players
+
+    async def get_players(self, *, refresh: bool = False) -> dict[int, HeosPlayer]:
+        """Get available players.
+
+        References:
+            4.2.1 Get Players"""
+        # get players and pull initial state
+        if not self._players_loaded or refresh:
+            await self.load_players()
+        return self._players
+
+    async def load_players(self) -> dict[str, list | dict]:
+        """Refresh the players."""
+        new_player_ids = []
+        mapped_player_ids = {}
+        players = {}
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        existing = list(self._players.values())
+        for player_data in payload:
+            player_id = player_data[const.ATTR_PLAYER_ID]
+            name = player_data[const.ATTR_NAME]
+            version = player_data[const.ATTR_VERSION]
+            # Try finding existing player by id or match name when firmware
+            # version is different because IDs change after a firmware upgrade
+            player = next(
+                (
+                    player
+                    for player in existing
+                    if player.player_id == player_id
+                    or (player.name == name and player.version != version)
+                ),
+                None,
+            )
+            if player:
+                # Existing player matched - update
+                if player.player_id != player_id:
+                    mapped_player_ids[player_id] = player.player_id
+                player.from_data(player_data)
+                players[player_id] = player
+                existing.remove(player)
+            else:
+                # New player
+                player = HeosPlayer(cast("Heos", self), player_data)
+                new_player_ids.append(player_id)
+                players[player_id] = player
+        # For any item remaining in existing, mark unavailalbe, add to updated
+        for player in existing:
+            player.set_available(False)
+            players[player.player_id] = player
+
+        # Update all statuses
+        await asyncio.gather(
+            *[player.refresh() for player in players.values() if player.available]
+        )
+        self._players = players
+        self._players_loaded = True
+        return {
+            const.DATA_NEW: new_player_ids,
+            const.DATA_MAPPED_IDS: mapped_player_ids,
+        }
+
+    async def player_get_state(self, player_id: int) -> str:
+        """Get the state of the player.
+
+        References:
+            4.2.3 Get Play State"""
+        response = await self._connection.command(
+            PlayerCommands.get_player_state(player_id)
+        )
+        return response.get_message_value(const.ATTR_STATE)
+
+    async def player_set_state(self, player_id: int, state: str) -> None:
+        """Set the state of the player.
+
+        References:
+            4.2.4 Set Play State"""
+        await self._connection.command(
+            PlayerCommands.set_player_state(player_id, state)
+        )
+
+    async def get_now_playing_media(
+        self, player_id: int, update: HeosNowPlayingMedia | None = None
+    ) -> HeosNowPlayingMedia:
+        """Get the now playing media information.
+
+        Args:
+            player_id: The identifier of the player to get the now playing media.
+            update: The current now playing media information to update. If not provided, a new instance will be created.
+
+        Returns:
+            A HeosNowPlayingMedia instance containing the now playing media information.
+
+        References:
+            4.2.5 Get Now Playing Media"""
+        result = await self._connection.command(
+            PlayerCommands.get_now_playing_media(player_id)
+        )
+        if update:
+            update.update_from_data(result)
+            return update
+        return HeosNowPlayingMedia.from_data(result)
+
+    async def player_get_volume(self, player_id: int) -> int:
+        """Get the volume level of the player.
+
+        References:
+            4.2.6 Get Volume"""
+        result = await self._connection.command(PlayerCommands.get_volume(player_id))
+        return result.get_message_value_int(const.ATTR_LEVEL)
+
+    async def player_set_volume(self, player_id: int, level: int) -> None:
+        """Set the volume of the player.
+
+        References:
+            4.2.7 Set Volume"""
+        await self._connection.command(PlayerCommands.set_volume(player_id, level))
+
+    async def player_volume_up(
+        self, player_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.8 Volume Up"""
+        await self._connection.command(PlayerCommands.volume_up(player_id, step))
+
+    async def player_volume_down(
+        self, player_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.9 Volume Down"""
+        await self._connection.command(PlayerCommands.volume_down(player_id, step))
+
+    async def player_get_mute(self, player_id: int) -> bool:
+        """Get the mute state of the player.
+
+        References:
+            4.2.10 Get Mute"""
+        result = await self._connection.command(PlayerCommands.get_mute(player_id))
+        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+
+    async def player_set_mute(self, player_id: int, state: bool) -> None:
+        """Set the mute state of the player.
+
+        References:
+            4.2.11 Set Mute"""
+        await self._connection.command(PlayerCommands.set_mute(player_id, state))
+
+    async def player_toggle_mute(self, player_id: int) -> None:
+        """Toggle the mute state.
+
+        References:
+            4.2.12 Toggle Mute"""
+        await self._connection.command(PlayerCommands.toggle_mute(player_id))
+
+    async def player_get_play_mode(self, player_id: int) -> PlayMode:
+        """Get the play mode of the player.
+
+        References:
+            4.2.13 Get Play Mode"""
+        result = await self._connection.command(PlayerCommands.get_play_mode(player_id))
+        return PlayMode.from_data(result)
+
+    async def player_set_play_mode(
+        self, player_id: int, repeat: const.RepeatType, shuffle: bool
+    ) -> None:
+        """Set the play mode of the player.
+
+        References:
+            4.2.14 Set Play Mode"""
+        await self._connection.command(
+            PlayerCommands.set_play_mode(player_id, repeat, shuffle)
+        )
+
+
+class Heos(BrowseMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod
@@ -355,7 +548,6 @@ class Heos(BrowseMixin):
         """Init a new instance of the Heos CLI API."""
         super(Heos, self).__init__(options)
 
-        self._options = options
         self._current_credentials = options.credentials
         self._connection.add_on_connected(self._on_connected)
         self._connection.add_on_disconnected(self._on_disconnected)
@@ -364,9 +556,6 @@ class Heos(BrowseMixin):
         self._commands = HeosCommands(self._connection)
 
         self._dispatcher = options.dispatcher or Dispatcher()
-
-        self._players: dict[int, HeosPlayer] = {}
-        self._players_loaded = False
 
         self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
@@ -462,6 +651,17 @@ class Heos(BrowseMixin):
         else:
             _LOGGER.debug("Unrecognized event: %s", event)
 
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system.
+
+        References:
+            4.2.1 Get Players"""
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
+
     async def sign_in(
         self, username: str, password: str, *, update_credential: bool = True
     ) -> None:
@@ -488,70 +688,6 @@ class Heos(BrowseMixin):
         self._signed_in_username = None
         if update_credential:
             self._current_credentials = None
-
-    async def get_system_info(self) -> HeosSystem:
-        """Get information about the HEOS system."""
-        payload = await self._commands.get_players()
-        hosts = list([HeosHost.from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
-        return HeosSystem(self._signed_in_username, host, hosts)
-
-    async def load_players(self) -> dict[str, list | dict]:
-        """Refresh the players."""
-        new_player_ids = []
-        mapped_player_ids = {}
-        players = {}
-        payload = await self._commands.get_players()
-        existing = list(self._players.values())
-        for player_data in payload:
-            player_id = player_data[const.ATTR_PLAYER_ID]
-            name = player_data[const.ATTR_NAME]
-            version = player_data[const.ATTR_VERSION]
-            # Try finding existing player by id or match name when firmware
-            # version is different because IDs change after a firmware upgrade
-            player = next(
-                (
-                    player
-                    for player in existing
-                    if player.player_id == player_id
-                    or (player.name == name and player.version != version)
-                ),
-                None,
-            )
-            if player:
-                # Existing player matched - update
-                if player.player_id != player_id:
-                    mapped_player_ids[player_id] = player.player_id
-                player.from_data(player_data)
-                players[player_id] = player
-                existing.remove(player)
-            else:
-                # New player
-                player = HeosPlayer(self, player_data)
-                new_player_ids.append(player_id)
-                players[player_id] = player
-        # For any item remaining in existing, mark unavailalbe, add to updated
-        for player in existing:
-            player.set_available(False)
-            players[player.player_id] = player
-
-        # Update all statuses
-        await asyncio.gather(
-            *[player.refresh() for player in players.values() if player.available]
-        )
-        self._players = players
-        self._players_loaded = True
-        return {
-            const.DATA_NEW: new_player_ids,
-            const.DATA_MAPPED_IDS: mapped_player_ids,
-        }
-
-    async def get_players(self, *, refresh: bool = False) -> dict[int, HeosPlayer]:
-        """Get available players."""
-        # get players and pull initial state
-        if not self._players_loaded or refresh:
-            await self.load_players()
-        return self._players
 
     async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
         """Get available groups."""
@@ -629,11 +765,6 @@ class Heos(BrowseMixin):
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""
         return self._dispatcher
-
-    @property
-    def players(self) -> dict[int, HeosPlayer]:
-        """Get the loaded players."""
-        return self._players
 
     @property
     def groups(self) -> dict[int, HeosGroup]:

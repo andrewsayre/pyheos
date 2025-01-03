@@ -23,7 +23,7 @@ from pyheos.message import HeosCommand
 
 
 class BrowseCommands:
-    """Define handles for browsing commands."""
+    """Define functions for creating browse commands."""
 
     @staticmethod
     def browse(
