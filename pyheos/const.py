@@ -368,6 +368,7 @@ COMMAND_GROUP_VOLUME_DOWN: Final = "group/volume_down"
 COMMAND_REGISTER_FOR_CHANGE_EVENTS: Final = "system/register_for_change_events"
 COMMAND_HEART_BEAT: Final = "system/heart_beat"
 COMMAND_ACCOUNT_CHECK: Final = "system/check_account"
+COMMAND_REBOOT: Final = "system/reboot"
 COMMAND_SIGN_IN: Final = "system/sign_in"
 COMMAND_SIGN_OUT: Final = "system/sign_out"
 

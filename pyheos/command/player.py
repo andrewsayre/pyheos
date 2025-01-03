@@ -1,7 +1,7 @@
 """
-Define the browse command module.
+Define the player command module.
 
-This module creates HEOS browse commands.
+This module creates HEOS player commands.
 
 Commands not currently implemented:
     4.2.2 Get Player Info
