@@ -98,10 +98,13 @@ NETWORK_TYPE_UNKNOWN: Final = "unknown"
 DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"
 
-PLAY_STATE_PLAY: Final = "play"
-PLAY_STATE_PAUSE: Final = "pause"
-PLAY_STATE_STOP: Final = "stop"
-VALID_PLAY_STATES: Final = (PLAY_STATE_PLAY, PLAY_STATE_PAUSE, PLAY_STATE_STOP)
+
+class PlayState(StrEnum):
+    """Define the play states."""
+
+    PLAY = "play"
+    PAUSE = "pause"
+    STOP = "stop"
 
 
 class RepeatType(StrEnum):

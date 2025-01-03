@@ -30,20 +30,20 @@ async def test_str() -> None:
 
 
 @pytest.mark.parametrize(
-    "state", (const.PLAY_STATE_PAUSE, const.PLAY_STATE_PLAY, const.PLAY_STATE_STOP)
+    "state", (const.PlayState.PAUSE, const.PlayState.PLAY, const.PlayState.STOP)
 )
 @calls_command(
     "player.set_play_state",
     {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: value(arg_name="state")},
 )
-async def test_set_state(player: HeosPlayer, state: str) -> None:
+async def test_set_state(player: HeosPlayer, state: const.PlayState) -> None:
     """Test the play, pause, and stop commands."""
     await player.set_state(state)
 
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_PLAY},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.PLAY},
 )
 async def test_set_play(player: HeosPlayer) -> None:
     """Test the pause commands."""
@@ -52,7 +52,7 @@ async def test_set_play(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_PAUSE},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.PAUSE},
 )
 async def test_set_pause(player: HeosPlayer) -> None:
     """Test the play commands."""
@@ -61,7 +61,7 @@ async def test_set_pause(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PLAY_STATE_STOP},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.STOP},
 )
 async def test_set_stop(player: HeosPlayer) -> None:
     """Test the stop commands."""

@@ -346,7 +346,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
     assert player.network == const.NETWORK_TYPE_WIRED
-    assert player.state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.STOP
     assert player.version == "1.493.180"
     assert player.volume == 36
     assert not player.is_muted
@@ -371,7 +371,7 @@ async def test_player_state_changed_event(
     # assert not playing
     await heos.get_players()
     player = heos.players[1]
-    assert player.state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.STOP
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -386,14 +386,14 @@ async def test_player_state_changed_event(
     # Write event through mock device
     await mock_device.write_event(
         "event.player_state_changed",
-        {"player_id": player.player_id, "state": const.PLAY_STATE_PLAY},
+        {"player_id": player.player_id, "state": const.PlayState.PLAY},
     )
 
     # Wait until the signal
     await signal.wait()
     # Assert state changed
-    assert player.state == const.PLAY_STATE_PLAY
-    assert heos.players[2].state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.PLAY
+    assert heos.players[2].state == const.PlayState.STOP
 
 
 @calls_player_commands()

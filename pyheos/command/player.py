@@ -32,7 +32,7 @@ class PlayerCommands:
         return HeosCommand(const.COMMAND_GET_PLAYERS)
 
     @staticmethod
-    def get_player_state(player_id: int) -> HeosCommand:
+    def get_play_state(player_id: int) -> HeosCommand:
         """Get the state of the player.
 
         References:
@@ -42,13 +42,11 @@ class PlayerCommands:
         )
 
     @staticmethod
-    def set_player_state(player_id: int, state: str) -> HeosCommand:
+    def set_play_state(player_id: int, state: const.PlayState) -> HeosCommand:
         """Set the state of the player.
 
         References:
             4.2.4 Set Play State"""
-        if state not in const.VALID_PLAY_STATES:
-            raise ValueError("Invalid play state: " + state)
         return HeosCommand(
             const.COMMAND_SET_PLAY_STATE,
             {const.ATTR_PLAYER_ID: player_id, const.ATTR_STATE: state},

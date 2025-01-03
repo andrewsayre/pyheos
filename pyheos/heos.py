@@ -387,24 +387,24 @@ class PlayerMixin(ConnectionMixin):
             const.DATA_MAPPED_IDS: mapped_player_ids,
         }
 
-    async def player_get_state(self, player_id: int) -> str:
+    async def player_get_play_state(self, player_id: int) -> const.PlayState:
         """Get the state of the player.
 
         References:
             4.2.3 Get Play State"""
         response = await self._connection.command(
-            PlayerCommands.get_player_state(player_id)
+            PlayerCommands.get_play_state(player_id)
         )
-        return response.get_message_value(const.ATTR_STATE)
+        return const.PlayState(response.get_message_value(const.ATTR_STATE))
 
-    async def player_set_state(self, player_id: int, state: str) -> None:
+    async def player_set_play_state(
+        self, player_id: int, state: const.PlayState
+    ) -> None:
         """Set the state of the player.
 
         References:
             4.2.4 Set Play State"""
-        await self._connection.command(
-            PlayerCommands.set_player_state(player_id, state)
-        )
+        await self._connection.command(PlayerCommands.set_play_state(player_id, state))
 
     async def get_now_playing_media(
         self, player_id: int, update: HeosNowPlayingMedia | None = None

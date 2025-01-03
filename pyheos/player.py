@@ -143,7 +143,7 @@ class HeosPlayer:
         self._network: str = data[const.ATTR_NETWORK]
         self._line_out: int = data[const.ATTR_LINE_OUT]
 
-        self._state: str | None = None
+        self._state: const.PlayState | None = None
         self._volume: int | None = None
         self._is_muted: bool | None = None
         self._repeat: const.RepeatType = const.RepeatType.OFF
@@ -185,7 +185,7 @@ class HeosPlayer:
 
     async def refresh_state(self) -> None:
         """Refresh the now playing state."""
-        self._state = await self.heos.player_get_state(self._player_id)
+        self._state = await self.heos.player_get_play_state(self._player_id)
 
     async def refresh_now_playing_media(self) -> None:
         """Pull the latest now playing media."""
@@ -205,21 +205,21 @@ class HeosPlayer:
         self._repeat = play_mode.repeat
         self._shuffle = play_mode.shuffle
 
-    async def set_state(self, state: str) -> None:
+    async def set_state(self, state: const.PlayState) -> None:
         """Set the state of the player."""
-        await self.heos.player_set_state(self._player_id, state)
+        await self.heos.player_set_play_state(self._player_id, state)
 
     async def play(self) -> None:
         """Set the start to play."""
-        await self.set_state(const.PLAY_STATE_PLAY)
+        await self.set_state(const.PlayState.PLAY)
 
     async def pause(self) -> None:
         """Set the start to pause."""
-        await self.set_state(const.PLAY_STATE_PAUSE)
+        await self.set_state(const.PlayState.PAUSE)
 
     async def stop(self) -> None:
         """Set the start to stop."""
-        await self.set_state(const.PLAY_STATE_STOP)
+        await self.set_state(const.PlayState.STOP)
 
     async def set_volume(self, level: int) -> None:
         """Set the volume level."""
@@ -323,8 +323,8 @@ class HeosPlayer:
                 event, all_progress_events
             )
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self._state = event.get_message_value(const.ATTR_STATE)
-            if self._state == const.PLAY_STATE_PLAY:
+            self._state = const.PlayState(event.get_message_value(const.ATTR_STATE))
+            if self._state == const.PlayState.PLAY:
                 self._now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
