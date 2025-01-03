@@ -502,6 +502,62 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.set_play_mode(player_id, repeat, shuffle)
         )
 
+    async def player_clear_queue(self, player_id: int) -> None:
+        """Clear the queue.
+
+        References:
+            4.2.19 Clear Queue"""
+        await self._connection.command(PlayerCommands.clear_queue(player_id))
+
+    async def player_play_next(self, player_id: int) -> None:
+        """Play next.
+
+        References:
+            4.2.21 Play Next"""
+        await self._connection.command(PlayerCommands.play_next(player_id))
+
+    async def player_play_previous(self, player_id: int) -> None:
+        """Play next.
+
+        References:
+            4.2.22 Play Previous"""
+        await self._connection.command(PlayerCommands.play_previous(player_id))
+
+    async def player_set_quick_select(
+        self, player_id: int, quick_select_id: int
+    ) -> None:
+        """Play a quick select.
+
+        References:
+            4.2.23 Set QuickSelect"""
+        await self._connection.command(
+            PlayerCommands.set_quick_select(player_id, quick_select_id)
+        )
+
+    async def player_play_quick_select(
+        self, player_id: int, quick_select_id: int
+    ) -> None:
+        """Play a quick select.
+
+        References:
+            4.2.24 Play QuickSelect"""
+        await self._connection.command(
+            PlayerCommands.play_quick_select(player_id, quick_select_id)
+        )
+
+    async def get_player_quick_selects(self, player_id: int) -> dict[int, str]:
+        """Get quick selects.
+
+        References:
+            4.2.25 Get QuickSelects"""
+        result = await self._connection.command(
+            PlayerCommands.get_quick_selects(player_id)
+        )
+        return {
+            int(data[const.ATTR_ID]): data[const.ATTR_NAME]
+            for data in cast(list[dict], result.payload)
+        }
+
 
 class Heos(BrowseMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""

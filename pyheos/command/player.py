@@ -5,6 +5,12 @@ This module creates HEOS browse commands.
 
 Commands not currently implemented:
     4.2.2 Get Player Info
+    4.2.15 Get Queue
+    4.2.16 Play Queue Item
+    4.2.17 Remove Item(s) from Queue
+    4.2.18 Save Queue as Playlist
+    4.2.20 Move Queue
+    4.2.26 Check for Firmware Update
 
 """
 
@@ -160,4 +166,66 @@ class PlayerCommands:
                 const.ATTR_REPEAT: repeat,
                 const.ATTR_SHUFFLE: const.VALUE_ON if shuffle else const.VALUE_OFF,
             },
+        )
+
+    @staticmethod
+    def clear_queue(player_id: int) -> HeosCommand:
+        """Clear the queue.
+
+        References:
+            4.2.19 Clear Queue"""
+        return HeosCommand(const.COMMAND_CLEAR_QUEUE, {const.ATTR_PLAYER_ID: player_id})
+
+    @staticmethod
+    def play_next(player_id: int) -> HeosCommand:
+        """Play next.
+
+        References:
+            4.2.21 Play Next"""
+        return HeosCommand(const.COMMAND_PLAY_NEXT, {const.ATTR_PLAYER_ID: player_id})
+
+    @staticmethod
+    def play_previous(player_id: int) -> HeosCommand:
+        """Play next.
+
+        References:
+            4.2.22 Play Previous"""
+        return HeosCommand(
+            const.COMMAND_PLAY_PREVIOUS, {const.ATTR_PLAYER_ID: player_id}
+        )
+
+    @staticmethod
+    def set_quick_select(player_id: int, quick_select_id: int) -> HeosCommand:
+        """Play a quick select.
+
+        References:
+            4.2.23 Set QuickSelect"""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        return HeosCommand(
+            const.COMMAND_SET_QUICK_SELECT,
+            {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id},
+        )
+
+    @staticmethod
+    def play_quick_select(player_id: int, quick_select_id: int) -> HeosCommand:
+        """Play a quick select.
+
+        References:
+            4.2.24 Play QuickSelect"""
+        if quick_select_id < 1 or quick_select_id > 6:
+            raise ValueError("'quick_select_id' must be in the range 1-6")
+        return HeosCommand(
+            const.COMMAND_PLAY_QUICK_SELECT,
+            {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id},
+        )
+
+    @staticmethod
+    def get_quick_selects(player_id: int) -> HeosCommand:
+        """Get quick selects.
+
+        References:
+            4.2.25 Get QuickSelects"""
+        return HeosCommand(
+            const.COMMAND_GET_QUICK_SELECTS, {const.ATTR_PLAYER_ID: player_id}
         )

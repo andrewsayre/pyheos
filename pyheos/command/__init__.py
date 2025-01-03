@@ -44,21 +44,6 @@ class HeosCommands:
         """Sign out of the HEOS account."""
         await self._connection.command(HeosCommand(const.COMMAND_SIGN_OUT))
 
-    async def clear_queue(self, player_id: int) -> None:
-        """Clear the queue."""
-        params = {const.ATTR_PLAYER_ID: player_id}
-        await self._connection.command(HeosCommand(const.COMMAND_CLEAR_QUEUE, params))
-
-    async def play_next(self, player_id: int) -> None:
-        """Play next."""
-        params = {const.ATTR_PLAYER_ID: player_id}
-        await self._connection.command(HeosCommand(const.COMMAND_PLAY_NEXT, params))
-
-    async def play_previous(self, player_id: int) -> None:
-        """Play next."""
-        params = {const.ATTR_PLAYER_ID: player_id}
-        await self._connection.command(HeosCommand(const.COMMAND_PLAY_PREVIOUS, params))
-
     async def get_groups(self) -> Sequence[dict]:
         """Get groups."""
         response = await self._connection.command(HeosCommand(const.COMMAND_GET_GROUPS))
@@ -132,29 +117,3 @@ class HeosCommands:
         await self._connection.command(
             HeosCommand(const.COMMAND_GROUP_TOGGLE_MUTE, params)
         )
-
-    async def play_quick_select(self, player_id: int, quick_select_id: int) -> None:
-        """Play a quick select."""
-        if quick_select_id < 1 or quick_select_id > 6:
-            raise ValueError("'quick_select_id' must be in the range 1-6")
-        params = {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_PLAY_QUICK_SELECT, params)
-        )
-
-    async def set_quick_select(self, player_id: int, quick_select_id: int) -> None:
-        """Play a quick select."""
-        if quick_select_id < 1 or quick_select_id > 6:
-            raise ValueError("'quick_select_id' must be in the range 1-6")
-        params = {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id}
-        await self._connection.command(
-            HeosCommand(const.COMMAND_SET_QUICK_SELECT, params)
-        )
-
-    async def get_quick_selects(self, player_id: int) -> Sequence[dict]:
-        """Play a quick select."""
-        params = {const.ATTR_PLAYER_ID: player_id}
-        response = await self._connection.command(
-            HeosCommand(const.COMMAND_GET_QUICK_SELECTS, params)
-        )
-        return cast(Sequence[dict], response.payload)

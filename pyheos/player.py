@@ -257,15 +257,15 @@ class HeosPlayer:
 
     async def clear_queue(self) -> None:
         """Clear the queue of the player."""
-        await self._commands.clear_queue(self._player_id)
+        await self.heos.player_clear_queue(self._player_id)
 
     async def play_next(self) -> None:
         """Clear the queue of the player."""
-        await self._commands.play_next(self._player_id)
+        await self.heos.player_play_next(self._player_id)
 
     async def play_previous(self) -> None:
         """Clear the queue of the player."""
-        await self._commands.play_previous(self._player_id)
+        await self.heos.player_play_previous(self._player_id)
 
     async def play_input_source(
         self, input_name: str, source_player_id: int | None = None
@@ -283,7 +283,7 @@ class HeosPlayer:
 
     async def play_quick_select(self, quick_select_id: int) -> None:
         """Play the specified quick select."""
-        await self._commands.play_quick_select(self._player_id, quick_select_id)
+        await self.heos.player_play_quick_select(self._player_id, quick_select_id)
 
     async def add_to_queue(
         self,
@@ -312,12 +312,11 @@ class HeosPlayer:
 
     async def set_quick_select(self, quick_select_id: int) -> None:
         """Set the specified quick select to the current source."""
-        await self._commands.set_quick_select(self._player_id, quick_select_id)
+        await self.heos.player_set_quick_select(self._player_id, quick_select_id)
 
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
-        payload = await self._commands.get_quick_selects(self._player_id)
-        return {int(data[const.ATTR_ID]): data[const.ATTR_NAME] for data in payload}
+        return await self.heos.get_player_quick_selects(self._player_id)
 
     async def event_update(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""
