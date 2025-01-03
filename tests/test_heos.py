@@ -346,7 +346,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
     assert player.network == const.NETWORK_TYPE_WIRED
-    assert player.state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.STOP
     assert player.version == "1.493.180"
     assert player.volume == 36
     assert not player.is_muted
@@ -371,7 +371,7 @@ async def test_player_state_changed_event(
     # assert not playing
     await heos.get_players()
     player = heos.players[1]
-    assert player.state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.STOP
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -386,14 +386,14 @@ async def test_player_state_changed_event(
     # Write event through mock device
     await mock_device.write_event(
         "event.player_state_changed",
-        {"player_id": player.player_id, "state": const.PLAY_STATE_PLAY},
+        {"player_id": player.player_id, "state": const.PlayState.PLAY},
     )
 
     # Wait until the signal
     await signal.wait()
     # Assert state changed
-    assert player.state == const.PLAY_STATE_PLAY
-    assert heos.players[2].state == const.PLAY_STATE_STOP
+    assert player.state == const.PlayState.PLAY
+    assert heos.players[2].state == const.PlayState.STOP
 
 
 @calls_player_commands()
@@ -405,16 +405,19 @@ async def test_player_now_playing_changed_event(
     await heos.get_players()
     player = heos.players[1]
     now_playing = player.now_playing_media
-    assert now_playing.album == ""
-    assert now_playing.type == "song"
-    assert now_playing.album_id == ""
-    assert now_playing.artist == ""
-    assert now_playing.image_url == ""
-    assert now_playing.media_id == "catalog/playlists/genres"
+    assert now_playing.type == "station"
+    assert now_playing.song == "Disney (Children's) Radio"
+    assert now_playing.station == "Disney (Children's) Radio"
+    assert now_playing.album == "Album"
+    assert now_playing.artist == "Artist"
+    assert (
+        now_playing.image_url
+        == "http://cont-5.p-cdn.us/images/public/int/6/1/1/9/050087149116_500W_500H.jpg"
+    )
+    assert now_playing.album_id == "123456"
+    assert now_playing.media_id == "4256592506324148495"
     assert now_playing.queue_id == 1
     assert now_playing.source_id == 13
-    assert now_playing.song == "Disney Hits"
-    assert now_playing.station is None
     assert now_playing.supported_controls == const.CONTROLS_ALL
 
     # Attach dispatch handler
@@ -1173,3 +1176,24 @@ async def test_remove_group(heos: Heos) -> None:
 async def test_update_group(heos: Heos) -> None:
     """Test removing a group."""
     await heos.update_group(1, [2])
+
+
+@calls_command("player.get_now_playing_media", {const.ATTR_PLAYER_ID: 1})
+async def test_get_now_playing_media(heos: Heos) -> None:
+    """Test removing a group."""
+    media = await heos.get_now_playing_media(1)
+
+    assert media.type == "station"
+    assert media.song == "Disney (Children's) Radio"
+    assert media.station == "Disney (Children's) Radio"
+    assert media.album == "Album"
+    assert media.artist == "Artist"
+    assert (
+        media.image_url
+        == "http://cont-5.p-cdn.us/images/public/int/6/1/1/9/050087149116_500W_500H.jpg"
+    )
+    assert media.album_id == "123456"
+    assert media.media_id == "4256592506324148495"
+    assert media.queue_id == 1
+    assert media.source_id == 13
+    assert media.supported_controls == const.CONTROLS_ALL

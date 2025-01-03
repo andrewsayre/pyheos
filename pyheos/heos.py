@@ -8,6 +8,7 @@ from typing import Any, Final, cast
 
 from pyheos.command import HeosCommands
 from pyheos.command.browse import BrowseCommands
+from pyheos.command.player import PlayerCommands
 from pyheos.credentials import Credentials
 from pyheos.error import CommandError
 from pyheos.media import (
@@ -22,7 +23,7 @@ from . import const
 from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup, create_group
-from .player import HeosPlayer
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -62,51 +63,12 @@ class HeosOptions:
     credentials: Credentials | None = field(default=None, kw_only=True)
 
 
-class Heos:
-    """The Heos class provides access to the CLI API."""
-
-    @classmethod
-    async def create_and_connect(cls, host: str, **kwargs: Any) -> "Heos":
-        """
-        Create a new instance of the Heos CLI API and connect.
-
-        Args:
-            host: A host name or IP address of a HEOS-capable device.
-            timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
-            events: Set to True to enable event updates, False to disable. The default is True.
-            all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
-            dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
-            auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
-            auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
-            auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
-            heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
-            heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
-            credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
-
-        """
-        heos = Heos(HeosOptions(host, **kwargs))
-        await heos.connect()
-        return heos
-
-    @classmethod
-    async def validate_connection(cls, host: str) -> HeosSystem:
-        """
-        Validate the connection to the HEOS device and return information about the HEOS system.
-
-        Args:
-            host: A host name or IP address of a HEOS-capable device.
-        """
-        heos = Heos(HeosOptions(host, events=False, heart_beat=False))
-        try:
-            await heos.connect()
-            return await heos.get_system_info()
-        finally:
-            await heos.disconnect()
+class ConnectionMixin:
+    "A mixin to provide access to the connection."
 
     def __init__(self, options: HeosOptions) -> None:
-        """Init a new instance of the Heos CLI API."""
+        """Init a new instance of the ConnectionMixin."""
         self._options = options
-        self._current_credentials = options.credentials
         self._connection = AutoReconnectingConnection(
             options.host,
             timeout=options.timeout,
@@ -116,232 +78,22 @@ class Heos:
             heart_beat=options.heart_beat,
             heart_beat_interval=options.heart_beat_interval,
         )
-        self._connection.add_on_connected(self._on_connected)
-        self._connection.add_on_disconnected(self._on_disconnected)
-        self._connection.add_on_event(self._on_event)
 
-        self._commands = HeosCommands(self._connection)
 
-        self._dispatcher = options.dispatcher or Dispatcher()
+class BrowseMixin(ConnectionMixin):
+    "A mixin to provide access to the browse commands."
 
-        self._players: dict[int, HeosPlayer] = {}
-        self._players_loaded = False
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(BrowseMixin, self).__init__(*args, **kwargs)
 
         self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
 
-        self._groups: dict[int, HeosGroup] = {}
-        self._groups_loaded = False
-
-        self._signed_in_username: str | None = None
-
-    async def connect(self) -> None:
-        """Connect to the CLI."""
-        await self._connection.connect()
-
-    async def _on_connected(self) -> None:
-        """Handle when connected, which may occur more than once."""
-        assert self._connection.state == const.STATE_CONNECTED
-
-        if self._current_credentials:
-            # Sign-in to the account if provided
-            try:
-                self._signed_in_username = await self._commands.sign_in(
-                    self._current_credentials.username,
-                    self._current_credentials.password,
-                )
-            except CommandError as err:
-                _LOGGER.debug(
-                    "Failed to sign-in to HEOS Account after connection: %s", err
-                )
-                self._dispatcher.send(
-                    const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
-                )
-        else:
-            # Determine the logged in user
-            self._signed_in_username = await self._commands.check_account()
-
-        await self._commands.register_for_change_events(self._options.events)
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
-
-    async def disconnect(self) -> None:
-        """Disconnect from the CLI."""
-        await self._connection.disconnect()
-
-    async def _on_disconnected(self, from_error: bool) -> None:
-        """Handle when disconnected, which may occur more than once."""
-        assert self._connection.state == const.STATE_DISCONNECTED
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
-
-    async def _handle_heos_event(self, event: HeosMessage) -> None:
-        """Process a HEOS system event."""
-        result: dict[str, list | dict] | None = None
-        if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
-            result = await self.load_players()
-        if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
-            await self.get_music_sources(refresh=True)
-        elif event.command == const.EVENT_USER_CHANGED:
-            if const.ATTR_SIGNED_IN in event.message:
-                self._signed_in_username = event.get_message_value(const.ATTR_USER_NAME)
-            else:
-                self._signed_in_username = None
-        elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
-            await self.get_groups(refresh=True)
-
-        self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
-        _LOGGER.debug("Event received: %s", event)
-
-    async def _handle_player_event(self, event: HeosMessage) -> None:
-        """Process an event about a player."""
-        player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
-        player = self.players.get(player_id)
-        if player and (
-            await player.event_update(event, self._options.all_progress_events)
-        ):
-            self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
-            _LOGGER.debug("Event received for player %s: %s", player, event)
-
-    async def _handle_group_event(self, event: HeosMessage) -> None:
-        """Process an event about a group."""
-        group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
-        group = self.groups.get(group_id)
-        if group:
-            await group.event_update(event)
-            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
-            _LOGGER.debug("Event received for group %s: %s", group_id, event)
-
-    async def _on_event(self, event: HeosMessage) -> None:
-        """Handle a heos event."""
-        if event.command in const.HEOS_EVENTS:
-            await self._handle_heos_event(event)
-        elif event.command in const.PLAYER_EVENTS:
-            await self._handle_player_event(event)
-        elif event.command in const.GROUP_EVENTS:
-            await self._handle_group_event(event)
-        else:
-            _LOGGER.debug("Unrecognized event: %s", event)
-
-    async def sign_in(
-        self, username: str, password: str, *, update_credential: bool = True
-    ) -> None:
-        """
-        Sign-in to the HEOS account on the device directly connected.
-
-        Args:
-            username: The username of the HEOS account.
-            password: The password of the HEOS account.
-            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
-        """
-        self._signed_in_username = await self._commands.sign_in(username, password)
-        if update_credential:
-            self._current_credentials = Credentials(username, password)
-
-    async def sign_out(self, *, update_credential: bool = True) -> None:
-        """
-        Sign-out of the HEOS account on the device directly connected.
-
-        Args:
-            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
-        """
-        await self._commands.sign_out()
-        self._signed_in_username = None
-        if update_credential:
-            self._current_credentials = None
-
-    async def get_system_info(self) -> HeosSystem:
-        """Get information about the HEOS system."""
-        payload = await self._commands.get_players()
-        hosts = list([HeosHost.from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
-        return HeosSystem(self._signed_in_username, host, hosts)
-
-    async def load_players(self) -> dict[str, list | dict]:
-        """Refresh the players."""
-        new_player_ids = []
-        mapped_player_ids = {}
-        players = {}
-        payload = await self._commands.get_players()
-        existing = list(self._players.values())
-        for player_data in payload:
-            player_id = player_data[const.ATTR_PLAYER_ID]
-            name = player_data[const.ATTR_NAME]
-            version = player_data[const.ATTR_VERSION]
-            # Try finding existing player by id or match name when firmware
-            # version is different because IDs change after a firmware upgrade
-            player = next(
-                (
-                    player
-                    for player in existing
-                    if player.player_id == player_id
-                    or (player.name == name and player.version != version)
-                ),
-                None,
-            )
-            if player:
-                # Existing player matched - update
-                if player.player_id != player_id:
-                    mapped_player_ids[player_id] = player.player_id
-                player.from_data(player_data)
-                players[player_id] = player
-                existing.remove(player)
-            else:
-                # New player
-                player = HeosPlayer(self, player_data)
-                new_player_ids.append(player_id)
-                players[player_id] = player
-        # For any item remaining in existing, mark unavailalbe, add to updated
-        for player in existing:
-            player.set_available(False)
-            players[player.player_id] = player
-
-        # Update all statuses
-        await asyncio.gather(
-            *[player.refresh() for player in players.values() if player.available]
-        )
-        self._players = players
-        self._players_loaded = True
-        return {
-            const.DATA_NEW: new_player_ids,
-            const.DATA_MAPPED_IDS: mapped_player_ids,
-        }
-
-    async def get_players(self, *, refresh: bool = False) -> dict[int, HeosPlayer]:
-        """Get available players."""
-        # get players and pull initial state
-        if not self._players_loaded or refresh:
-            await self.load_players()
-        return self._players
-
-    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
-        """Get available groups."""
-        if not self._groups_loaded or refresh:
-            players = await self.get_players()
-            groups = {}
-            payload = await self._commands.get_groups()
-            for data in payload:
-                group = create_group(self, data, players)
-                groups[group.group_id] = group
-            self._groups = groups
-            # Update all statuses
-            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
-            self._groups_loaded = True
-        return self._groups
-
-    async def create_group(self, leader_id: int, member_ids: Sequence[int]) -> None:
-        """Create a HEOS group."""
-        ids = [leader_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
-
-    async def remove_group(self, group_id: int) -> None:
-        """Ungroup the specified group."""
-        await self._commands.set_group([group_id])
-
-    async def update_group(self, group_id: int, member_ids: Sequence[int]) -> None:
-        """Update the membership of a group."""
-        ids = [group_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
+    @property
+    def music_sources(self) -> dict[int, MediaMusicSource]:
+        """Get available music sources."""
+        return self._music_sources
 
     async def get_music_sources(
         self, refresh: bool = True
@@ -356,7 +108,7 @@ class Heos:
             message = await self._connection.command(BrowseCommands.get_music_sources())
             self._music_sources.clear()
             for data in cast(Sequence[dict], message.payload):
-                source = MediaMusicSource.from_data(data, self)
+                source = MediaMusicSource.from_data(data, cast("Heos", self))
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True
         return self._music_sources
@@ -387,7 +139,7 @@ class Heos:
         message = await self._connection.command(
             BrowseCommands.browse(source_id, container_id, range_start, range_end)
         )
-        return BrowseResult.from_data(message, self)
+        return BrowseResult.from_data(message, cast("Heos", self))
 
     async def browse_media(
         self,
@@ -419,87 +171,6 @@ class Heos:
                 raise ValueError("Only media sources and containers can be browsed")
             return await self.browse(
                 media.source_id, media.container_id, range_start, range_end
-            )
-
-    async def get_input_sources(self) -> Sequence[MediaItem]:
-        """
-        Get available input sources.
-
-        This will browse all aux input sources and return a list of all available input sources.
-
-        Returns:
-            A sequence of MediaItem instances representing the available input sources across all aux input sources.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        input_sources: list[MediaItem] = []
-        for item in result.items:
-            source_browse_result = await item.browse()
-            input_sources.extend(source_browse_result.items)
-
-        return input_sources
-
-    async def get_favorites(self) -> dict[int, MediaItem]:
-        """
-        Get available favorites.
-
-        This will browse the favorites music source and return a dictionary of all available favorites.
-
-        Returns:
-            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
-        return {index + 1: source for index, source in enumerate(result.items)}
-
-    async def get_playlists(self) -> Sequence[MediaItem]:
-        """
-        Get available playlists.
-
-        This will browse the playlists music source and return a list of all available playlists.
-
-        Returns:
-            A sequence of MediaItem instances representing the available playlists.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        return result.items
-
-    async def play_media(
-        self,
-        player_id: int,
-        media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
-    ) -> None:
-        """
-        Play the specified media item on the specified player.
-
-        Args:
-            player_id: The identifier of the player to play the media item.
-            media: The media item to play.
-            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
-        """
-        if not media.playable:
-            raise ValueError(f"Media '{media}' is not playable")
-
-        if media.media_id in const.VALID_INPUTS:
-            await self.play_input_source(player_id, media.media_id, media.source_id)
-        elif media.type == const.MediaType.STATION:
-            if media.media_id is None:
-                raise ValueError(f"'Media '{media}' cannot have a None media_id")
-            await self.play_station(
-                player_id=player_id,
-                source_id=media.source_id,
-                container_id=media.container_id,
-                media_id=media.media_id,
-            )
-        else:
-            # Handles both songs and containers
-            if media.container_id is None:
-                raise ValueError(f"Media '{media}' cannot have a None container_id")
-            await self.add_to_queue(
-                player_id=player_id,
-                source_id=media.source_id,
-                container_id=media.container_id,
-                media_id=media.media_id,
-                add_criteria=add_criteria,
             )
 
     async def play_input_source(
@@ -599,25 +270,562 @@ class Heos:
             )
         )
 
-    @property
-    def dispatcher(self) -> Dispatcher:
-        """Get the dispatcher instance."""
-        return self._dispatcher
+    async def play_media(
+        self,
+        player_id: int,
+        media: MediaItem,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """
+        Play the specified media item on the specified player.
+
+        Args:
+            player_id: The identifier of the player to play the media item.
+            media: The media item to play.
+            add_criteria: Determines how containers or tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        if not media.playable:
+            raise ValueError(f"Media '{media}' is not playable")
+
+        if media.media_id in const.VALID_INPUTS:
+            await self.play_input_source(player_id, media.media_id, media.source_id)
+        elif media.type == const.MediaType.STATION:
+            if media.media_id is None:
+                raise ValueError(f"'Media '{media}' cannot have a None media_id")
+            await self.play_station(
+                player_id=player_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+            )
+        else:
+            # Handles both songs and containers
+            if media.container_id is None:
+                raise ValueError(f"Media '{media}' cannot have a None container_id")
+            await self.add_to_queue(
+                player_id=player_id,
+                source_id=media.source_id,
+                container_id=media.container_id,
+                media_id=media.media_id,
+                add_criteria=add_criteria,
+            )
+
+
+class PlayerMixin(ConnectionMixin):
+    """A mixin to provide access to the player commands."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(PlayerMixin, self).__init__(*args, **kwargs)
+
+        self._players: dict[int, HeosPlayer] = {}
+        self._players_loaded = False
 
     @property
     def players(self) -> dict[int, HeosPlayer]:
         """Get the loaded players."""
         return self._players
 
+    async def get_players(self, *, refresh: bool = False) -> dict[int, HeosPlayer]:
+        """Get available players.
+
+        References:
+            4.2.1 Get Players"""
+        # get players and pull initial state
+        if not self._players_loaded or refresh:
+            await self.load_players()
+        return self._players
+
+    async def load_players(self) -> dict[str, list | dict]:
+        """Refresh the players."""
+        new_player_ids = []
+        mapped_player_ids = {}
+        players = {}
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        existing = list(self._players.values())
+        for player_data in payload:
+            player_id = player_data[const.ATTR_PLAYER_ID]
+            name = player_data[const.ATTR_NAME]
+            version = player_data[const.ATTR_VERSION]
+            # Try finding existing player by id or match name when firmware
+            # version is different because IDs change after a firmware upgrade
+            player = next(
+                (
+                    player
+                    for player in existing
+                    if player.player_id == player_id
+                    or (player.name == name and player.version != version)
+                ),
+                None,
+            )
+            if player:
+                # Existing player matched - update
+                if player.player_id != player_id:
+                    mapped_player_ids[player_id] = player.player_id
+                player.from_data(player_data)
+                players[player_id] = player
+                existing.remove(player)
+            else:
+                # New player
+                player = HeosPlayer(cast("Heos", self), player_data)
+                new_player_ids.append(player_id)
+                players[player_id] = player
+        # For any item remaining in existing, mark unavailalbe, add to updated
+        for player in existing:
+            player.set_available(False)
+            players[player.player_id] = player
+
+        # Update all statuses
+        await asyncio.gather(
+            *[player.refresh() for player in players.values() if player.available]
+        )
+        self._players = players
+        self._players_loaded = True
+        return {
+            const.DATA_NEW: new_player_ids,
+            const.DATA_MAPPED_IDS: mapped_player_ids,
+        }
+
+    async def player_get_play_state(self, player_id: int) -> const.PlayState:
+        """Get the state of the player.
+
+        References:
+            4.2.3 Get Play State"""
+        response = await self._connection.command(
+            PlayerCommands.get_play_state(player_id)
+        )
+        return const.PlayState(response.get_message_value(const.ATTR_STATE))
+
+    async def player_set_play_state(
+        self, player_id: int, state: const.PlayState
+    ) -> None:
+        """Set the state of the player.
+
+        References:
+            4.2.4 Set Play State"""
+        await self._connection.command(PlayerCommands.set_play_state(player_id, state))
+
+    async def get_now_playing_media(
+        self, player_id: int, update: HeosNowPlayingMedia | None = None
+    ) -> HeosNowPlayingMedia:
+        """Get the now playing media information.
+
+        Args:
+            player_id: The identifier of the player to get the now playing media.
+            update: The current now playing media information to update. If not provided, a new instance will be created.
+
+        Returns:
+            A HeosNowPlayingMedia instance containing the now playing media information.
+
+        References:
+            4.2.5 Get Now Playing Media"""
+        result = await self._connection.command(
+            PlayerCommands.get_now_playing_media(player_id)
+        )
+        if update:
+            update.update_from_data(result)
+            return update
+        return HeosNowPlayingMedia.from_data(result)
+
+    async def player_get_volume(self, player_id: int) -> int:
+        """Get the volume level of the player.
+
+        References:
+            4.2.6 Get Volume"""
+        result = await self._connection.command(PlayerCommands.get_volume(player_id))
+        return result.get_message_value_int(const.ATTR_LEVEL)
+
+    async def player_set_volume(self, player_id: int, level: int) -> None:
+        """Set the volume of the player.
+
+        References:
+            4.2.7 Set Volume"""
+        await self._connection.command(PlayerCommands.set_volume(player_id, level))
+
+    async def player_volume_up(
+        self, player_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.8 Volume Up"""
+        await self._connection.command(PlayerCommands.volume_up(player_id, step))
+
+    async def player_volume_down(
+        self, player_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.9 Volume Down"""
+        await self._connection.command(PlayerCommands.volume_down(player_id, step))
+
+    async def player_get_mute(self, player_id: int) -> bool:
+        """Get the mute state of the player.
+
+        References:
+            4.2.10 Get Mute"""
+        result = await self._connection.command(PlayerCommands.get_mute(player_id))
+        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+
+    async def player_set_mute(self, player_id: int, state: bool) -> None:
+        """Set the mute state of the player.
+
+        References:
+            4.2.11 Set Mute"""
+        await self._connection.command(PlayerCommands.set_mute(player_id, state))
+
+    async def player_toggle_mute(self, player_id: int) -> None:
+        """Toggle the mute state.
+
+        References:
+            4.2.12 Toggle Mute"""
+        await self._connection.command(PlayerCommands.toggle_mute(player_id))
+
+    async def player_get_play_mode(self, player_id: int) -> PlayMode:
+        """Get the play mode of the player.
+
+        References:
+            4.2.13 Get Play Mode"""
+        result = await self._connection.command(PlayerCommands.get_play_mode(player_id))
+        return PlayMode.from_data(result)
+
+    async def player_set_play_mode(
+        self, player_id: int, repeat: const.RepeatType, shuffle: bool
+    ) -> None:
+        """Set the play mode of the player.
+
+        References:
+            4.2.14 Set Play Mode"""
+        await self._connection.command(
+            PlayerCommands.set_play_mode(player_id, repeat, shuffle)
+        )
+
+    async def player_clear_queue(self, player_id: int) -> None:
+        """Clear the queue.
+
+        References:
+            4.2.19 Clear Queue"""
+        await self._connection.command(PlayerCommands.clear_queue(player_id))
+
+    async def player_play_next(self, player_id: int) -> None:
+        """Play next.
+
+        References:
+            4.2.21 Play Next"""
+        await self._connection.command(PlayerCommands.play_next(player_id))
+
+    async def player_play_previous(self, player_id: int) -> None:
+        """Play next.
+
+        References:
+            4.2.22 Play Previous"""
+        await self._connection.command(PlayerCommands.play_previous(player_id))
+
+    async def player_set_quick_select(
+        self, player_id: int, quick_select_id: int
+    ) -> None:
+        """Play a quick select.
+
+        References:
+            4.2.23 Set QuickSelect"""
+        await self._connection.command(
+            PlayerCommands.set_quick_select(player_id, quick_select_id)
+        )
+
+    async def player_play_quick_select(
+        self, player_id: int, quick_select_id: int
+    ) -> None:
+        """Play a quick select.
+
+        References:
+            4.2.24 Play QuickSelect"""
+        await self._connection.command(
+            PlayerCommands.play_quick_select(player_id, quick_select_id)
+        )
+
+    async def get_player_quick_selects(self, player_id: int) -> dict[int, str]:
+        """Get quick selects.
+
+        References:
+            4.2.25 Get QuickSelects"""
+        result = await self._connection.command(
+            PlayerCommands.get_quick_selects(player_id)
+        )
+        return {
+            int(data[const.ATTR_ID]): data[const.ATTR_NAME]
+            for data in cast(list[dict], result.payload)
+        }
+
+
+class Heos(BrowseMixin, PlayerMixin):
+    """The Heos class provides access to the CLI API."""
+
+    @classmethod
+    async def create_and_connect(cls, host: str, **kwargs: Any) -> "Heos":
+        """
+        Create a new instance of the Heos CLI API and connect.
+
+        Args:
+            host: A host name or IP address of a HEOS-capable device.
+            timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+            events: Set to True to enable event updates, False to disable. The default is True.
+            all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
+            dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
+            auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
+            auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
+            auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
+            heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
+            heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
+            credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+
+        """
+        heos = Heos(HeosOptions(host, **kwargs))
+        await heos.connect()
+        return heos
+
+    @classmethod
+    async def validate_connection(cls, host: str) -> HeosSystem:
+        """
+        Validate the connection to the HEOS device and return information about the HEOS system.
+
+        Args:
+            host: A host name or IP address of a HEOS-capable device.
+        """
+        heos = Heos(HeosOptions(host, events=False, heart_beat=False))
+        try:
+            await heos.connect()
+            return await heos.get_system_info()
+        finally:
+            await heos.disconnect()
+
+    def __init__(self, options: HeosOptions) -> None:
+        """Init a new instance of the Heos CLI API."""
+        super(Heos, self).__init__(options)
+
+        self._current_credentials = options.credentials
+        self._connection.add_on_connected(self._on_connected)
+        self._connection.add_on_disconnected(self._on_disconnected)
+        self._connection.add_on_event(self._on_event)
+
+        self._commands = HeosCommands(self._connection)
+
+        self._dispatcher = options.dispatcher or Dispatcher()
+
+        self._music_sources: dict[int, MediaMusicSource] = {}
+        self._music_sources_loaded = False
+
+        self._groups: dict[int, HeosGroup] = {}
+        self._groups_loaded = False
+
+        self._signed_in_username: str | None = None
+
+    async def connect(self) -> None:
+        """Connect to the CLI."""
+        await self._connection.connect()
+
+    async def _on_connected(self) -> None:
+        """Handle when connected, which may occur more than once."""
+        assert self._connection.state == const.STATE_CONNECTED
+
+        if self._current_credentials:
+            # Sign-in to the account if provided
+            try:
+                self._signed_in_username = await self._commands.sign_in(
+                    self._current_credentials.username,
+                    self._current_credentials.password,
+                )
+            except CommandError as err:
+                _LOGGER.debug(
+                    "Failed to sign-in to HEOS Account after connection: %s", err
+                )
+                self._dispatcher.send(
+                    const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+                )
+        else:
+            # Determine the logged in user
+            self._signed_in_username = await self._commands.check_account()
+
+        await self._commands.register_for_change_events(self._options.events)
+        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+
+    async def disconnect(self) -> None:
+        """Disconnect from the CLI."""
+        await self._connection.disconnect()
+
+    async def _on_disconnected(self, from_error: bool) -> None:
+        """Handle when disconnected, which may occur more than once."""
+        assert self._connection.state == const.STATE_DISCONNECTED
+        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+
+    async def _handle_heos_event(self, event: HeosMessage) -> None:
+        """Process a HEOS system event."""
+        result: dict[str, list | dict] | None = None
+        if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
+            result = await self.load_players()
+        if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
+            await self.get_music_sources(refresh=True)
+        elif event.command == const.EVENT_USER_CHANGED:
+            if const.ATTR_SIGNED_IN in event.message:
+                self._signed_in_username = event.get_message_value(const.ATTR_USER_NAME)
+            else:
+                self._signed_in_username = None
+        elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+            await self.get_groups(refresh=True)
+
+        self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
+        _LOGGER.debug("Event received: %s", event)
+
+    async def _handle_player_event(self, event: HeosMessage) -> None:
+        """Process an event about a player."""
+        player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
+        player = self.players.get(player_id)
+        if player and (
+            await player.event_update(event, self._options.all_progress_events)
+        ):
+            self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
+            _LOGGER.debug("Event received for player %s: %s", player, event)
+
+    async def _handle_group_event(self, event: HeosMessage) -> None:
+        """Process an event about a group."""
+        group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
+        group = self.groups.get(group_id)
+        if group:
+            await group.event_update(event)
+            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+            _LOGGER.debug("Event received for group %s: %s", group_id, event)
+
+    async def _on_event(self, event: HeosMessage) -> None:
+        """Handle a heos event."""
+        if event.command in const.HEOS_EVENTS:
+            await self._handle_heos_event(event)
+        elif event.command in const.PLAYER_EVENTS:
+            await self._handle_player_event(event)
+        elif event.command in const.GROUP_EVENTS:
+            await self._handle_group_event(event)
+        else:
+            _LOGGER.debug("Unrecognized event: %s", event)
+
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system.
+
+        References:
+            4.2.1 Get Players"""
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
+
+    async def sign_in(
+        self, username: str, password: str, *, update_credential: bool = True
+    ) -> None:
+        """
+        Sign-in to the HEOS account on the device directly connected.
+
+        Args:
+            username: The username of the HEOS account.
+            password: The password of the HEOS account.
+            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
+        """
+        self._signed_in_username = await self._commands.sign_in(username, password)
+        if update_credential:
+            self._current_credentials = Credentials(username, password)
+
+    async def sign_out(self, *, update_credential: bool = True) -> None:
+        """
+        Sign-out of the HEOS account on the device directly connected.
+
+        Args:
+            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
+        """
+        await self._commands.sign_out()
+        self._signed_in_username = None
+        if update_credential:
+            self._current_credentials = None
+
+    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
+        """Get available groups."""
+        if not self._groups_loaded or refresh:
+            players = await self.get_players()
+            groups = {}
+            payload = await self._commands.get_groups()
+            for data in payload:
+                group = create_group(self, data, players)
+                groups[group.group_id] = group
+            self._groups = groups
+            # Update all statuses
+            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
+            self._groups_loaded = True
+        return self._groups
+
+    async def create_group(self, leader_id: int, member_ids: Sequence[int]) -> None:
+        """Create a HEOS group."""
+        ids = [leader_id]
+        ids.extend(member_ids)
+        await self._commands.set_group(ids)
+
+    async def remove_group(self, group_id: int) -> None:
+        """Ungroup the specified group."""
+        await self._commands.set_group([group_id])
+
+    async def update_group(self, group_id: int, member_ids: Sequence[int]) -> None:
+        """Update the membership of a group."""
+        ids = [group_id]
+        ids.extend(member_ids)
+        await self._commands.set_group(ids)
+
+    async def get_input_sources(self) -> Sequence[MediaItem]:
+        """
+        Get available input sources.
+
+        This will browse all aux input sources and return a list of all available input sources.
+
+        Returns:
+            A sequence of MediaItem instances representing the available input sources across all aux input sources.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        input_sources: list[MediaItem] = []
+        for item in result.items:
+            source_browse_result = await item.browse()
+            input_sources.extend(source_browse_result.items)
+
+        return input_sources
+
+    async def get_favorites(self) -> dict[int, MediaItem]:
+        """
+        Get available favorites.
+
+        This will browse the favorites music source and return a dictionary of all available favorites.
+
+        Returns:
+            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
+        return {index + 1: source for index, source in enumerate(result.items)}
+
+    async def get_playlists(self) -> Sequence[MediaItem]:
+        """
+        Get available playlists.
+
+        This will browse the playlists music source and return a list of all available playlists.
+
+        Returns:
+            A sequence of MediaItem instances representing the available playlists.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        return result.items
+
+    @property
+    def dispatcher(self) -> Dispatcher:
+        """Get the dispatcher instance."""
+        return self._dispatcher
+
     @property
     def groups(self) -> dict[int, HeosGroup]:
         """Get the loaded groups."""
         return self._groups
-
-    @property
-    def music_sources(self) -> dict[int, MediaMusicSource]:
-        """Get available music sources."""
-        return self._music_sources
 
     @property
     def connection_state(self) -> str:
