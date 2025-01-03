@@ -5,12 +5,9 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
-import pytest
-
 from pyheos.dispatch import Dispatcher
 
 
-@pytest.mark.asyncio
 async def test_connect(handler: Callable) -> None:
     """Tests the connect function."""
     # Arrange
@@ -21,7 +18,6 @@ async def test_connect(handler: Callable) -> None:
     assert handler in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
 async def test_disconnect(handler: Callable) -> None:
     """Tests the disconnect function."""
     # Arrange
@@ -33,7 +29,6 @@ async def test_disconnect(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
 async def test_disconnect_all(handler: Callable) -> None:
     """Tests the disconnect all function."""
     # Arrange
@@ -50,7 +45,6 @@ async def test_disconnect_all(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST3"]
 
 
-@pytest.mark.asyncio
 async def test_already_disconnected(handler: Callable) -> None:
     """Tests that disconnect can be called more than once."""
     # Arrange
@@ -63,7 +57,6 @@ async def test_already_disconnected(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
 async def test_send_async_handler(async_handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
@@ -75,7 +68,6 @@ async def test_send_async_handler(async_handler: Callable) -> None:
     assert async_handler.fired  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
 async def test_send_async_partial_handler(async_handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
@@ -88,7 +80,6 @@ async def test_send_async_partial_handler(async_handler: Callable) -> None:
     assert async_handler.fired  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
 async def test_send(handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
@@ -102,7 +93,6 @@ async def test_send(handler: Callable) -> None:
     assert handler.args[0] == args  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
 async def test_custom_connect_and_send(handler: Callable) -> None:
     """Tests using the custom connect and send implementations."""
     # Arrange

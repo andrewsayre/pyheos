@@ -3,90 +3,82 @@
 import pytest
 
 from pyheos import const
+from pyheos.group import HeosGroup
 from pyheos.heos import Heos
-from tests import MockHeosDevice
+from tests import calls_command, value
 
 
-@pytest.mark.asyncio
-async def test_set_volume(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("group.set_volume", {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"})
+async def test_set_volume(group: HeosGroup) -> None:
     """Test the set_volume command."""
-    await heos.get_groups()
-    group = heos.groups[1]
-    mock_device.register(
-        const.COMMAND_SET_GROUP_VOLUME,
-        {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"},
-        "group.set_volume",
-    )
-    with pytest.raises(ValueError):
-        await group.set_volume(-1)
-    with pytest.raises(ValueError):
-        await group.set_volume(101)
     await group.set_volume(25)
 
 
-@pytest.mark.asyncio
-async def test_volume_down(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test the volume_down command."""
-    await heos.get_groups()
-    group = heos.groups[1]
-    mock_device.register(
-        const.COMMAND_GROUP_VOLUME_DOWN,
-        {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"},
-        "group.volume_down",
-    )
+@pytest.mark.parametrize("volume", [-1, 101])
+async def test_set_volume_invalid_raises(group: HeosGroup, volume: int) -> None:
+    """Test the set_volume command."""
+    with pytest.raises(ValueError):
+        await group.set_volume(volume)
 
-    with pytest.raises(ValueError):
-        await group.volume_down(0)
-    with pytest.raises(ValueError):
-        await group.volume_down(11)
+
+@calls_command("group.volume_down", {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"})
+async def test_volume_down(group: HeosGroup) -> None:
+    """Test the volume_down command."""
     await group.volume_down(6)
 
 
-@pytest.mark.asyncio
-async def test_volume_up(mock_device: MockHeosDevice, heos: Heos) -> None:
+@pytest.mark.parametrize("step", [0, 11])
+async def test_volume_down_invalid_raises(
+    group: HeosGroup, heos: Heos, step: int
+) -> None:
+    """Test the volume_down command."""
+    with pytest.raises(ValueError):
+        await group.volume_down(step)
+
+
+@calls_command("group.volume_up", {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"})
+async def test_volume_up(group: HeosGroup) -> None:
     """Test the volume_up command."""
-    await heos.get_groups()
-    group = heos.groups[1]
-    mock_device.register(
-        const.COMMAND_GROUP_VOLUME_UP,
-        {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"},
-        "group.volume_up",
-    )
-    with pytest.raises(ValueError):
-        await group.volume_up(0)
-    with pytest.raises(ValueError):
-        await group.volume_up(11)
     await group.volume_up(6)
 
 
-@pytest.mark.asyncio
-async def test_set_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
-    """Test mute and unmute commands."""
-    await heos.get_groups()
-    group = heos.groups[1]
+@pytest.mark.parametrize("step", [0, 11])
+async def test_volume_up_invalid_raises(group: HeosGroup, step: int) -> None:
+    """Test the volume_up command."""
+    with pytest.raises(ValueError):
+        await group.volume_up(step)
 
-    mock_device.register(
-        const.COMMAND_SET_GROUP_MUTE,
-        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_ON},
-        "group.set_mute",
-    )
+
+@calls_command(
+    "group.set_mute", {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_ON}
+)
+async def test_mute(group: HeosGroup) -> None:
+    """Test mute commands."""
     await group.mute()
 
-    mock_device.register(
-        const.COMMAND_SET_GROUP_MUTE,
-        {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF},
-        "group.set_mute",
-        replace=True,
-    )
+
+@pytest.mark.parametrize("mute", [True, False])
+@calls_command(
+    "group.set_mute",
+    {
+        const.ATTR_GROUP_ID: "1",
+        const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
+    },
+)
+async def test_set_mute(group: HeosGroup, mute: bool) -> None:
+    """Test mute commands."""
+    await group.set_mute(mute)
+
+
+@calls_command(
+    "group.set_mute", {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF}
+)
+async def test_unmute(group: HeosGroup) -> None:
+    """Test mute commands."""
     await group.unmute()
 
 
-@pytest.mark.asyncio
-async def test_toggle_mute(mock_device: MockHeosDevice, heos: Heos) -> None:
+@calls_command("group.toggle_mute", {const.ATTR_GROUP_ID: "1"})
+async def test_toggle_mute(group: HeosGroup) -> None:
     """Test toggle mute command."""
-    await heos.get_groups()
-    group = heos.groups[1]
-    mock_device.register(
-        const.COMMAND_GROUP_TOGGLE_MUTE, {const.ATTR_GROUP_ID: "1"}, "group.toggle_mute"
-    )
     await group.toggle_mute()
