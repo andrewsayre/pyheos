@@ -125,7 +125,7 @@ def calls_commands(*commands: CallCommand) -> Callable:
                 # Resolve command arguments (they may contain a ArgumentValue)
                 resolved_args = command.get_resolve_args(kwargs)
 
-                mock_device.register(
+                matcher = mock_device.register(
                     command_name,
                     resolved_args,
                     command.fixture,
@@ -134,11 +134,7 @@ def calls_commands(*commands: CallCommand) -> Callable:
 
                 # Store item to assert later (so we don't need to keep a copy of the resolved args)
                 if command.assert_called:
-                    assert_list.append(
-                        lambda: mock_device.assert_command_called(
-                            command_name, resolved_args
-                        )
-                    )
+                    assert_list.append(matcher.assert_called)
 
             # Call the wrapped method
             result = await func(*args, **kwargs)
@@ -310,13 +306,15 @@ class MockHeosDevice:
         responses: str | list[str],
         *,
         replace: bool = False,
-    ) -> None:
+    ) -> "CommandMatcher":
         """Register a matcher."""
         if replace:
             self._matchers = [m for m in self._matchers if m.command != command]
         if isinstance(responses, str):
             responses = [responses]
-        self._matchers.append(CommandMatcher(command, args, responses))
+        matcher = CommandMatcher(command, args, responses)
+        self._matchers.append(matcher)
+        return matcher
 
     def assert_command_called(
         self, target_command: str, target_args: dict[str, Any] | None = None
@@ -328,7 +326,13 @@ class MockHeosDevice:
             command: The command to check.
             args: The arguments to check. If None, only the command is checked.
         """
-        self.connections[0].assert_command_called(target_command, target_args)
+        for matcher in self._matchers:
+            if matcher.is_match(target_command, target_args, increment=False):
+                matcher.assert_called()
+                return
+        assert (
+            False
+        ), f"Command was not registered: {target_command} with args {target_args}."
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -352,8 +356,6 @@ class MockHeosDevice:
             fixture_name = (
                 f"{str(url_parts.hostname)}.{str(url_parts.path.lstrip('/'))}"
             )
-
-            log.add_called_command(command, query)
 
             # Try matchers
             matcher = next(
@@ -394,36 +396,39 @@ class MockHeosDevice:
 
 
 @dataclass
-class CalledCommand:
+class CommandMatcher:
+    """Define a command match response."""
+
     command: str
     _args: dict[str, Any] | None = field(default_factory=dict)
+    responses: list[str] = field(default_factory=list)
+    match_count: int = field(default=0, init=False)
 
     @functools.cached_property
     def args(self) -> dict[str, str] | None:
         if self._args is None:
             return None
-        return CalledCommand._convert_dict_to_strings(self._args)
+        return CommandMatcher._convert_dict_to_strings(self._args)
 
     @staticmethod
     def _convert_dict_to_strings(args: dict[str, Any]) -> dict[str, str]:
         return {key: str(value) for key, value in args.items()}
 
     def is_match(
-        self, match_command: str, match_args: dict[str, Any] | None = None
+        self,
+        match_command: str,
+        match_args: dict[str, Any] | None = None,
+        increment: bool = True,
     ) -> bool:
         """Determine if the command matches the target."""
         if self.command != match_command:
             return False
         if match_args is not None and self.args is not None:
-            return self.args == CalledCommand._convert_dict_to_strings(match_args)
+            if not self.args == CommandMatcher._convert_dict_to_strings(match_args):
+                return False
+        if increment:
+            self.match_count += 1
         return True
-
-
-@dataclass
-class CommandMatcher(CalledCommand):
-    """Define a command match response."""
-
-    responses: list[str] = field(default_factory=list)
 
     async def get_response(self, query: dict) -> list[str]:
         """Get the response body."""
@@ -445,6 +450,12 @@ class CommandMatcher(CalledCommand):
                 response = response.replace(token, value)
         return response
 
+    def assert_called(self) -> None:
+        """Assert that the command was called."""
+        assert (
+            self.match_count
+        ), f"Command {self.command} was not called with arguments {self._args}."
+
 
 class ConnectionLog:
     """Define a connection log."""
@@ -456,7 +467,6 @@ class ConnectionLog:
         self._reader = reader
         self._writer = writer
         self.is_registered_for_events = False
-        self.commands: list[CalledCommand] = []
 
     async def disconnect(self) -> None:
         """Close the connection."""
@@ -468,18 +478,3 @@ class ConnectionLog:
         data = (payload + SEPARATOR).encode()
         self._writer.write(data)
         await self._writer.drain()
-
-    def add_called_command(self, command: str, args: dict[str, str]) -> None:
-        """Add a called command."""
-        self.commands.append(CalledCommand(command, args))
-
-    def assert_command_called(
-        self, target_command: str, target_args: dict[str, Any] | None = None
-    ) -> None:
-        """Assert that the command was called."""
-        for called_command in self.commands:
-            if called_command.is_match(target_command, target_args):
-                return
-        assert (
-            False
-        ), f"Command {target_command} was not called with arguments {target_args}."

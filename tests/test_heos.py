@@ -130,7 +130,7 @@ async def test_heart_beat(mock_device: MockHeosDevice) -> None:
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
     await asyncio.sleep(0.2)
 
-    mock_device.connections[0].assert_command_called(const.COMMAND_HEART_BEAT)
+    mock_device.assert_command_called(const.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -428,7 +428,7 @@ async def test_player_now_playing_changed_event(
     heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
 
     # Write event through mock device
-    mock_device.register(
+    command = mock_device.register(
         const.COMMAND_GET_NOW_PLAYING_MEDIA,
         None,
         "player.get_now_playing_media_changed",
@@ -441,6 +441,7 @@ async def test_player_now_playing_changed_event(
     # Wait until the signal is set
     await signal.wait()
     # Assert state changed
+    command.assert_called()
     assert now_playing.album == "I've Been Waiting (Single) (Explicit)"
     assert now_playing.type == "station"
     assert now_playing.album_id == "1"
@@ -664,13 +665,14 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
-    mock_device.register(
+    command = mock_device.register(
         const.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
     )
     await mock_device.write_event("event.players_changed")
 
     # Wait until the signal is set
     await signal.wait()
+    command.assert_called()
     assert len(heos.players) == 3
     # Assert 2 (Front Porch) was marked unavailable
     assert not old_players[2].available
@@ -699,7 +701,7 @@ async def test_players_changed_event_new_ids(
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
-    mock_device.register(
+    command = mock_device.register(
         const.COMMAND_GET_PLAYERS,
         None,
         "player.get_players_firmware_update",
@@ -708,6 +710,7 @@ async def test_players_changed_event_new_ids(
     await mock_device.write_event("event.players_changed")
     await signal.wait()
     # Assert players are the same as before just updated.
+    command.assert_called()
     assert len(heos.players) == 2
     assert heos.players[101] == old_players[1]
     assert heos.players[101].available
@@ -717,7 +720,7 @@ async def test_players_changed_event_new_ids(
     assert heos.players[102].name == "Front Porch"
 
 
-@calls_player_commands((1, 2), CallCommand("browse.get_music_sources"))
+@calls_command("browse.get_music_sources")
 async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test sources changed fires dispatcher."""
     await heos.get_music_sources()
@@ -730,7 +733,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
-    mock_device.register(
+    command = mock_device.register(
         const.COMMAND_BROWSE_GET_SOURCES,
         None,
         "browse.get_music_sources_changed",
@@ -740,6 +743,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Wait until the signal is set
     await signal.wait()
+    command.assert_called()
     assert heos.music_sources[const.MUSIC_SOURCE_TUNEIN].available
 
 
@@ -757,13 +761,14 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
 
     # Write event through mock device
-    mock_device.register(
+    command = mock_device.register(
         const.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
     )
     await mock_device.write_event("event.groups_changed")
 
     # Wait until the signal is set
     await signal.wait()
+    command.assert_called()
     assert not await heos.get_groups()
 
 
