@@ -65,7 +65,7 @@ async def test_mute(group: HeosGroup) -> None:
         const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
     },
 )
-async def test_unmute(group: HeosGroup, mute: bool) -> None:
+async def test_set_mute(group: HeosGroup, mute: bool) -> None:
     """Test mute commands."""
     await group.set_mute(mute)
 
@@ -73,7 +73,7 @@ async def test_unmute(group: HeosGroup, mute: bool) -> None:
 @calls_command(
     "group.set_mute", {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF}
 )
-async def test_set_mute(group: HeosGroup) -> None:
+async def test_unmute(group: HeosGroup) -> None:
     """Test mute commands."""
     await group.unmute()
 
