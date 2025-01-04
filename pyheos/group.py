@@ -45,8 +45,6 @@ class HeosGroup:
     ) -> None:
         """Init the group class."""
         self._heos = heos
-        # pylint: disable=protected-access
-        self._commands = heos._commands
         self._name: str = name
         self._group_id: int = group_id
         self._leader: HeosPlayer = leader
@@ -60,11 +58,11 @@ class HeosGroup:
 
     async def refresh_volume(self) -> None:
         """Pull the latest volume."""
-        self._volume = await self._commands.get_group_volume(self._group_id)
+        self._volume = await self._heos.get_group_volume(self._group_id)
 
     async def refresh_mute(self) -> None:
         """Pull the latest mute status."""
-        self._is_muted = await self._commands.get_group_mute(self._group_id)
+        self._is_muted = await self._heos.get_group_mute(self._group_id)
 
     async def event_update(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
@@ -75,19 +73,19 @@ class HeosGroup:
 
     async def set_volume(self, level: int) -> None:
         """Set the volume level."""
-        await self._commands.set_group_volume(self._group_id, level)
+        await self._heos.set_group_volume(self._group_id, level)
 
     async def volume_up(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        await self._commands.group_volume_up(self._group_id, step)
+        await self._heos.group_volume_up(self._group_id, step)
 
     async def volume_down(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        await self._commands.group_volume_down(self._group_id, step)
+        await self._heos.group_volume_down(self._group_id, step)
 
     async def set_mute(self, state: bool) -> None:
         """Set the mute state."""
-        await self._commands.group_set_mute(self._group_id, state)
+        await self._heos.group_set_mute(self._group_id, state)
 
     async def mute(self) -> None:
         """Set mute state."""
@@ -99,7 +97,7 @@ class HeosGroup:
 
     async def toggle_mute(self) -> None:
         """Toggle mute state."""
-        await self._commands.group_toggle_mute(self._group_id)
+        await self._heos.group_toggle_mute(self._group_id)
 
     @property
     def name(self) -> str:

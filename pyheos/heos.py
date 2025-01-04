@@ -6,8 +6,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final, cast
 
-from pyheos.command import HeosCommands
 from pyheos.command.browse import BrowseCommands
+from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
@@ -80,6 +80,11 @@ class ConnectionMixin:
             heart_beat_interval=options.heart_beat_interval,
         )
 
+    @property
+    def connection_state(self) -> str:
+        """Get the state of the connection."""
+        return self._connection.state
+
 
 class SystemMixin(ConnectionMixin):
     """A mixin to provide access to the system commands."""
@@ -90,6 +95,21 @@ class SystemMixin(ConnectionMixin):
 
         self._current_credentials = self._options.credentials
         self._signed_in_username: str | None = None
+
+    @property
+    def is_signed_in(self) -> bool:
+        """Return True if the HEOS accuont is signed in."""
+        return bool(self._signed_in_username)
+
+    @property
+    def signed_in_username(self) -> str | None:
+        """Return the signed-in username."""
+        return self._signed_in_username
+
+    @property
+    def current_credentials(self) -> Credentials | None:
+        """Return the current credential, if any set."""
+        return self._current_credentials
 
     async def register_for_change_events(self, enable: bool) -> None:
         """Register for change events.
@@ -642,7 +662,144 @@ class PlayerMixin(ConnectionMixin):
         }
 
 
-class Heos(SystemMixin, BrowseMixin, PlayerMixin):
+class GroupMixin(PlayerMixin):
+    """A mixin to provide access to the group commands."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(GroupMixin, self).__init__(*args, **kwargs)
+        self._groups: dict[int, HeosGroup] = {}
+        self._groups_loaded = False
+
+    @property
+    def groups(self) -> dict[int, HeosGroup]:
+        """Get the loaded groups."""
+        return self._groups
+
+    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
+        """Get available groups."""
+        if not self._groups_loaded or refresh:
+            players = await self.get_players()
+            groups = {}
+            result = await self._connection.command(GroupCommands.get_groups())
+            payload = cast(Sequence[dict], result.payload)
+            for data in payload:
+                group = create_group(cast("Heos", self), data, players)
+                groups[group.group_id] = group
+            self._groups = groups
+            # Update all statuses
+            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
+            self._groups_loaded = True
+        return self._groups
+
+    async def set_group(self, player_ids: Sequence[int]) -> None:
+        """Create, modify, or ungroup players.
+
+        Args:
+            player_ids: The list of player identifiers to group or ungroup. The first player is the group leader.
+
+        References:
+            4.3.3 Set Group"""
+        await self._connection.command(GroupCommands.set_group(player_ids))
+
+    async def create_group(
+        self, leader_player_id: int, member_player_ids: Sequence[int]
+    ) -> None:
+        """Create a HEOS group.
+
+        Args:
+            leader_player_id: The player_id of the lead player in the group.
+            member_player_ids: The player_ids of the group members.
+
+        References:
+            4.3.3 Set Group"""
+        player_ids = [leader_player_id]
+        player_ids.extend(member_player_ids)
+        await self.set_group(player_ids)
+
+    async def remove_group(self, group_id: int) -> None:
+        """Ungroup the specified group.
+
+        Args:
+            group_id: The identifier of the group to ungroup. Must be the lead player.
+
+        References:
+            4.3.3 Set Group
+        """
+        await self.set_group([group_id])
+
+    async def update_group(
+        self, group_id: int, member_player_ids: Sequence[int]
+    ) -> None:
+        """Update the membership of a group.
+
+        Args:
+            group_id: The identifier of the group to update (same as the lead player_id)
+            member_player_ids: The new player_ids of the group members.
+        """
+        await self.create_group(group_id, member_player_ids)
+
+    async def get_group_volume(self, group_id: int) -> int:
+        """
+        Get the volume of a group.
+
+        References:
+            4.3.4 Get Group Volume
+        """
+        result = await self._connection.command(
+            GroupCommands.get_group_volume(group_id)
+        )
+        return result.get_message_value_int(const.ATTR_LEVEL)
+
+    async def set_group_volume(self, group_id: int, level: int) -> None:
+        """Set the volume of the group.
+
+        References:
+            4.3.5 Set Group Volume"""
+        await self._connection.command(GroupCommands.set_group_volume(group_id, level))
+
+    async def group_volume_up(
+        self, group_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.3.6 Group Volume Up"""
+        await self._connection.command(GroupCommands.group_volume_up(group_id, step))
+
+    async def group_volume_down(
+        self, group_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.7 Group Volume Down"""
+        await self._connection.command(GroupCommands.group_volume_down(group_id, step))
+
+    async def get_group_mute(self, group_id: int) -> bool:
+        """Get the mute status of the group.
+
+        References:
+            4.3.8 Get Group Mute"""
+        result = await self._connection.command(GroupCommands.get_group_mute(group_id))
+        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+
+    async def group_set_mute(self, group_id: int, state: bool) -> None:
+        """Set the mute state of the group.
+
+        References:
+            4.3.9 Set Group Mute"""
+        await self._connection.command(GroupCommands.group_set_mute(group_id, state))
+
+    async def group_toggle_mute(self, group_id: int) -> None:
+        """Toggle the mute state.
+
+        References:
+            4.3.10 Toggle Group Mute"""
+        await self._connection.command(GroupCommands.group_toggle_mute(group_id))
+
+
+class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod
@@ -691,15 +848,10 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
 
-        self._commands = HeosCommands(self._connection)
-
         self._dispatcher = options.dispatcher or Dispatcher()
 
         self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
-
-        self._groups: dict[int, HeosGroup] = {}
-        self._groups_loaded = False
 
     async def connect(self) -> None:
         """Connect to the CLI."""
@@ -798,37 +950,6 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
         host = next(host for host in hosts if host.ip_address == self._options.host)
         return HeosSystem(self._signed_in_username, host, hosts)
 
-    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
-        """Get available groups."""
-        if not self._groups_loaded or refresh:
-            players = await self.get_players()
-            groups = {}
-            payload = await self._commands.get_groups()
-            for data in payload:
-                group = create_group(self, data, players)
-                groups[group.group_id] = group
-            self._groups = groups
-            # Update all statuses
-            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
-            self._groups_loaded = True
-        return self._groups
-
-    async def create_group(self, leader_id: int, member_ids: Sequence[int]) -> None:
-        """Create a HEOS group."""
-        ids = [leader_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
-
-    async def remove_group(self, group_id: int) -> None:
-        """Ungroup the specified group."""
-        await self._commands.set_group([group_id])
-
-    async def update_group(self, group_id: int, member_ids: Sequence[int]) -> None:
-        """Update the membership of a group."""
-        ids = [group_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
-
     async def get_input_sources(self) -> Sequence[MediaItem]:
         """
         Get available input sources.
@@ -874,28 +995,3 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""
         return self._dispatcher
-
-    @property
-    def groups(self) -> dict[int, HeosGroup]:
-        """Get the loaded groups."""
-        return self._groups
-
-    @property
-    def connection_state(self) -> str:
-        """Get the state of the connection."""
-        return self._connection.state
-
-    @property
-    def is_signed_in(self) -> bool:
-        """Return True if the HEOS accuont is signed in."""
-        return bool(self._signed_in_username)
-
-    @property
-    def signed_in_username(self) -> str | None:
-        """Return the signed-in username."""
-        return self._signed_in_username
-
-    @property
-    def current_credentials(self) -> Credentials | None:
-        """Return the current credential, if any set."""
-        return self._current_credentials
