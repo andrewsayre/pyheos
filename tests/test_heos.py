@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from pyheos import command as commands
 from pyheos import const
 from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
@@ -137,7 +138,7 @@ async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
     await asyncio.sleep(0.3)
 
-    mock_device.assert_command_called(const.COMMAND_HEART_BEAT)
+    mock_device.assert_command_called(commands.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -205,7 +206,7 @@ async def test_commands_fail_when_disconnected(
 
     with pytest.raises(CommandError, match="Not connected to device") as e_info:
         await heos.load_players()
-    assert e_info.value.command == const.COMMAND_GET_PLAYERS
+    assert e_info.value.command == commands.COMMAND_GET_PLAYERS
     assert (
         "Command failed 'heos://player/get_players': Not connected to device"
         in caplog.text
@@ -457,7 +458,7 @@ async def test_player_now_playing_changed_event(
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_NOW_PLAYING_MEDIA,
+        commands.COMMAND_GET_NOW_PLAYING_MEDIA,
         None,
         "player.get_now_playing_media_changed",
         replace=True,
@@ -696,7 +697,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
+        commands.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
     )
     await mock_device.write_event("event.players_changed")
 
@@ -732,7 +733,7 @@ async def test_players_changed_event_new_ids(
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_PLAYERS,
+        commands.COMMAND_GET_PLAYERS,
         None,
         "player.get_players_firmware_update",
         replace=True,
@@ -764,7 +765,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_BROWSE_GET_SOURCES,
+        commands.COMMAND_BROWSE_GET_SOURCES,
         None,
         "browse.get_music_sources_changed",
         replace=True,
@@ -792,7 +793,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
+        commands.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
     )
     await mock_device.write_event("event.groups_changed")
 

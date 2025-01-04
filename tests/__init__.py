@@ -10,6 +10,11 @@ from typing import Any, cast
 from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
 
 from pyheos import Heos, const
+from pyheos.command import (
+    COMMAND_ACCOUNT_CHECK,
+    COMMAND_REBOOT,
+    COMMAND_REGISTER_FOR_CHANGE_EVENTS,
+)
 from pyheos.const import SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
@@ -280,7 +285,7 @@ class MockHeosDevice:
             self._handle_connection, "127.0.0.1", const.CLI_PORT
         )
 
-        self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
+        self.register(COMMAND_ACCOUNT_CHECK, None, "system.check_account")
 
     async def stop(self) -> None:
         """Stop the heos server."""
@@ -388,13 +393,13 @@ class MockHeosDevice:
                 continue
 
             # Special processing for known/unknown commands
-            if command == const.COMMAND_REBOOT:
+            if command == COMMAND_REBOOT:
                 # Simulate a reboot by shutting down the server
                 await self.stop()
                 await asyncio.sleep(0.3)
                 await self.start()
                 return
-            if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
+            if command == COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[const.ATTR_ENABLE])
                 log.is_registered_for_events = enable == const.VALUE_ON
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)

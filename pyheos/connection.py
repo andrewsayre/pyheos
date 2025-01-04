@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
+from pyheos.command import COMMAND_REBOOT
 from pyheos.command.system import SystemCommands
 from pyheos.message import HeosCommand, HeosMessage
 
@@ -165,9 +166,9 @@ class ConnectionBase:
                 self._last_activity = datetime.now()
 
             # If the command is a reboot, we won't get a response.
-            if command.command == const.COMMAND_REBOOT:
+            if command.command == COMMAND_REBOOT:
                 _LOGGER.debug(f"Command executed '{command.uri_masked}': No response")
-                return HeosMessage(const.COMMAND_REBOOT)
+                return HeosMessage(COMMAND_REBOOT)
 
             # Wait for the response with a timeout
             try:

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from pyheos import const
+from pyheos import command, const
 from pyheos.heos import Heos
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource
 from pyheos.message import HeosMessage
@@ -57,7 +57,7 @@ async def test_browse_result_from_data() -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
     message = HeosMessage(
-        const.COMMAND_BROWSE_BROWSE,
+        command.COMMAND_BROWSE_BROWSE,
         True,
         {const.ATTR_SOURCE_ID: "1025", const.ATTR_RETURNED: "1", const.ATTR_COUNT: "1"},
         [
