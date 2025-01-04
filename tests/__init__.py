@@ -15,7 +15,7 @@ from pyheos.command import (
     COMMAND_REBOOT,
     COMMAND_REGISTER_FOR_CHANGE_EVENTS,
 )
-from pyheos.const import SEPARATOR, SEPARATOR_BYTES
+from pyheos.connection import CLI_PORT, SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
 
@@ -282,7 +282,7 @@ class MockHeosDevice:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
-            self._handle_connection, "127.0.0.1", const.CLI_PORT
+            self._handle_connection, "127.0.0.1", CLI_PORT
         )
 
         self.register(COMMAND_ACCOUNT_CHECK, None, "system.check_account")

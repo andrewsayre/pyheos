@@ -3,7 +3,6 @@
 from enum import IntEnum, StrEnum
 from typing import Final
 
-CLI_PORT: Final = 1255
 DEFAULT_TIMEOUT: Final = 10.0
 DEFAULT_RECONNECT_DELAY: Final = 10.0
 DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
@@ -65,12 +64,6 @@ ATTR_TYPE: Final = "type"
 ATTR_URL: Final = "url"
 ATTR_USER_NAME: Final = "un"
 ATTR_VERSION: Final = "version"
-
-QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
-MASKED_PARAMS: Final = {ATTR_PASSWORD}
-MASK: Final = "********"
-SEPARATOR: Final = "\r\n"
-SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
