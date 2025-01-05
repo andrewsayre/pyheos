@@ -167,13 +167,11 @@ async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
 
 
 @pytest_asyncio.fixture(name="group")
-async def group_fixture(
-    heos: MockHeos, player: HeosPlayer, player_front_porch: HeosPlayer
-) -> HeosGroup:
+async def group_fixture(heos: MockHeos) -> HeosGroup:
     return HeosGroup(
-        heos,
-        "Back Patio + Front Porch",
-        1,
-        player,
-        [player, player_front_porch],
+        name="Back Patio + Front Porch",
+        group_id=1,
+        lead_player_id=1,
+        member_player_ids=[1, 2],
+        _heos=heos,
     )

@@ -234,7 +234,7 @@ def calls_group_commands(*additional: CallCommand) -> Callable:
         CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
     ]
     commands.extend(additional)
-    return calls_player_commands((1, 2), *commands)
+    return calls_commands(*commands)
 
 
 async def get_fixture(file: str) -> str:

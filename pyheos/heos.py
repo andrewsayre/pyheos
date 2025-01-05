@@ -23,7 +23,7 @@ from pyheos.system import HeosHost, HeosSystem
 from . import const
 from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
-from .group import HeosGroup, create_group
+from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -679,12 +679,11 @@ class GroupMixin(PlayerMixin):
     async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
         """Get available groups."""
         if not self._groups_loaded or refresh:
-            players = await self.get_players()
             groups = {}
             result = await self._connection.command(GroupCommands.get_groups())
             payload = cast(Sequence[dict], result.payload)
             for data in payload:
-                group = create_group(cast("Heos", self), data, players)
+                group = HeosGroup.from_data(data, cast("Heos", self))
                 groups[group.group_id] = group
             self._groups = groups
             # Update all statuses

@@ -1181,9 +1181,9 @@ async def test_get_groups(heos: Heos) -> None:
     group = groups[1]
     assert group.name == "Back Patio + Front Porch"
     assert group.group_id == 1
-    assert group.leader.player_id == 1
-    assert len(group.members) == 1
-    assert group.members[0].player_id == 2
+    assert group.lead_player_id == 1
+    assert len(group.member_player_ids) == 1
+    assert group.member_player_ids[0] == 2
     assert group.volume == 42
     assert not group.is_muted
 
