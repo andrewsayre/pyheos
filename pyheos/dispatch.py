@@ -3,7 +3,8 @@
 import asyncio
 import functools
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 TargetType = Callable[..., Any]
 DisconnectType = Callable[[], None]
@@ -17,18 +18,18 @@ class Dispatcher:
     def __init__(
         self,
         *,
-        connect: ConnectType = None,
-        send: SendType = None,
+        connect: ConnectType | None = None,
+        send: SendType | None = None,
         signal_prefix: str = "",
-        loop=None,
-    ):
+        loop: asyncio.AbstractEventLoop | None = None,
+    ) -> None:
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
-        self._signals = defaultdict(list)
-        self._loop = loop or asyncio.get_event_loop()
+        self._signals: dict[str, list] = defaultdict(list)
+        self._loop = loop or asyncio.get_running_loop()
         self._connect = connect or self._default_connect
         self._send = send or self._default_send
-        self._disconnects = []
+        self._disconnects: list[Callable] = []
 
     def connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
@@ -40,7 +41,7 @@ class Dispatcher:
         """Fire a signal.  Must be ran in the event loop."""
         return self._send(self._signal_prefix + signal, *args)
 
-    def disconnect_all(self):
+    def disconnect_all(self) -> None:
         """Disconnect all connected."""
         disconnects = self._disconnects.copy()
         self._disconnects.clear()
@@ -70,7 +71,7 @@ class Dispatcher:
             futures.append(task)
         return futures
 
-    def _call_target(self, target, *args) -> asyncio.Future:
+    def _call_target(self, target: Callable, *args: Any) -> asyncio.Future:
         check_target = target
         while isinstance(check_target, functools.partial):
             check_target = check_target.func
@@ -79,6 +80,6 @@ class Dispatcher:
         return self._loop.run_in_executor(None, target, *args)
 
     @property
-    def signals(self) -> Dict[str, List[TargetType]]:
+    def signals(self) -> dict[str, list[TargetType]]:
         """Get the dictionary of registered signals and callbacks."""
         return self._signals

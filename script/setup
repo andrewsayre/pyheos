@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Setups the repository.
+
+# Stop on errors
+set -e
+
+# Upgrade pip and install UV
+pip install --upgrade pip
+pip install uv
+
+# Setup virtual environment
+uv venv $VIRTUAL_ENV
+
+# install dependencies
+uv pip install -r requirements.txt -r test-requirements.txt

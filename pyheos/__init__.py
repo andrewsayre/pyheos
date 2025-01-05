@@ -1,23 +1,37 @@
 """pyheos - a library for interacting with HEOS devices."""
 
 from . import const
+from .credentials import Credentials
 from .dispatch import Dispatcher
 from .error import CommandError, CommandFailedError, HeosError
 from .group import HeosGroup
-from .heos import Heos
-from .player import HeosNowPlayingMedia, HeosPlayer
-from .source import HeosSource, InputSource
+from .heos import Heos, HeosOptions
+from .media import (
+    BrowseResult,
+    Media,
+    MediaItem,
+    MediaMusicSource,
+)
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .system import HeosHost, HeosSystem
 
 __all__ = [
+    "BrowseResult",
     "const",
     "CommandError",
     "CommandFailedError",
+    "Credentials",
     "Dispatcher",
     "Heos",
     "HeosError",
     "HeosGroup",
+    "HeosHost",
+    "HeosOptions",
     "HeosPlayer",
     "HeosNowPlayingMedia",
-    "HeosSource",
-    "InputSource",
+    "HeosSystem",
+    "Media",
+    "MediaItem",
+    "MediaMusicSource",
+    "PlayMode",
 ]

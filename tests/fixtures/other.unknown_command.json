@@ -1,0 +1,1 @@
+{"heos": {"command": "{command}", "result": "fail", "message": "eid=1&text=Command not registered: {full_command}"}}

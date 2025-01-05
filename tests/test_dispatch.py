@@ -2,14 +2,13 @@
 
 import asyncio
 import functools
-
-import pytest
+from collections.abc import Callable
+from typing import Any
 
 from pyheos.dispatch import Dispatcher
 
 
-@pytest.mark.asyncio
-async def test_connect(handler):
+async def test_connect(handler: Callable) -> None:
     """Tests the connect function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -19,8 +18,7 @@ async def test_connect(handler):
     assert handler in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
-async def test_disconnect(handler):
+async def test_disconnect(handler: Callable) -> None:
     """Tests the disconnect function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -31,8 +29,7 @@ async def test_disconnect(handler):
     assert handler not in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
-async def test_disconnect_all(handler):
+async def test_disconnect_all(handler: Callable) -> None:
     """Tests the disconnect all function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -48,8 +45,7 @@ async def test_disconnect_all(handler):
     assert handler not in dispatcher.signals["TEST3"]
 
 
-@pytest.mark.asyncio
-async def test_already_disconnected(handler):
+async def test_already_disconnected(handler: Callable) -> None:
     """Tests that disconnect can be called more than once."""
     # Arrange
     dispatcher = Dispatcher()
@@ -61,8 +57,7 @@ async def test_already_disconnected(handler):
     assert handler not in dispatcher.signals["TEST"]
 
 
-@pytest.mark.asyncio
-async def test_send_async_handler(async_handler):
+async def test_send_async_handler(async_handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
     dispatcher = Dispatcher()
@@ -70,11 +65,10 @@ async def test_send_async_handler(async_handler):
     # Act
     await asyncio.gather(*dispatcher.send("TEST"))
     # Assert
-    assert async_handler.fired
+    assert async_handler.fired  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
-async def test_send_async_partial_handler(async_handler):
+async def test_send_async_partial_handler(async_handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
     partial = functools.partial(async_handler)
@@ -83,11 +77,10 @@ async def test_send_async_partial_handler(async_handler):
     # Act
     await asyncio.gather(*dispatcher.send("TEST"))
     # Assert
-    assert async_handler.fired
+    assert async_handler.fired  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
-async def test_send(handler):
+async def test_send(handler: Callable) -> None:
     """Tests sending to async handlers."""
     # Arrange
     dispatcher = Dispatcher()
@@ -96,36 +89,36 @@ async def test_send(handler):
     # Act
     await asyncio.gather(*dispatcher.send("TEST", args))
     # Assert
-    assert handler.fired
-    assert handler.args[0] == args
+    assert handler.fired  # type: ignore[attr-defined]
+    assert handler.args[0] == args  # type: ignore[attr-defined]
 
 
-@pytest.mark.asyncio
-async def test_custom_connect_and_send(handler):
+async def test_custom_connect_and_send(handler: Callable) -> None:
     """Tests using the custom connect and send implementations."""
     # Arrange
     test_signal = "PREFIX_TEST"
     stored_target = None
 
-    def connect(signal, target):
+    def connect(signal: str, target: Callable) -> Callable:
         assert signal == test_signal
         nonlocal stored_target
         stored_target = target
 
-        def disconnect():
+        def disconnect() -> None:
             nonlocal stored_target
             stored_target = None
 
         return disconnect
 
-    def send(signal, *args):
+    def send(signal: str, *args: Any) -> None:
         assert signal == test_signal
+        assert stored_target is not None
         stored_target(*args)  # pylint:disable=not-callable
 
-    dispatcher = Dispatcher(connect=connect, send=send, signal_prefix="PREFIX_")
+    dispatcher = Dispatcher(connect=connect, send=send, signal_prefix="PREFIX_")  # type: ignore[arg-type]
 
     # Act
     dispatcher.connect("TEST", handler)
     dispatcher.send("TEST")
     # Assert
-    assert handler.fired
+    assert handler.fired  # type: ignore[attr-defined]

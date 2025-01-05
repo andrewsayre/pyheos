@@ -1,1 +1,1 @@
-{"heos": {"result": "success", "command": "player/get_volume", "message": "pid={player_id}&level=36.0&sequence={sequence}"}}
+{"heos": {"result": "success", "command": "player/get_volume", "message": "pid={player_id}&level=36.0"}}

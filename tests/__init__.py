@@ -1,75 +1,293 @@
 """Tests for the pyheos library."""
 
 import asyncio
-from collections import defaultdict
+import functools
+import json
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Optional, Union
-from urllib.parse import parse_qsl, urlparse
-
-import pytest
+from dataclasses import dataclass, field
+from typing import Any, cast
+from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
 
 from pyheos import Heos, const
-from pyheos.connection import SEPARATOR, SEPARATOR_BYTES
+from pyheos.command import (
+    COMMAND_ACCOUNT_CHECK,
+    COMMAND_REBOOT,
+    COMMAND_REGISTER_FOR_CHANGE_EVENTS,
+)
+from pyheos.connection import CLI_PORT, SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
 
 
-async def get_fixture(file: str):
+@dataclass
+class CallCommand:
+    """Define a command call.
+
+    Args:
+        fixture: The name of the json fixture to load. The command will be determiend from this file.
+        command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
+        when: Only registers the command if the test method arguments match the provided values.
+        replace: Replace any existing command matchers. The default is False.
+        assert_called: Assert the command was called after test execution. The default is True.
+        add_command_under_process: When True, the under process response will be sent prior to the command response.
+    """
+
+    fixture: str
+    command_args: dict[str, Any] | None = None
+    when: dict[str, Any] | None = None
+    replace: bool = False
+    assert_called: bool = True
+    add_command_under_process: bool = False
+
+    def get_resolve_args(self, args: dict[str, Any]) -> dict[str, Any] | None:
+        """Resolve the arguments."""
+        if self.command_args is None:
+            return None
+        resolved_args = {}
+        for key, value in self.command_args.items():
+            if isinstance(value, ArgumentValue):
+                resolved_args[key] = value.get_value(args)
+            else:
+                resolved_args[key] = value
+        return resolved_args
+
+
+@dataclass
+class ArgumentValue:
+    """Define an argument value source."""
+
+    value: Any | None = field(default=None, kw_only=True)
+    arg_name: str | None = field(default=None, kw_only=True)
+    formatter: str | None = field(default=None, kw_only=True)
+
+    def get_value(self, args: dict[str, Any]) -> Any:
+        """Get the value."""
+        if self.value:
+            return value
+        assert self.arg_name is not None
+        arg_value = args[self.arg_name]
+        if self.formatter == "on_off":
+            return const.VALUE_ON if arg_value else const.VALUE_OFF
+        return arg_value
+
+
+def calls_commands(*commands: CallCommand) -> Callable:
+    """
+    Decorator that registers commands prior to test execution.
+
+    Args:
+        commands: The commands to register.
+    """
+
+    def wrapper(func: Callable) -> Callable:
+        @functools.wraps(func)
+        async def wrapped(*args: Any, **kwargs: Any) -> Any:
+            # Build a list of commands that match the when conditions
+            matched_commands: list[CallCommand] = []
+            for command in commands:
+                if command.when is not None:
+                    for key, value in command.when.items():
+                        if kwargs.get(key) != value:
+                            break
+                    else:
+                        matched_commands.append(command)
+                else:
+                    matched_commands.append(command)
+
+            # Find the mock heos parameter.
+            if "mock_device" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["mock_device"])
+            elif "heos" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["heos"].device)
+            elif "group" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["group"]._heos.device)
+            elif "player" in kwargs:
+                mock_device = cast(MockHeosDevice, kwargs["player"]._heos.device)
+            elif "media_music_source" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_music_source"]._heos.device
+                )
+            elif "media_item_device" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_item_device"]._heos.device
+                )
+            elif "media_item_song" in kwargs:
+                mock_device = cast(
+                    MockHeosDevice, kwargs["media_item_song"]._heos.device
+                )
+            else:
+                raise ValueError(
+                    "The mock device must be accessible through one of the fixture parameters."
+                )
+
+            # Register commands
+            assert_list: list[Callable] = []
+
+            for command in matched_commands:
+                # Get the fixture command
+                fixture_data = json.loads(await get_fixture(command.fixture))
+                command_name = fixture_data[const.ATTR_HEOS][const.ATTR_COMMAND]
+
+                # Resolve command arguments (they may contain a ArgumentValue)
+                resolved_args = command.get_resolve_args(kwargs)
+
+                fixtures: list[str] = [command.fixture]
+                if command.add_command_under_process:
+                    fixtures.insert(0, "other.command_under_process")
+
+                matcher = mock_device.register(
+                    command_name,
+                    resolved_args,
+                    fixtures,
+                    replace=command.replace,
+                )
+
+                # Store item to assert later (so we don't need to keep a copy of the resolved args)
+                if command.assert_called:
+                    assert_list.append(matcher.assert_called)
+
+            # Call the wrapped method
+            result = await func(*args, **kwargs)
+
+            # Assert the commands were called
+            for callable in assert_list:
+                callable()
+
+            return result
+
+        return wrapped
+
+    return wrapper
+
+
+def value(
+    *,
+    value: Any | None = None,
+    arg_name: str | None = None,
+    formatter: str | None = None,
+) -> ArgumentValue:
+    """Define a value source."""
+    return ArgumentValue(value=value, arg_name=arg_name, formatter=formatter)
+
+
+def calls_command(
+    fixture: str,
+    command_args: dict[str, Any] | None = None,
+    assert_called: bool = True,
+    when: dict[str, Any] | None = None,
+    replace: bool = False,
+    add_command_under_process: bool = False,
+) -> Callable:
+    """
+    Decorator that registers a command prior to test execution.
+
+    Args:
+        fixture: The name of the json fixture to load. The command will be determiend from this file.
+        command_args: The arguments that are expected to be passed. If set to None, any argument combination is accepted.
+        when: Only registers the command if the test method arguments match the provided values.
+        assert_called: Assert the command was called after test execution. The default is True.
+        replace: Replace any existing command matchers. The default is False.
+        add_command_under_process: When True, the under process response will be sent prior to the command response.
+    """
+    return calls_commands(
+        CallCommand(
+            fixture,
+            command_args,
+            when,
+            replace,
+            assert_called,
+            add_command_under_process,
+        )
+    )
+
+
+def calls_player_commands(
+    player_ids: Sequence[int] = (1, 2), *additional: CallCommand
+) -> Callable:
+    """
+    Decorator that registers player commands and any optional additional commands.
+    """
+    commands = [
+        CallCommand("player.get_players"),
+    ]
+    for player_id in player_ids:
+        commands.extend(
+            [
+                CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand(
+                    "player.get_now_playing_media", {const.ATTR_PLAYER_ID: player_id}
+                ),
+                CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: player_id}),
+            ]
+        )
+    commands.extend(additional)
+    return calls_commands(*commands)
+
+
+def calls_group_commands(*additional: CallCommand) -> Callable:
+    commands = [
+        CallCommand("group.get_groups"),
+        CallCommand("group.get_volume", {const.ATTR_GROUP_ID: 1}),
+        CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
+    ]
+    commands.extend(additional)
+    return calls_commands(*commands)
+
+
+async def get_fixture(file: str) -> str:
     """Load a fixtures file."""
     file_name = f"tests/fixtures/{file}.json"
-
-    def read_file():
-        with open(file_name, encoding="utf-8") as open_file:
-            return open_file.read()
-
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(FILE_IO_POOL, read_file)
+    return await loop.run_in_executor(FILE_IO_POOL, lambda: read_file(file_name))
+
+
+@functools.lru_cache
+def read_file(file_name: str) -> str:
+    with open(file_name, encoding="utf-8") as open_file:
+        return open_file.read()
 
 
 def connect_handler(heos: Heos, signal: str, event: str) -> asyncio.Event:
     """Connect a handler to the specific signal and assert event."""
     trigger = asyncio.Event()
 
-    async def handler(target_event: str, *args):
-        assert target_event == event
-        trigger.set()
+    async def handler(target_event: str, *args: Any) -> None:
+        if target_event == event:
+            trigger.set()
 
     heos.dispatcher.connect(signal, handler)
     return trigger
 
 
+class MockHeos(Heos):
+    """Define a mock heos connection."""
+
+    device: "MockHeosDevice"
+
+
 class MockHeosDevice:
     """Define a mock heos device."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init a new instance of the mock heos device."""
-        self._server = None  # type: asyncio.AbstractServer
-        self._started = False
-        self.connections = []  # type: List[ConnectionLog]
-        self._matchers = []  # type: List[CommandMatcher]
+        self._server: asyncio.AbstractServer | None = None
+        self._started: bool = False
+        self.connections: list[ConnectionLog] = []
+        self._matchers: list[CommandMatcher] = []
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
-            self._handle_connection, "127.0.0.1", const.CLI_PORT
+            self._handle_connection, "127.0.0.1", CLI_PORT
         )
 
-        self.register(const.COMMAND_HEART_BEAT, None, "system.heart_beat")
-        self.register(const.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
-        self.register(const.COMMAND_GET_PLAYERS, None, "player.get_players")
-        self.register(const.COMMAND_GET_PLAY_STATE, None, "player.get_play_state")
-        self.register(
-            const.COMMAND_GET_NOW_PLAYING_MEDIA, None, "player.get_now_playing_media"
-        )
-        self.register(const.COMMAND_GET_VOLUME, None, "player.get_volume")
-        self.register(const.COMMAND_GET_MUTE, None, "player.get_mute")
-        self.register(const.COMMAND_GET_PLAY_MODE, None, "player.get_play_mode")
-        self.register(const.COMMAND_GET_GROUPS, None, "group.get_groups")
-        self.register(const.COMMAND_GET_GROUP_VOLUME, None, "group.get_volume")
-        self.register(const.COMMAND_GET_GROUP_MUTE, None, "group.get_mute")
+        self.register(COMMAND_ACCOUNT_CHECK, None, "system.check_account")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the heos server."""
         if not self._started:
             return
@@ -77,11 +295,24 @@ class MockHeosDevice:
         for connection in self.connections:
             await connection.disconnect()
         self.connections.clear()
-        self._server.close()
-        # await self._server.wait_closed()
 
-    async def write_event(self, event: str):
-        """Send an event through the event channel."""
+        assert self._server is not None
+        self._server.close()
+        await self._server.wait_closed()
+
+    async def write_event(
+        self, fixture: str, replacements: dict[str, Any] | None = None
+    ) -> None:
+        """Send an event through the event channel.
+
+        Args:
+            fixture: The name of the fixture to send.
+            replacements: The replacements to apply to the fixture.
+        """
+        event = await get_fixture(fixture)
+        if replacements:
+            for key, value in replacements.items():
+                event = event.replace("{" + key + "}", str(value))
         connection = next(
             conn for conn in self.connections if conn.is_registered_for_events
         )
@@ -90,38 +321,60 @@ class MockHeosDevice:
     def register(
         self,
         command: str,
-        args: Optional[dict],
-        response: Union[str, List[str]],
+        args: dict[str, Any] | None,
+        responses: str | list[str],
         *,
         replace: bool = False,
-    ):
+    ) -> "CommandMatcher":
         """Register a matcher."""
         if replace:
             self._matchers = [m for m in self._matchers if m.command != command]
-        self._matchers.append(CommandMatcher(command, args, response))
+        if isinstance(responses, str):
+            responses = [responses]
+        matcher = CommandMatcher(command, args, responses)
+        self._matchers.append(matcher)
+        return matcher
+
+    def assert_command_called(
+        self, target_command: str, target_args: dict[str, Any] | None = None
+    ) -> None:
+        """
+        Assert that the commands were called.
+
+        Args:
+            command: The command to check.
+            args: The arguments to check. If None, only the command is checked.
+        """
+        for matcher in self._matchers:
+            if matcher.is_match(target_command, target_args, increment=False):
+                matcher.assert_called()
+                return
+        assert (
+            False
+        ), f"Command was not registered: {target_command} with args {target_args}."
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
-    ):
+    ) -> None:
         log = ConnectionLog(reader, writer)
         self.connections.append(log)
 
         while self._started:
             try:
-                result = await reader.readuntil(SEPARATOR_BYTES)
+                result: str = (await reader.readuntil(SEPARATOR_BYTES)).decode()
             except asyncio.IncompleteReadError:
                 # Occurs when the reader is being stopped
-                break
+                return
 
-            result = result.decode().rstrip(SEPARATOR)
+            result = result.rstrip(SEPARATOR)
 
             url_parts = urlparse(result)
             query = dict(parse_qsl(url_parts.query))
 
-            command = url_parts.hostname + url_parts.path
-            fixture_name = f"{url_parts.hostname}.{url_parts.path.lstrip('/')}"
-
-            log.commands[command].append(result)
+            command = str(url_parts.hostname) + str(url_parts.path)
+            fixture_name = (
+                f"{str(url_parts.hostname)}.{str(url_parts.path.lstrip('/'))}"
+            )
 
             # Try matchers
             matcher = next(
@@ -139,15 +392,27 @@ class MockHeosDevice:
                     await writer.drain()
                 continue
 
-            if command == const.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
-                enable = query["enable"]
-                if enable == "on":
-                    log.is_registered_for_events = True
+            # Special processing for known/unknown commands
+            if command == COMMAND_REBOOT:
+                # Simulate a reboot by shutting down the server
+                await self.stop()
+                await asyncio.sleep(0.3)
+                await self.start()
+                return
+            if command == COMMAND_REGISTER_FOR_CHANGE_EVENTS:
+                enable = str(query[const.ATTR_ENABLE])
+                log.is_registered_for_events = enable == const.VALUE_ON
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
-                writer.write((response + SEPARATOR).encode())
-                await writer.drain()
             else:
-                pytest.fail("Unrecognized command: " + result)
+                response = (
+                    (await get_fixture("other.unknown_command"))
+                    .replace("{command}", command)
+                    .replace("{full_command}", quote_plus(result))
+                )
+
+            # write the response
+            writer.write((response + SEPARATOR).encode())
+            await writer.drain()
 
         try:
             self.connections.remove(log)
@@ -155,65 +420,89 @@ class MockHeosDevice:
             pass
 
 
+@dataclass
 class CommandMatcher:
     """Define a command match response."""
 
-    def __init__(self, command: str, args: dict, response: Union[str, List[str]]):
-        """Init the command response."""
-        self.command = command
-        self.args = args
+    command: str
+    _args: dict[str, Any] | None = field(default_factory=dict)
+    responses: list[str] = field(default_factory=list)
+    match_count: int = field(default=0, init=False)
 
-        if isinstance(response, str):
-            response = [response]
-        self._response = response
+    @functools.cached_property
+    def args(self) -> dict[str, str] | None:
+        if self._args is None:
+            return None
+        return CommandMatcher._convert_dict_to_strings(self._args)
 
-    def is_match(self, command, args):
+    @staticmethod
+    def _convert_dict_to_strings(args: dict[str, Any]) -> dict[str, str]:
+        return {key: str(value) for key, value in args.items()}
+
+    def is_match(
+        self,
+        match_command: str,
+        match_args: dict[str, Any] | None = None,
+        increment: bool = True,
+    ) -> bool:
         """Determine if the command matches the target."""
-        if command != self.command:
+        if self.command != match_command:
             return False
-        if self.args:
-            for key, value in self.args.items():
-                if not args[key] == value:
-                    return False
+        if match_args is not None and self.args is not None:
+            if not self.args == CommandMatcher._convert_dict_to_strings(match_args):
+                return False
+        if increment:
+            self.match_count += 1
         return True
 
-    async def get_response(self, query: dict) -> List[str]:
+    async def get_response(self, query: dict) -> list[str]:
         """Get the response body."""
         responses = []
-        for fixture in self._response:
+        for fixture in self.responses:
             responses.append(await self._get_response(fixture, query))
         return responses
 
     async def _get_response(self, response: str, query: dict) -> str:
         response = await get_fixture(response)
         keys = {
-            "pid": "{player_id}",
-            "sequence": "{sequence}",
-            "state": "{state}",
-            "level": "{level}",
+            const.ATTR_PLAYER_ID: "{player_id}",
+            const.ATTR_STATE: "{state}",
+            const.ATTR_LEVEL: "{level}",
         }
         for key, token in keys.items():
             value = query.get(key)
             if value is not None and token in response:
-                response = response.replace(token, value)
+                response = response.replace(token, quote_plus(value))
+
+        response = response.replace("{command}", self.command)
+        response = response.replace("{parameters}", urlencode(query))
+
         return response
+
+    def assert_called(self) -> None:
+        """Assert that the command was called."""
+        assert (
+            self.match_count
+        ), f"Command {self.command} was not called with arguments {self._args}."
 
 
 class ConnectionLog:
     """Define a connection log."""
 
-    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def __init__(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         """Initialize the connection log."""
         self._reader = reader
         self._writer = writer
         self.is_registered_for_events = False
-        self.commands = defaultdict(list)
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
         """Close the connection."""
         self._writer.close()
+        await self._writer.wait_closed()
 
-    async def write(self, payload: str):
+    async def write(self, payload: str) -> None:
         """Write the payload to the stream."""
         data = (payload + SEPARATOR).encode()
         self._writer.write(data)

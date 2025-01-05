@@ -1,19 +1,37 @@
 {
 	"heos": {
-		"command": "player/get_now_playing_media",
-		"result": "success",
-		"message": "pid={player_id}&sequence={sequence}"
+	  "command": "player/get_now_playing_media",
+	  "result": "success",
+	  "message": "pid={player_id}"
 	},
 	"payload": {
-		"type": "song",
-		"song": "Disney Hits",
-		"album": "",
-		"artist": "",
-		"image_url": "",
-		"album_id": "",
-		"mid": "catalog/playlists/genres",
-		"qid": 1,
-		"sid": 13
+	  "type": "station",
+	  "song": "Disney (Children's) Radio",
+	  "station": "Disney (Children's) Radio",
+	  "album": "Album",
+	  "artist": "Artist",
+	  "image_url": "http://cont-5.p-cdn.us/images/public/int/6/1/1/9/050087149116_500W_500H.jpg",
+	  "album_id": "123456",
+	  "mid": "4256592506324148495",
+	  "qid": 1,
+	  "sid": 13
 	},
-	"options": []
-}
+	"options": [
+	  {
+		"play": [
+		  {
+			"id": 11,
+			"name": "Thumbs Up"
+		  },
+		  {
+			"id": 12,
+			"name": "Thumbs Down"
+		  },
+		  {
+			"id": 19,
+			"name": "Add to HEOS Favorites"
+		  }
+		]
+	  }
+	]
+  }

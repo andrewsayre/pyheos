@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Run linters
+codespell
+ruff check --extend-select I --fix
+ruff format
+pylint pyheos tests
+mypy pyheos tests

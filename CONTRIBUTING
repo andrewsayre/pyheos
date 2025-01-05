@@ -4,11 +4,16 @@ Contributions welcome!
 
 **Before spending lots of time on something, ask for feedback on your idea first!**
 
+## Set up development environment
+
+This repository uses Visual Studio Code with devcontainers. This is the easiest way to get started with development.
+
 ## Style
 
 This repository uses [Ruff](https://docs.astral.sh/ruff/) for code style and formatting. Commits and pull requests are automatically linted and checked using Ruff and must pass in order to be accepted.
 
-*Save time by checking for style/lint issues **before** committing.*:
+_Save time by checking for style/lint issues **before** committing._:
+
 ```bash
 pip install -r test-requirements.txt
 .\script\lint.cmd
@@ -17,16 +22,19 @@ pip install -r test-requirements.txt
 ## Testing
 
 All code is checked to verify:
+
 - All the unit tests pass
 - All code passes the checks from the linting tools
 - Code coverage is maintained or improved without adding exclusions to `.coveragerc`
 
 Unit tests can be ran outside of Tox by running:
+
 ```bash
 pytest tests
 ```
 
 To check the code coverage and determine which statements are not covered, run:
+
 ```bash
 pytest tests --cov --cov-report=term-missing
 ```
@@ -34,6 +42,7 @@ pytest tests --cov --cov-report=term-missing
 ### Rules
 
 There are a few basic ground-rules for contributors:
+
 1. Follow the style and testing guidelines above
 2. Fill out the pull request template and complete check-list activities
 3. Submit a pull request and be responsive to questions and feedback

@@ -1,121 +1,113 @@
 """Define the heos group module."""
 
 import asyncio
-from typing import Dict, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Optional
+
+from pyheos.message import HeosMessage
 
 from . import const
-from .player import HeosPlayer
-from .response import HeosResponse
+
+if TYPE_CHECKING:
+    from pyheos.heos import Heos
 
 
-def create_group(heos, data: dict, players: Dict[int, HeosPlayer]) -> "HeosGroup":
-    """Create a group from the data."""
-    leader = None
-    members = []
-    for group_player in data["players"]:
-        player = players[int(group_player["pid"])]
-        if group_player["role"] == "leader":
-            leader = player
-        else:
-            members.append(player)
-    return HeosGroup(heos, data["name"], int(data["gid"]), leader, members)
-
-
+@dataclass
 class HeosGroup:
     """A group of players."""
 
-    def __init__(
-        self,
-        heos,
-        name: str,
-        group_id: int,
-        leader: HeosPlayer,
-        members: Sequence[HeosPlayer],
-    ):
-        """Init the group class."""
-        self._heos = heos
-        # pylint: disable=protected-access
-        self._commands = heos._connection.commands
-        self._name = name  # type: str
-        self._group_id = group_id  # type: int
-        self._leader = leader  # type: HeosPlayer
-        self._members = members  # type: Sequence[HeosPlayer]
-        self._volume = None  # type: int
-        self._is_muted = None  # type: bool
+    name: str
+    group_id: int
+    lead_player_id: int
+    member_player_ids: Sequence[int]
+    volume: int = 0
+    is_muted: bool = False
+    _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
-    async def refresh(self):
-        """Pull current state."""
-        await asyncio.gather(self.refresh_volume(), self.refresh_mute())
+    @classmethod
+    def from_data(
+        cls,
+        data: dict[str, Any],
+        heos: Optional["Heos"] = None,
+    ) -> "HeosGroup":
+        """Create a new instance from the provided data."""
+        player_id: int | None = None
+        player_ids: list[int] = []
+        for group_player in data[const.ATTR_PLAYERS]:
+            # Find the loaded player
+            member_player_id = int(group_player[const.ATTR_PLAYER_ID])
+            if group_player[const.ATTR_ROLE] == const.VALUE_LEADER:
+                player_id = member_player_id
+            else:
+                player_ids.append(member_player_id)
+        if player_id is None:
+            raise ValueError("No leader found in group data")
+        return cls(
+            name=data[const.ATTR_NAME],
+            group_id=int(data[const.ATTR_GROUP_ID]),
+            lead_player_id=player_id,
+            member_player_ids=player_ids,
+            _heos=heos,
+        )
 
-    async def refresh_volume(self):
-        """Pull the latest volume."""
-        self._volume = await self._commands.get_group_volume(self._group_id)
-
-    async def refresh_mute(self):
-        """Pull the latest mute status."""
-        self._is_muted = await self._commands.get_group_mute(self._group_id)
-
-    async def event_update(self, event: HeosResponse) -> bool:
+    async def on_event(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
-        if event.command == const.EVENT_GROUP_VOLUME_CHANGED:
-            self._volume = int(float(event.get_message("level")))
-            self._is_muted = event.get_message("mute") == "on"
+        if not (
+            event.command == const.EVENT_GROUP_VOLUME_CHANGED
+            and event.get_message_value_int(const.ATTR_GROUP_ID) == self.group_id
+        ):
+            return False
+        self.volume = event.get_message_value_int(const.ATTR_LEVEL)
+        self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         return True
 
-    async def set_volume(self, level: int):
+    async def refresh(self) -> None:
+        """Pull current state."""
+        assert self._heos, "Heos instance not set"
+        await asyncio.gather(self.refresh_volume(), self.refresh_mute())
+
+    async def refresh_volume(self) -> None:
+        """Pull the latest volume."""
+        assert self._heos, "Heos instance not set"
+        self.volume = await self._heos.get_group_volume(self.group_id)
+
+    async def refresh_mute(self) -> None:
+        """Pull the latest mute status."""
+        assert self._heos, "Heos instance not set"
+        self.is_muted = await self._heos.get_group_mute(self.group_id)
+
+    async def set_volume(self, level: int) -> None:
         """Set the volume level."""
-        await self._commands.set_group_volume(self._group_id, level)
+        assert self._heos, "Heos instance not set"
+        await self._heos.set_group_volume(self.group_id, level)
 
-    async def volume_up(self, step: int = const.DEFAULT_STEP):
+    async def volume_up(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        await self._commands.group_volume_up(self._group_id, step)
+        assert self._heos, "Heos instance not set"
+        await self._heos.group_volume_up(self.group_id, step)
 
-    async def volume_down(self, step: int = const.DEFAULT_STEP):
+    async def volume_down(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        await self._commands.group_volume_down(self._group_id, step)
+        assert self._heos, "Heos instance not set"
+        await self._heos.group_volume_down(self.group_id, step)
 
-    async def set_mute(self, state: bool):
+    async def set_mute(self, state: bool) -> None:
         """Set the mute state."""
-        return await self._commands.group_set_mute(self._group_id, state)
+        assert self._heos, "Heos instance not set"
+        await self._heos.group_set_mute(self.group_id, state)
 
-    async def mute(self):
+    async def mute(self) -> None:
         """Set mute state."""
-        return await self.set_mute(True)
+        assert self._heos, "Heos instance not set"
+        await self.set_mute(True)
 
-    async def unmute(self):
+    async def unmute(self) -> None:
         """Clear mute state."""
-        return await self.set_mute(False)
+        assert self._heos, "Heos instance not set"
+        await self.set_mute(False)
 
-    async def toggle_mute(self):
+    async def toggle_mute(self) -> None:
         """Toggle mute state."""
-        return await self._commands.group_toggle_mute(self._group_id)
-
-    @property
-    def name(self) -> str:
-        """Get the name of the group."""
-        return self._name
-
-    @property
-    def group_id(self) -> int:
-        """Get the id of the group."""
-        return self._group_id
-
-    @property
-    def leader(self) -> HeosPlayer:
-        """Get the leader player of the group."""
-        return self._leader
-
-    @property
-    def members(self) -> Sequence[HeosPlayer]:
-        """Get the members of the group."""
-        return self._members
-
-    @property
-    def volume(self) -> int:
-        """Get the volume of the group."""
-        return self._volume
-
-    @property
-    def is_muted(self) -> bool:
-        """Return True if the group is muted."""
-        return self._is_muted
+        assert self._heos, "Heos instance not set"
+        await self._heos.group_toggle_mute(self.group_id)
