@@ -3,7 +3,7 @@
 {
 	"name": "pyheos Dev",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.13-bullseye",
 	"postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} | script/setup",
 	"containerEnv": {
 		"PYTHONASYNCIODEBUG": "1",
