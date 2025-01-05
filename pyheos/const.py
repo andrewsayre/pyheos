@@ -128,7 +128,9 @@ class MediaType(StrEnum):
     SONG = "song"
     STATION = "station"
 
-MUSIC_SOURCE_CONNECT = 0 # TIDAL Connect // possibly Spotify Connect as well (?)
+
+# Music Sources
+MUSIC_SOURCE_CONNECT: Final = 0 # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1
 MUSIC_SOURCE_RHAPSODY: Final = 2
 MUSIC_SOURCE_TUNEIN: Final = 3
@@ -207,7 +209,6 @@ SOURCE_CONTROLS: Final = {
         MediaType.STATION: CONTROLS_ALL,
     },
     MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROL_PLAY_STOP},
-    MUSIC_SOURCE_CONNECT: {TYPE_STATION: CONTROLS_ALL},
 }
 
 
