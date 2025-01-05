@@ -382,6 +382,24 @@ async def test_get_players(heos: Heos) -> None:
     assert player._heos == heos
 
 
+@calls_player_commands()
+async def test_player_availability_matches_connection_state(heos: Heos) -> None:
+    """Test that loaded players' availability matches the connection state."""
+    await heos.get_players()
+    # Assert players loaded
+    assert len(heos.players) == 2
+    player = heos.players[1]
+    assert player.available
+
+    # Disconnect, unavailable
+    await heos.disconnect()
+    assert not player.available, "Player should be unavailable after disconnect"
+
+    # Reonnected, available
+    await heos.connect()  # type: ignore[unreachable]
+    assert player.available, "Player should be available after reconnect"
+
+
 @calls_command("player.get_players_error")
 async def test_get_players_error(heos: Heos) -> None:
     """Test the get_players method load players."""
@@ -609,14 +627,7 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
             "duration": 210000,
         },
     )
-    await mock_device.write_event(
-        "event.player_now_playing_progress",
-        {
-            "player_id": player.player_id,
-            "cur_pos": 113000,
-            "duration": 210000,
-        },
-    )
+    await asyncio.sleep(0.1)  # Ensures the second event is sent through
     await signal.wait()
     await heos.disconnect()
 

@@ -75,9 +75,7 @@ class HeosNowPlayingMedia:
                 )
         self.supported_controls = new_supported_controls
 
-    def event_update_progress(
-        self, event: HeosMessage, all_progress_events: bool
-    ) -> bool:
+    def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self.current_position is None:
             self.current_position = event.get_message_value_int(
@@ -136,7 +134,7 @@ class HeosPlayer:
         repr=False, hash=False, compare=False, default=None
     )
     now_playing_media: HeosNowPlayingMedia = field(default_factory=HeosNowPlayingMedia)
-    available: bool = True
+    available: bool = field(repr=False, hash=False, compare=False, default=True)
     _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
     @classmethod
@@ -172,9 +170,7 @@ class HeosPlayer:
     async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Return True if player update event changed state."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
-            return self.now_playing_media.event_update_progress(
-                event, all_progress_events
-            )
+            return self.now_playing_media.on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
             self.state = const.PlayState(event.get_message_value(const.ATTR_STATE))
             if self.state == const.PlayState.PLAY:
@@ -191,15 +187,6 @@ class HeosPlayer:
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
             self.playback_error = event.get_message_value(const.ATTR_ERROR)
         return True
-
-    # @property
-    # def available(self) -> bool:
-    #     """Return True if this player is available."""
-    #     return self._available and self._heos.connection_state == const.STATE_CONNECTED
-
-    def set_available(self, available: bool) -> None:
-        """Mark player removed after a change event."""
-        self.available = available
 
     async def refresh(self) -> None:
         """Pull current state."""

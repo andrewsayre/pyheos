@@ -519,6 +519,7 @@ class PlayerMixin(ConnectionMixin):
                 if player.player_id != player_id:
                     mapped_player_ids[player_id] = player.player_id
                 player.update_from_data(player_data)
+                player.available = True
                 players[player_id] = player
                 existing.remove(player)
             else:
@@ -528,7 +529,7 @@ class PlayerMixin(ConnectionMixin):
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
         for player in existing:
-            player.set_available(False)
+            player.available = False
             players[player.player_id] = player
 
         # Update all statuses
@@ -930,6 +931,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             await self.check_account()
 
         await self.register_for_change_events(self._options.events)
+
+        # Refresh players and mark available
+        if self._players_loaded:
+            await self.load_players()
+
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -939,6 +945,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
         assert self._connection.state == const.STATE_DISCONNECTED
+        # Mark loaded players unavailable
+        for player in self.players.values():
+            player.available = False
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
     async def _on_event(self, event: HeosMessage) -> None:
