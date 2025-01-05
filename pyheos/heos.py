@@ -182,6 +182,17 @@ class SystemMixin(ConnectionMixin):
             4.1.6 HEOS Speaker Reboot"""
         await self._connection.command(SystemCommands.reboot())
 
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system.
+
+        References:
+            4.2.1 Get Players"""
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
+
 
 class BrowseMixin(ConnectionMixin):
     """A mixin to provide access to the browse commands."""
@@ -412,6 +423,47 @@ class BrowseMixin(ConnectionMixin):
                 media_id=media.media_id,
                 add_criteria=add_criteria,
             )
+
+    async def get_input_sources(self) -> Sequence[MediaItem]:
+        """
+        Get available input sources.
+
+        This will browse all aux input sources and return a list of all available input sources.
+
+        Returns:
+            A sequence of MediaItem instances representing the available input sources across all aux input sources.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        input_sources: list[MediaItem] = []
+        for item in result.items:
+            source_browse_result = await item.browse()
+            input_sources.extend(source_browse_result.items)
+
+        return input_sources
+
+    async def get_favorites(self) -> dict[int, MediaItem]:
+        """
+        Get available favorites.
+
+        This will browse the favorites music source and return a dictionary of all available favorites.
+
+        Returns:
+            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
+        return {index + 1: source for index, source in enumerate(result.items)}
+
+    async def get_playlists(self) -> Sequence[MediaItem]:
+        """
+        Get available playlists.
+
+        This will browse the playlists music source and return a list of all available playlists.
+
+        Returns:
+            A sequence of MediaItem instances representing the available playlists.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        return result.items
 
 
 class PlayerMixin(ConnectionMixin):
@@ -924,8 +976,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         group = self.groups.get(group_id)
         if group:
             await group.event_update(event)
-            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
-            _LOGGER.debug("Event received for group %s: %s", group_id, event)
+        self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+        _LOGGER.debug("Event received for group %s: %s", group_id, event)
 
     async def _on_event(self, event: HeosMessage) -> None:
         """Handle a heos event."""
@@ -937,58 +989,6 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             await self._handle_group_event(event)
         else:
             _LOGGER.debug("Unrecognized event: %s", event)
-
-    async def get_system_info(self) -> HeosSystem:
-        """Get information about the HEOS system.
-
-        References:
-            4.2.1 Get Players"""
-        response = await self._connection.command(PlayerCommands.get_players())
-        payload = cast(Sequence[dict], response.payload)
-        hosts = list([HeosHost.from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
-        return HeosSystem(self._signed_in_username, host, hosts)
-
-    async def get_input_sources(self) -> Sequence[MediaItem]:
-        """
-        Get available input sources.
-
-        This will browse all aux input sources and return a list of all available input sources.
-
-        Returns:
-            A sequence of MediaItem instances representing the available input sources across all aux input sources.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        input_sources: list[MediaItem] = []
-        for item in result.items:
-            source_browse_result = await item.browse()
-            input_sources.extend(source_browse_result.items)
-
-        return input_sources
-
-    async def get_favorites(self) -> dict[int, MediaItem]:
-        """
-        Get available favorites.
-
-        This will browse the favorites music source and return a dictionary of all available favorites.
-
-        Returns:
-            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
-        return {index + 1: source for index, source in enumerate(result.items)}
-
-    async def get_playlists(self) -> Sequence[MediaItem]:
-        """
-        Get available playlists.
-
-        This will browse the playlists music source and return a list of all available playlists.
-
-        Returns:
-            A sequence of MediaItem instances representing the available playlists.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        return result.items
 
     @property
     def dispatcher(self) -> Dispatcher:
