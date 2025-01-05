@@ -115,13 +115,9 @@ async def test_connect_with_bad_credentials_dispatches_event(
     credentials = Credentials("example@example.com", "example")
     heos = Heos(HeosOptions("127.0.0.1", credentials=credentials, heart_beat=False))
 
-    signal = asyncio.Event()
-
-    async def handler(event: str) -> None:
-        assert event == const.EVENT_USER_CREDENTIALS_INVALID
-        signal.set()
-
-    heos.dispatcher.connect(const.SIGNAL_HEOS_EVENT, handler)
+    signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+    )
 
     await heos.connect()
     await signal.wait()
