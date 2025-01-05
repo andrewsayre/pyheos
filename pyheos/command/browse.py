@@ -18,7 +18,7 @@ Commands not currently implemented:
 
 from typing import Any
 
-from pyheos import const
+from pyheos import command, const
 from pyheos.message import HeosCommand
 
 
@@ -45,7 +45,7 @@ class BrowseCommands:
             params[const.ATTR_CONTAINER_ID] = container_id
         if isinstance(range_start, int) and isinstance(range_end, int):
             params[const.ATTR_RANGE] = f"{range_start},{range_end}"
-        return HeosCommand(const.COMMAND_BROWSE_BROWSE, params)
+        return HeosCommand(command.COMMAND_BROWSE_BROWSE, params)
 
     @staticmethod
     def get_music_sources() -> HeosCommand:
@@ -55,7 +55,7 @@ class BrowseCommands:
         References:
             4.4.1 Get Music Sources
         """
-        return HeosCommand(const.COMMAND_BROWSE_GET_SOURCES)
+        return HeosCommand(command.COMMAND_BROWSE_GET_SOURCES)
 
     @staticmethod
     def play_station(
@@ -79,7 +79,7 @@ class BrowseCommands:
         }
         if container_id is not None:
             params[const.ATTR_CONTAINER_ID] = container_id
-        return HeosCommand(const.COMMAND_BROWSE_PLAY_STREAM, params)
+        return HeosCommand(command.COMMAND_BROWSE_PLAY_STREAM, params)
 
     @staticmethod
     def play_preset_station(player_id: int, preset: int) -> HeosCommand:
@@ -92,7 +92,7 @@ class BrowseCommands:
         if preset < 1:
             raise ValueError(f"Invalid preset: {preset}")
         return HeosCommand(
-            const.COMMAND_BROWSE_PLAY_PRESET,
+            command.COMMAND_BROWSE_PLAY_PRESET,
             {const.ATTR_PLAYER_ID: player_id, const.ATTR_PRESET: preset},
         )
 
@@ -112,7 +112,7 @@ class BrowseCommands:
         }
         if source_player_id is not None:
             params[const.ATTR_SOURCE_PLAYER_ID] = source_player_id
-        return HeosCommand(const.COMMAND_BROWSE_PLAY_INPUT, params)
+        return HeosCommand(command.COMMAND_BROWSE_PLAY_INPUT, params)
 
     @staticmethod
     def play_url(player_id: int, url: str) -> HeosCommand:
@@ -123,7 +123,7 @@ class BrowseCommands:
             4.4.10 Play URL
         """
         return HeosCommand(
-            const.COMMAND_BROWSE_PLAY_STREAM,
+            command.COMMAND_BROWSE_PLAY_STREAM,
             {const.ATTR_PLAYER_ID: player_id, const.ATTR_URL: url},
         )
 
@@ -150,4 +150,4 @@ class BrowseCommands:
         }
         if media_id is not None:
             params[const.ATTR_MEDIA_ID] = media_id
-        return HeosCommand(const.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+        return HeosCommand(command.COMMAND_BROWSE_ADD_TO_QUEUE, params)

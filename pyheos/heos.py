@@ -6,8 +6,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final, cast
 
-from pyheos.command import HeosCommands
 from pyheos.command.browse import BrowseCommands
+from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
@@ -23,7 +23,7 @@ from pyheos.system import HeosHost, HeosSystem
 from . import const
 from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
-from .group import HeosGroup, create_group
+from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 
 _LOGGER: Final = logging.getLogger(__name__)
@@ -80,6 +80,11 @@ class ConnectionMixin:
             heart_beat_interval=options.heart_beat_interval,
         )
 
+    @property
+    def connection_state(self) -> str:
+        """Get the state of the connection."""
+        return self._connection.state
+
 
 class SystemMixin(ConnectionMixin):
     """A mixin to provide access to the system commands."""
@@ -90,6 +95,21 @@ class SystemMixin(ConnectionMixin):
 
         self._current_credentials = self._options.credentials
         self._signed_in_username: str | None = None
+
+    @property
+    def is_signed_in(self) -> bool:
+        """Return True if the HEOS accuont is signed in."""
+        return bool(self._signed_in_username)
+
+    @property
+    def signed_in_username(self) -> str | None:
+        """Return the signed-in username."""
+        return self._signed_in_username
+
+    @property
+    def current_credentials(self) -> Credentials | None:
+        """Return the current credential, if any set."""
+        return self._current_credentials
 
     async def register_for_change_events(self, enable: bool) -> None:
         """Register for change events.
@@ -161,6 +181,17 @@ class SystemMixin(ConnectionMixin):
         References:
             4.1.6 HEOS Speaker Reboot"""
         await self._connection.command(SystemCommands.reboot())
+
+    async def get_system_info(self) -> HeosSystem:
+        """Get information about the HEOS system.
+
+        References:
+            4.2.1 Get Players"""
+        response = await self._connection.command(PlayerCommands.get_players())
+        payload = cast(Sequence[dict], response.payload)
+        hosts = list([HeosHost.from_data(item) for item in payload])
+        host = next(host for host in hosts if host.ip_address == self._options.host)
+        return HeosSystem(self._signed_in_username, host, hosts)
 
 
 class BrowseMixin(ConnectionMixin):
@@ -393,6 +424,47 @@ class BrowseMixin(ConnectionMixin):
                 add_criteria=add_criteria,
             )
 
+    async def get_input_sources(self) -> Sequence[MediaItem]:
+        """
+        Get available input sources.
+
+        This will browse all aux input sources and return a list of all available input sources.
+
+        Returns:
+            A sequence of MediaItem instances representing the available input sources across all aux input sources.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
+        input_sources: list[MediaItem] = []
+        for item in result.items:
+            source_browse_result = await item.browse()
+            input_sources.extend(source_browse_result.items)
+
+        return input_sources
+
+    async def get_favorites(self) -> dict[int, MediaItem]:
+        """
+        Get available favorites.
+
+        This will browse the favorites music source and return a dictionary of all available favorites.
+
+        Returns:
+            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
+        return {index + 1: source for index, source in enumerate(result.items)}
+
+    async def get_playlists(self) -> Sequence[MediaItem]:
+        """
+        Get available playlists.
+
+        This will browse the playlists music source and return a list of all available playlists.
+
+        Returns:
+            A sequence of MediaItem instances representing the available playlists.
+        """
+        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
+        return result.items
+
 
 class PlayerMixin(ConnectionMixin):
     """A mixin to provide access to the player commands."""
@@ -446,17 +518,18 @@ class PlayerMixin(ConnectionMixin):
                 # Existing player matched - update
                 if player.player_id != player_id:
                     mapped_player_ids[player_id] = player.player_id
-                player.from_data(player_data)
+                player.update_from_data(player_data)
+                player.available = True
                 players[player_id] = player
                 existing.remove(player)
             else:
                 # New player
-                player = HeosPlayer(cast("Heos", self), player_data)
+                player = HeosPlayer.from_data(player_data, cast("Heos", self))
                 new_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
         for player in existing:
-            player.set_available(False)
+            player.available = False
             players[player.player_id] = player
 
         # Update all statuses
@@ -506,10 +579,9 @@ class PlayerMixin(ConnectionMixin):
         result = await self._connection.command(
             PlayerCommands.get_now_playing_media(player_id)
         )
-        if update:
-            update.update_from_data(result)
-            return update
-        return HeosNowPlayingMedia.from_data(result)
+        instance = update or HeosNowPlayingMedia()
+        instance.update_from_message(result)
+        return instance
 
     async def player_get_volume(self, player_id: int) -> int:
         """Get the volume level of the player.
@@ -642,7 +714,143 @@ class PlayerMixin(ConnectionMixin):
         }
 
 
-class Heos(SystemMixin, BrowseMixin, PlayerMixin):
+class GroupMixin(PlayerMixin):
+    """A mixin to provide access to the group commands."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Init a new instance of the BrowseMixin."""
+        super(GroupMixin, self).__init__(*args, **kwargs)
+        self._groups: dict[int, HeosGroup] = {}
+        self._groups_loaded = False
+
+    @property
+    def groups(self) -> dict[int, HeosGroup]:
+        """Get the loaded groups."""
+        return self._groups
+
+    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
+        """Get available groups."""
+        if not self._groups_loaded or refresh:
+            groups = {}
+            result = await self._connection.command(GroupCommands.get_groups())
+            payload = cast(Sequence[dict], result.payload)
+            for data in payload:
+                group = HeosGroup.from_data(data, cast("Heos", self))
+                groups[group.group_id] = group
+            self._groups = groups
+            # Update all statuses
+            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
+            self._groups_loaded = True
+        return self._groups
+
+    async def set_group(self, player_ids: Sequence[int]) -> None:
+        """Create, modify, or ungroup players.
+
+        Args:
+            player_ids: The list of player identifiers to group or ungroup. The first player is the group leader.
+
+        References:
+            4.3.3 Set Group"""
+        await self._connection.command(GroupCommands.set_group(player_ids))
+
+    async def create_group(
+        self, leader_player_id: int, member_player_ids: Sequence[int]
+    ) -> None:
+        """Create a HEOS group.
+
+        Args:
+            leader_player_id: The player_id of the lead player in the group.
+            member_player_ids: The player_ids of the group members.
+
+        References:
+            4.3.3 Set Group"""
+        player_ids = [leader_player_id]
+        player_ids.extend(member_player_ids)
+        await self.set_group(player_ids)
+
+    async def remove_group(self, group_id: int) -> None:
+        """Ungroup the specified group.
+
+        Args:
+            group_id: The identifier of the group to ungroup. Must be the lead player.
+
+        References:
+            4.3.3 Set Group
+        """
+        await self.set_group([group_id])
+
+    async def update_group(
+        self, group_id: int, member_player_ids: Sequence[int]
+    ) -> None:
+        """Update the membership of a group.
+
+        Args:
+            group_id: The identifier of the group to update (same as the lead player_id)
+            member_player_ids: The new player_ids of the group members.
+        """
+        await self.create_group(group_id, member_player_ids)
+
+    async def get_group_volume(self, group_id: int) -> int:
+        """
+        Get the volume of a group.
+
+        References:
+            4.3.4 Get Group Volume
+        """
+        result = await self._connection.command(
+            GroupCommands.get_group_volume(group_id)
+        )
+        return result.get_message_value_int(const.ATTR_LEVEL)
+
+    async def set_group_volume(self, group_id: int, level: int) -> None:
+        """Set the volume of the group.
+
+        References:
+            4.3.5 Set Group Volume"""
+        await self._connection.command(GroupCommands.set_group_volume(group_id, level))
+
+    async def group_volume_up(
+        self, group_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.3.6 Group Volume Up"""
+        await self._connection.command(GroupCommands.group_volume_up(group_id, step))
+
+    async def group_volume_down(
+        self, group_id: int, step: int = const.DEFAULT_STEP
+    ) -> None:
+        """Increase the volume level.
+
+        References:
+            4.2.7 Group Volume Down"""
+        await self._connection.command(GroupCommands.group_volume_down(group_id, step))
+
+    async def get_group_mute(self, group_id: int) -> bool:
+        """Get the mute status of the group.
+
+        References:
+            4.3.8 Get Group Mute"""
+        result = await self._connection.command(GroupCommands.get_group_mute(group_id))
+        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+
+    async def group_set_mute(self, group_id: int, state: bool) -> None:
+        """Set the mute state of the group.
+
+        References:
+            4.3.9 Set Group Mute"""
+        await self._connection.command(GroupCommands.group_set_mute(group_id, state))
+
+    async def group_toggle_mute(self, group_id: int) -> None:
+        """Toggle the mute state.
+
+        References:
+            4.3.10 Toggle Group Mute"""
+        await self._connection.command(GroupCommands.group_toggle_mute(group_id))
+
+
+class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod
@@ -691,15 +899,10 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
 
-        self._commands = HeosCommands(self._connection)
-
         self._dispatcher = options.dispatcher or Dispatcher()
 
         self._music_sources: dict[int, MediaMusicSource] = {}
         self._music_sources_loaded = False
-
-        self._groups: dict[int, HeosGroup] = {}
-        self._groups_loaded = False
 
     async def connect(self) -> None:
         """Connect to the CLI."""
@@ -728,6 +931,11 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
             await self.check_account()
 
         await self.register_for_change_events(self._options.events)
+
+        # Refresh players and mark available
+        if self._players_loaded:
+            await self.load_players()
+
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
@@ -737,9 +945,23 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
         assert self._connection.state == const.STATE_DISCONNECTED
+        # Mark loaded players unavailable
+        for player in self.players.values():
+            player.available = False
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
-    async def _handle_heos_event(self, event: HeosMessage) -> None:
+    async def _on_event(self, event: HeosMessage) -> None:
+        """Handle a heos event."""
+        if event.command in const.HEOS_EVENTS:
+            await self._on_event_heos(event)
+        elif event.command in const.PLAYER_EVENTS:
+            await self._on_event_player(event)
+        elif event.command in const.GROUP_EVENTS:
+            await self._on_event_group(event)
+        else:
+            _LOGGER.debug("Unrecognized event: %s", event)
+
+    async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
         result: dict[str, list | dict] | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
@@ -757,145 +979,23 @@ class Heos(SystemMixin, BrowseMixin, PlayerMixin):
         self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
         _LOGGER.debug("Event received: %s", event)
 
-    async def _handle_player_event(self, event: HeosMessage) -> None:
+    async def _on_event_player(self, event: HeosMessage) -> None:
         """Process an event about a player."""
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
-        if player and (
-            await player.event_update(event, self._options.all_progress_events)
-        ):
+        if player and (await player.on_event(event, self._options.all_progress_events)):
             self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
             _LOGGER.debug("Event received for player %s: %s", player, event)
 
-    async def _handle_group_event(self, event: HeosMessage) -> None:
+    async def _on_event_group(self, event: HeosMessage) -> None:
         """Process an event about a group."""
         group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
-        if group:
-            await group.event_update(event)
+        if group and await group.on_event(event):
             self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
             _LOGGER.debug("Event received for group %s: %s", group_id, event)
-
-    async def _on_event(self, event: HeosMessage) -> None:
-        """Handle a heos event."""
-        if event.command in const.HEOS_EVENTS:
-            await self._handle_heos_event(event)
-        elif event.command in const.PLAYER_EVENTS:
-            await self._handle_player_event(event)
-        elif event.command in const.GROUP_EVENTS:
-            await self._handle_group_event(event)
-        else:
-            _LOGGER.debug("Unrecognized event: %s", event)
-
-    async def get_system_info(self) -> HeosSystem:
-        """Get information about the HEOS system.
-
-        References:
-            4.2.1 Get Players"""
-        response = await self._connection.command(PlayerCommands.get_players())
-        payload = cast(Sequence[dict], response.payload)
-        hosts = list([HeosHost.from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
-        return HeosSystem(self._signed_in_username, host, hosts)
-
-    async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
-        """Get available groups."""
-        if not self._groups_loaded or refresh:
-            players = await self.get_players()
-            groups = {}
-            payload = await self._commands.get_groups()
-            for data in payload:
-                group = create_group(self, data, players)
-                groups[group.group_id] = group
-            self._groups = groups
-            # Update all statuses
-            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
-            self._groups_loaded = True
-        return self._groups
-
-    async def create_group(self, leader_id: int, member_ids: Sequence[int]) -> None:
-        """Create a HEOS group."""
-        ids = [leader_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
-
-    async def remove_group(self, group_id: int) -> None:
-        """Ungroup the specified group."""
-        await self._commands.set_group([group_id])
-
-    async def update_group(self, group_id: int, member_ids: Sequence[int]) -> None:
-        """Update the membership of a group."""
-        ids = [group_id]
-        ids.extend(member_ids)
-        await self._commands.set_group(ids)
-
-    async def get_input_sources(self) -> Sequence[MediaItem]:
-        """
-        Get available input sources.
-
-        This will browse all aux input sources and return a list of all available input sources.
-
-        Returns:
-            A sequence of MediaItem instances representing the available input sources across all aux input sources.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_AUX_INPUT)
-        input_sources: list[MediaItem] = []
-        for item in result.items:
-            source_browse_result = await item.browse()
-            input_sources.extend(source_browse_result.items)
-
-        return input_sources
-
-    async def get_favorites(self) -> dict[int, MediaItem]:
-        """
-        Get available favorites.
-
-        This will browse the favorites music source and return a dictionary of all available favorites.
-
-        Returns:
-            A dictionary with keys representing the index (1-based) of the favorite and the value being the MediaItem instance.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_FAVORITES)
-        return {index + 1: source for index, source in enumerate(result.items)}
-
-    async def get_playlists(self) -> Sequence[MediaItem]:
-        """
-        Get available playlists.
-
-        This will browse the playlists music source and return a list of all available playlists.
-
-        Returns:
-            A sequence of MediaItem instances representing the available playlists.
-        """
-        result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
-        return result.items
 
     @property
     def dispatcher(self) -> Dispatcher:
         """Get the dispatcher instance."""
         return self._dispatcher
-
-    @property
-    def groups(self) -> dict[int, HeosGroup]:
-        """Get the loaded groups."""
-        return self._groups
-
-    @property
-    def connection_state(self) -> str:
-        """Get the state of the connection."""
-        return self._connection.state
-
-    @property
-    def is_signed_in(self) -> bool:
-        """Return True if the HEOS accuont is signed in."""
-        return bool(self._signed_in_username)
-
-    @property
-    def signed_in_username(self) -> str | None:
-        """Return the signed-in username."""
-        return self._signed_in_username
-
-    @property
-    def current_credentials(self) -> Credentials | None:
-        """Return the current credential, if any set."""
-        return self._current_credentials

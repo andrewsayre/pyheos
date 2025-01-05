@@ -1,15 +1,16 @@
 """Define the message module for signals received from HEOS."""
 
 import json
-import logging
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any
+from typing import Any, Final
 from urllib.parse import parse_qsl
 
 from pyheos import const
 
-_LOGGER = logging.getLogger(__name__)
+QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
+MASKED_PARAMS: Final = {const.ATTR_PASSWORD}
+MASK: Final = "********"
 
 
 @dataclass(frozen=True)
@@ -41,14 +42,14 @@ class HeosCommand:
     @classmethod
     def _quote(cls, value: Any) -> str:
         """Quote a string per the CLI specification."""
-        return "".join([const.QUOTE_MAP.get(char, char) for char in str(value)])
+        return "".join([QUOTE_MAP.get(char, char) for char in str(value)])
 
     @classmethod
     def _encode_query(cls, items: dict[str, Any], *, mask: bool = False) -> str:
         """Encode a dict to query string per CLI specifications."""
         pairs = []
         for key in sorted(items.keys()):
-            value = const.MASK if mask and key in const.MASKED_PARAMS else items[key]
+            value = MASK if mask and key in MASKED_PARAMS else items[key]
             item = f"{key}={HeosCommand._quote(value)}"
             # Ensure 'url' goes last per CLI spec and is not quoted
             if key == const.ATTR_URL:

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from pyheos import const
+from pyheos import command, const
 from pyheos.heos import Heos
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource
 from pyheos.message import HeosMessage
@@ -33,8 +33,8 @@ async def test_media_music_source_from_data() -> None:
     assert source.available
     assert source.service_username == data[const.ATTR_SERVICE_USER_NAME]
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to browse",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.browse()
 
@@ -57,7 +57,7 @@ async def test_browse_result_from_data() -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
     message = HeosMessage(
-        const.COMMAND_BROWSE_BROWSE,
+        command.COMMAND_BROWSE_BROWSE,
         True,
         {const.ATTR_SOURCE_ID: "1025", const.ATTR_RETURNED: "1", const.ATTR_COUNT: "1"},
         [
@@ -113,13 +113,13 @@ async def test_media_item_from_data() -> None:
     assert source.album_id == data[const.ATTR_ALBUM_ID]
     assert source.media_id == data[const.ATTR_MEDIA_ID]
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to browse",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.browse()
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to play",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.play_media(1)
 

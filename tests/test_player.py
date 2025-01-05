@@ -5,14 +5,13 @@ import re
 import pytest
 
 from pyheos import const
-from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
 from tests import calls_command, value
 from tests.common import MediaItems
 
 
-async def test_str() -> None:
+def test_from_data() -> None:
     """Test the __str__ function."""
     data = {
         const.ATTR_NAME: "Back Patio",
@@ -24,9 +23,40 @@ async def test_str() -> None:
         const.ATTR_LINE_OUT: 1,
         const.ATTR_SERIAL: "1234567890",
     }
-    player = HeosPlayer(Heos(HeosOptions("None")), data)
-    assert str(player) == "{Back Patio (HEOS Drive)}"
-    assert repr(player) == "{Back Patio (HEOS Drive) with id 1 at 192.168.0.1}"
+    player = HeosPlayer.from_data(data, None)
+
+    assert player.name == "Back Patio"
+    assert player.player_id == 1
+    assert player.model == "HEOS Drive"
+    assert player.version == "1.493.180"
+    assert player.ip_address == "192.168.0.1"
+    assert player.network == const.NETWORK_TYPE_WIRED
+    assert player.line_out == 1
+    assert player.serial == "1234567890"
+
+
+async def test_update_from_data(player: HeosPlayer) -> None:
+    """Test the __str__ function."""
+    data = {
+        const.ATTR_NAME: "Patio",
+        const.ATTR_PLAYER_ID: 2,
+        const.ATTR_MODEL: "HEOS Drives",
+        const.ATTR_VERSION: "2.0.0",
+        const.ATTR_IP_ADDRESS: "192.168.0.2",
+        const.ATTR_NETWORK: const.NETWORK_TYPE_WIFI,
+        const.ATTR_LINE_OUT: "0",
+        const.ATTR_SERIAL: "0987654321",
+    }
+    player.update_from_data(data)
+
+    assert player.name == "Patio"
+    assert player.player_id == 2
+    assert player.model == "HEOS Drives"
+    assert player.version == "2.0.0"
+    assert player.ip_address == "192.168.0.2"
+    assert player.network == const.NETWORK_TYPE_WIFI
+    assert player.line_out == 0
+    assert player.serial == "0987654321"
 
 
 @pytest.mark.parametrize(

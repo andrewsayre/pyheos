@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from pyheos import command as commands
 from pyheos import const
 from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
@@ -137,7 +138,7 @@ async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
     await asyncio.sleep(0.3)
 
-    mock_device.assert_command_called(const.COMMAND_HEART_BEAT)
+    mock_device.assert_command_called(commands.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -205,7 +206,7 @@ async def test_commands_fail_when_disconnected(
 
     with pytest.raises(CommandError, match="Not connected to device") as e_info:
         await heos.load_players()
-    assert e_info.value.command == const.COMMAND_GET_PLAYERS
+    assert e_info.value.command == commands.COMMAND_GET_PLAYERS
     assert (
         "Command failed 'heos://player/get_players': Not connected to device"
         in caplog.text
@@ -378,7 +379,25 @@ async def test_get_players(heos: Heos) -> None:
     assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
-    assert player.heos == heos
+    assert player._heos == heos
+
+
+@calls_player_commands()
+async def test_player_availability_matches_connection_state(heos: Heos) -> None:
+    """Test that loaded players' availability matches the connection state."""
+    await heos.get_players()
+    # Assert players loaded
+    assert len(heos.players) == 2
+    player = heos.players[1]
+    assert player.available
+
+    # Disconnect, unavailable
+    await heos.disconnect()
+    assert not player.available, "Player should be unavailable after disconnect"
+
+    # Reonnected, available
+    await heos.connect()  # type: ignore[unreachable]
+    assert player.available, "Player should be available after reconnect"
 
 
 @calls_command("player.get_players_error")
@@ -417,8 +436,8 @@ async def test_player_state_changed_event(
     # Wait until the signal
     await signal.wait()
     # Assert state changed
-    assert player.state == const.PlayState.PLAY
-    assert heos.players[2].state == const.PlayState.STOP
+    assert player.state == const.PlayState.PLAY  # type: ignore[comparison-overlap]
+    assert heos.players[2].state == const.PlayState.STOP  # type: ignore[unreachable]
 
 
 @calls_player_commands()
@@ -457,7 +476,7 @@ async def test_player_now_playing_changed_event(
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_NOW_PLAYING_MEDIA,
+        commands.COMMAND_GET_NOW_PLAYING_MEDIA,
         None,
         "player.get_now_playing_media_changed",
         replace=True,
@@ -608,14 +627,7 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
             "duration": 210000,
         },
     )
-    await mock_device.write_event(
-        "event.player_now_playing_progress",
-        {
-            "player_id": player.player_id,
-            "cur_pos": 113000,
-            "duration": 210000,
-        },
-    )
+    await asyncio.sleep(0.1)  # Ensures the second event is sent through
     await signal.wait()
     await heos.disconnect()
 
@@ -696,7 +708,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
+        commands.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
     )
     await mock_device.write_event("event.players_changed")
 
@@ -713,7 +725,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.players[1].name == "Backyard"
 
 
-@calls_player_commands()
+@calls_player_commands((1, 2, 101, 102))
 async def test_players_changed_event_new_ids(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
@@ -732,7 +744,7 @@ async def test_players_changed_event_new_ids(
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_PLAYERS,
+        commands.COMMAND_GET_PLAYERS,
         None,
         "player.get_players_firmware_update",
         replace=True,
@@ -764,7 +776,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_BROWSE_GET_SOURCES,
+        commands.COMMAND_BROWSE_GET_SOURCES,
         None,
         "browse.get_music_sources_changed",
         replace=True,
@@ -792,7 +804,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
 
     # Write event through mock device
     command = mock_device.register(
-        const.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
+        commands.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
     )
     await mock_device.write_event("event.groups_changed")
 
@@ -1180,9 +1192,9 @@ async def test_get_groups(heos: Heos) -> None:
     group = groups[1]
     assert group.name == "Back Patio + Front Porch"
     assert group.group_id == 1
-    assert group.leader.player_id == 1
-    assert len(group.members) == 1
-    assert group.members[0].player_id == 2
+    assert group.lead_player_id == 1
+    assert len(group.member_player_ids) == 1
+    assert group.member_player_ids[0] == 2
     assert group.volume == 42
     assert not group.is_muted
 
