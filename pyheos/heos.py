@@ -940,7 +940,6 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def disconnect(self) -> None:
         """Disconnect from the CLI."""
-        await self._dispatcher.wait_all(cancel=True)
         await self._connection.disconnect()
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
