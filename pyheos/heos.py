@@ -952,7 +952,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         if error.is_credential_error and error.command != COMMAND_SIGN_IN:
             self._signed_in_username = None
             _LOGGER.debug(
-                "HEOS Account credentials are no longer valid.", exc_info=error
+                "HEOS Account credentials are no longer valid: %s",
+                error.error_text,
+                exc_info=error,
             )
             self._dispatcher.send(
                 const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
