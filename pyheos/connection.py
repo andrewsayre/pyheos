@@ -102,6 +102,7 @@ class ConnectionBase:
     async def _reset(self) -> None:
         """Reset the state of the connection."""
         # Stop running tasks and clear list
+
         while self._running_tasks:
             task = self._running_tasks.pop()
             if task.cancel():

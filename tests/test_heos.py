@@ -1288,3 +1288,18 @@ async def test_reboot() -> None:
         assert heos.connection_state == const.STATE_CONNECTED
     finally:
         await heos.disconnect()
+
+
+async def test_unrecognized_event_logs(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test repeat mode changes when event received."""
+    # Write event through mock device
+    await mock_device.write_event("event.invalid")
+
+    await asyncio.sleep(
+        0.2
+    )  # Figure out a better way to wait for the log to be written
+    await heos.dispatcher.wait_all()
+
+    assert "Unrecognized event: " in caplog.text

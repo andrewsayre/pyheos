@@ -897,16 +897,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
         super(Heos, self).__init__(options)
-
         self._connection.add_on_connected(self._on_connected)
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
         self._connection.add_on_command_error(self._on_command_error)
-
         self._dispatcher = options.dispatcher or Dispatcher()
-
-        self._music_sources: dict[int, MediaMusicSource] = {}
-        self._music_sources_loaded = False
 
     async def connect(self) -> None:
         """Connect to the CLI."""
@@ -945,6 +940,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def disconnect(self) -> None:
         """Disconnect from the CLI."""
+        await self._dispatcher.wait_all(cancel=True)
         await self._connection.disconnect()
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
