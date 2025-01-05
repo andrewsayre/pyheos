@@ -5,6 +5,8 @@ import functools
 from collections.abc import Callable
 from typing import Any
 
+import pytest
+
 from pyheos.dispatch import Dispatcher
 
 
@@ -66,6 +68,42 @@ async def test_send_async_handler(async_handler: Callable) -> None:
     await asyncio.gather(*dispatcher.send("TEST"))
     # Assert
     assert async_handler.fired  # type: ignore[attr-defined]
+
+
+async def test_send_async_handler_exception_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Tests sending to async handlers."""
+    # Arrange
+    dispatcher = Dispatcher()
+
+    async def async_handler_exception() -> None:
+        raise ValueError("Error in handler.")
+
+    dispatcher.connect("TEST", async_handler_exception)
+    # Act
+    dispatcher.send("TEST")
+    # Assert
+    await dispatcher.wait_all()
+    assert "Exception in target callback:" in caplog.text
+
+
+async def test_send_async_handler_canceled(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Tests sending to async handlers."""
+    # Arrange
+    dispatcher = Dispatcher()
+
+    async def async_handler_exception() -> None:
+        raise ValueError("Error in handler.")
+
+    dispatcher.connect("TEST", async_handler_exception)
+    # Act
+    dispatcher.send("TEST")
+    # Assert
+    await dispatcher.wait_all(True)
+    assert "Exception in target callback:" not in caplog.text
 
 
 async def test_send_async_partial_handler(async_handler: Callable) -> None:
