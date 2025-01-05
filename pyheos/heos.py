@@ -942,6 +942,17 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         assert self._connection.state == const.STATE_DISCONNECTED
         self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
+    async def _on_event(self, event: HeosMessage) -> None:
+        """Handle a heos event."""
+        if event.command in const.HEOS_EVENTS:
+            await self._handle_heos_event(event)
+        elif event.command in const.PLAYER_EVENTS:
+            await self._on_event_player(event)
+        elif event.command in const.GROUP_EVENTS:
+            await self._on_event_group(event)
+        else:
+            _LOGGER.debug("Unrecognized event: %s", event)
+
     async def _handle_heos_event(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
         result: dict[str, list | dict] | None = None
@@ -960,7 +971,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
         _LOGGER.debug("Event received: %s", event)
 
-    async def _handle_player_event(self, event: HeosMessage) -> None:
+    async def _on_event_player(self, event: HeosMessage) -> None:
         """Process an event about a player."""
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
@@ -970,25 +981,13 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
             _LOGGER.debug("Event received for player %s: %s", player, event)
 
-    async def _handle_group_event(self, event: HeosMessage) -> None:
+    async def _on_event_group(self, event: HeosMessage) -> None:
         """Process an event about a group."""
         group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
-        if group:
-            await group.event_update(event)
-        self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
-        _LOGGER.debug("Event received for group %s: %s", group_id, event)
-
-    async def _on_event(self, event: HeosMessage) -> None:
-        """Handle a heos event."""
-        if event.command in const.HEOS_EVENTS:
-            await self._handle_heos_event(event)
-        elif event.command in const.PLAYER_EVENTS:
-            await self._handle_player_event(event)
-        elif event.command in const.GROUP_EVENTS:
-            await self._handle_group_event(event)
-        else:
-            _LOGGER.debug("Unrecognized event: %s", event)
+        if group and await group.on_event(event):
+            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+            _LOGGER.debug("Event received for group %s: %s", group_id, event)
 
     @property
     def dispatcher(self) -> Dispatcher:

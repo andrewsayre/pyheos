@@ -51,11 +51,15 @@ class HeosGroup:
             _heos=heos,
         )
 
-    async def event_update(self, event: HeosMessage) -> bool:
+    async def on_event(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
-        if event.command == const.EVENT_GROUP_VOLUME_CHANGED:
-            self.volume = event.get_message_value_int(const.ATTR_LEVEL)
-            self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
+        if not (
+            event.command == const.EVENT_GROUP_VOLUME_CHANGED
+            and event.get_message_value_int(const.ATTR_GROUP_ID) == self.group_id
+        ):
+            return False
+        self.volume = event.get_message_value_int(const.ATTR_LEVEL)
+        self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         return True
 
     async def refresh(self) -> None:
