@@ -379,7 +379,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
-    assert player.heos == heos
+    assert player._heos == heos
 
 
 @calls_command("player.get_players_error")
@@ -418,8 +418,8 @@ async def test_player_state_changed_event(
     # Wait until the signal
     await signal.wait()
     # Assert state changed
-    assert player.state == const.PlayState.PLAY
-    assert heos.players[2].state == const.PlayState.STOP
+    assert player.state == const.PlayState.PLAY  # type: ignore[comparison-overlap]
+    assert heos.players[2].state == const.PlayState.STOP  # type: ignore[unreachable]
 
 
 @calls_player_commands()
@@ -714,7 +714,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.players[1].name == "Backyard"
 
 
-@calls_player_commands()
+@calls_player_commands((1, 2, 101, 102))
 async def test_players_changed_event_new_ids(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:

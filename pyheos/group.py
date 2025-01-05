@@ -29,7 +29,7 @@ class HeosGroup:
     def from_data(
         cls,
         data: dict[str, Any],
-        heos: "Heos",
+        heos: Optional["Heos"] = None,
     ) -> "HeosGroup":
         """Create a new instance from the provided data."""
         player_id: int | None = None

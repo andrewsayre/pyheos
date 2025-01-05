@@ -26,20 +26,20 @@ def test_group_from_data_no_leader_raises() -> None:
 @pytest.mark.parametrize(
     ("command", "group_id", "result"),
     [
-        (const.EVENT_GROUP_VOLUME_CHANGED, 1, True),
-        (const.EVENT_GROUP_VOLUME_CHANGED, 2, False),
-        (const.EVENT_PLAYER_VOLUME_CHANGED, 1, False),
+        (const.EVENT_GROUP_VOLUME_CHANGED, "1", True),
+        (const.EVENT_GROUP_VOLUME_CHANGED, "2", False),
+        (const.EVENT_PLAYER_VOLUME_CHANGED, "1", False),
     ],
 )
 async def test_on_event_no_match_returns_false(
-    group: HeosGroup, command: str, group_id: int, result: bool
+    group: HeosGroup, command: str, group_id: str, result: bool
 ) -> None:
     """Test the set_volume command."""
     event = HeosMessage(
         command,
         message={
             const.ATTR_GROUP_ID: group_id,
-            const.ATTR_LEVEL: 10,
+            const.ATTR_LEVEL: "10",
             const.ATTR_MUTE: const.VALUE_ON,
         },
     )

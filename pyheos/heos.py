@@ -518,12 +518,12 @@ class PlayerMixin(ConnectionMixin):
                 # Existing player matched - update
                 if player.player_id != player_id:
                     mapped_player_ids[player_id] = player.player_id
-                player.from_data(player_data)
+                player.update_from_data(player_data)
                 players[player_id] = player
                 existing.remove(player)
             else:
                 # New player
-                player = HeosPlayer(cast("Heos", self), player_data)
+                player = HeosPlayer.from_data(player_data, cast("Heos", self))
                 new_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
@@ -578,10 +578,9 @@ class PlayerMixin(ConnectionMixin):
         result = await self._connection.command(
             PlayerCommands.get_now_playing_media(player_id)
         )
-        if update:
-            update.update_from_data(result)
-            return update
-        return HeosNowPlayingMedia.from_data(result)
+        instance = update or HeosNowPlayingMedia()
+        instance.update_from_message(result)
+        return instance
 
     async def player_get_volume(self, player_id: int) -> int:
         """Get the volume level of the player.
@@ -975,9 +974,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Process an event about a player."""
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
-        if player and (
-            await player.event_update(event, self._options.all_progress_events)
-        ):
+        if player and (await player.on_event(event, self._options.all_progress_events)):
             self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
             _LOGGER.debug("Event received for player %s: %s", player, event)
 

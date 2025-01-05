@@ -135,17 +135,15 @@ def media_item_device(heos: MockHeos) -> MediaItem:
 async def player_fixture(heos: MockHeos) -> HeosPlayer:
     """Fixture for a player."""
     return HeosPlayer(
-        heos,
-        {
-            const.ATTR_NAME: "Back Patio",
-            const.ATTR_PLAYER_ID: 1,
-            const.ATTR_MODEL: "HEOS Drive",
-            const.ATTR_VERSION: "1.493.180",
-            const.ATTR_IP_ADDRESS: "127.0.0.1",
-            const.ATTR_NETWORK: const.NETWORK_TYPE_WIRED,
-            const.ATTR_LINE_OUT: 1,
-            const.ATTR_SERIAL: "B1A2C3K",
-        },
+        name="Back Patio",
+        player_id=1,
+        model="HEOS Drive",
+        serial="B1A2C3K",
+        version="1.493.180",
+        ip_address="127.0.0.1",
+        network=const.NETWORK_TYPE_WIRED,
+        line_out=1,
+        _heos=heos,
     )
 
 
@@ -153,16 +151,15 @@ async def player_fixture(heos: MockHeos) -> HeosPlayer:
 async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
     """Fixture for a player."""
     return HeosPlayer(
-        heos,
-        {
-            const.ATTR_NAME: "Front Porch",
-            const.ATTR_PLAYER_ID: 2,
-            const.ATTR_MODEL: "HEOS Drive",
-            const.ATTR_VERSION: "1.493.180",
-            const.ATTR_IP_ADDRESS: "127.0.0.2",
-            const.ATTR_NETWORK: const.NETWORK_TYPE_WIFI,
-            const.ATTR_LINE_OUT: 1,
-        },
+        name="Front Porch",
+        player_id=2,
+        model="HEOS Drive",
+        serial=None,
+        version="1.493.180",
+        ip_address="127.0.0.2",
+        network=const.NETWORK_TYPE_WIFI,
+        line_out=1,
+        _heos=heos,
     )
 
 
