@@ -6,12 +6,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Final, cast
 
+from pyheos.command import COMMAND_SIGN_IN
 from pyheos.command.browse import BrowseCommands
 from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
-from pyheos.error import CommandError
+from pyheos.error import CommandError, CommandFailedError
 from pyheos.media import (
     BrowseResult,
     MediaItem,
@@ -896,15 +897,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the Heos CLI API."""
         super(Heos, self).__init__(options)
-
         self._connection.add_on_connected(self._on_connected)
         self._connection.add_on_disconnected(self._on_disconnected)
         self._connection.add_on_event(self._on_event)
-
+        self._connection.add_on_command_error(self._on_command_error)
         self._dispatcher = options.dispatcher or Dispatcher()
-
-        self._music_sources: dict[int, MediaMusicSource] = {}
-        self._music_sources_loaded = False
 
     async def connect(self) -> None:
         """Connect to the CLI."""
@@ -922,6 +919,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                     self._current_credentials.password,
                 )
             except CommandError as err:
+                self._signed_in_username = None
                 _LOGGER.debug(
                     "Failed to sign-in to HEOS Account after connection: %s", err
                 )
@@ -943,6 +941,19 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     async def disconnect(self) -> None:
         """Disconnect from the CLI."""
         await self._connection.disconnect()
+
+    async def _on_command_error(self, error: CommandFailedError) -> None:
+        """Handle when a command error occurs."""
+        if error.is_credential_error and error.command != COMMAND_SIGN_IN:
+            self._signed_in_username = None
+            _LOGGER.debug(
+                "HEOS Account credentials are no longer valid: %s",
+                error.error_text,
+                exc_info=error,
+            )
+            self._dispatcher.send(
+                const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+            )
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""

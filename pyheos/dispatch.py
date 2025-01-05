@@ -2,9 +2,12 @@
 
 import asyncio
 import functools
+import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, Final
+
+_LOGGER: Final = logging.getLogger(__name__)
 
 TargetType = Callable[..., Any]
 DisconnectType = Callable[[], None]
@@ -30,6 +33,7 @@ class Dispatcher:
         self._connect = connect or self._default_connect
         self._send = send or self._default_send
         self._disconnects: list[Callable] = []
+        self._running_tasks: set[asyncio.Future] = set()
 
     def connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
@@ -48,6 +52,13 @@ class Dispatcher:
         for disconnect in disconnects:
             disconnect()
 
+    async def wait_all(self, cancel: bool = False) -> None:
+        """Wait for all signals to complete."""
+        if cancel:
+            for task in self._running_tasks:
+                task.cancel()
+        await asyncio.gather(*self._running_tasks, return_exceptions=True)
+
     def _default_connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
         self._signals[signal].append(target)
@@ -62,12 +73,24 @@ class Dispatcher:
 
         return remove_dispatcher
 
+    def _done_callback(self, future: asyncio.Future) -> None:
+        """Remove task from running tasks."""
+        if not future.cancelled() and future.exception():
+            _LOGGER.exception(
+                "Exception in target callback: %s",
+                future,
+                exc_info=future.exception(),
+            )
+        self._running_tasks.discard(future)
+
     def _default_send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
         """Fire a signal.  Must be ran in the event loop."""
         targets = self._signals[signal]
         futures = []
         for target in targets:
             task = self._call_target(target, *args)
+            self._running_tasks.add(task)
+            task.add_done_callback(self._done_callback)
             futures.append(task)
         return futures
 

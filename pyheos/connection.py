@@ -46,6 +46,9 @@ class ConnectionBase:
         self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable]] = []
         self._on_connected_callbacks: list[Callable[[], Awaitable]] = []
         self._on_disconnected_callbacks: list[Callable[[bool], Awaitable]] = []
+        self._on_command_error_callbacks: list[
+            Callable[[CommandFailedError], Awaitable]
+        ] = []
 
     @property
     def state(self) -> str:
@@ -78,6 +81,17 @@ class ConnectionBase:
         """Handle when the connection is lost. Invoked after the connection has been reset."""
         for callback in self._on_disconnected_callbacks:
             await callback(due_to_error)
+
+    def add_on_command_error(
+        self, callback: Callable[[CommandFailedError], Awaitable]
+    ) -> None:
+        """Add a callback to be invoked when a command error occurs."""
+        self._on_command_error_callbacks.append(callback)
+
+    async def _on_command_error(self, error: CommandFailedError) -> None:
+        """Handle when a command failed error occurs."""
+        for callback in self._on_command_error_callbacks:
+            await callback(error)
 
     def _register_task(self, future: Coroutine) -> None:
         """Register a task that is running in the background, so it can be canceled and reset later."""
@@ -208,6 +222,9 @@ class ConnectionBase:
         await self._command_lock.acquire()
         try:
             return await _command_impl()
+        except CommandFailedError as error:
+            await self._on_command_error(error)
+            raise  # Re-raise to send the error to the caller.
         finally:
             self._command_lock.release()
 

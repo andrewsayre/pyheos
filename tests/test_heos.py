@@ -108,20 +108,16 @@ async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> 
     "system.sign_in_failure",
     {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
 )
-async def test_connect_with_bad_credentials_raises_event(
+async def test_connect_with_bad_credentials_dispatches_event(
     mock_device: MockHeosDevice,
 ) -> None:
     """Test event raised when bad credentials supplied."""
     credentials = Credentials("example@example.com", "example")
     heos = Heos(HeosOptions("127.0.0.1", credentials=credentials, heart_beat=False))
 
-    signal = asyncio.Event()
-
-    async def handler(event: str) -> None:
-        assert event == const.EVENT_USER_CREDENTIALS_INVALID
-        signal.set()
-
-    heos.dispatcher.connect(const.SIGNAL_HEOS_EVENT, handler)
+    signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+    )
 
     await heos.connect()
     await signal.wait()
@@ -130,6 +126,28 @@ async def test_connect_with_bad_credentials_raises_event(
     assert heos.signed_in_username is None
 
     await heos.disconnect()
+
+
+@calls_command(
+    "browse.browse_fail_user_not_logged_in",
+    {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+    add_command_under_process=True,
+)
+async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
+    """Test command error with credential error dispatches event."""
+    assert heos.is_signed_in
+    assert heos.signed_in_username is not None
+
+    signal = connect_handler(
+        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+    )
+
+    with pytest.raises(CommandFailedError):
+        await heos.get_favorites()
+
+    await signal.wait()
+    assert not heos.is_signed_in
+    assert heos.signed_in_username is None  # type: ignore[unreachable]
 
 
 @calls_command("system.heart_beat")
@@ -1270,3 +1288,18 @@ async def test_reboot() -> None:
         assert heos.connection_state == const.STATE_CONNECTED
     finally:
         await heos.disconnect()
+
+
+async def test_unrecognized_event_logs(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test repeat mode changes when event received."""
+    # Write event through mock device
+    await mock_device.write_event("event.invalid")
+
+    await asyncio.sleep(
+        0.2
+    )  # Figure out a better way to wait for the log to be written
+    await heos.dispatcher.wait_all()
+
+    assert "Unrecognized event: " in caplog.text
