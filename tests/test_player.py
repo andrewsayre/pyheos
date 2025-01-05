@@ -204,11 +204,14 @@ async def test_play_preset_station_invalid_index(player: HeosPlayer) -> None:
 
 @calls_command(
     "browse.play_stream",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_URL: "https://my.website.com/podcast.mp3"},
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_URL: "https://my.website.com/podcast.mp3?patron-auth=qwerty",
+    },
 )
 async def test_play_url(player: HeosPlayer) -> None:
     """Test the play url."""
-    await player.play_url("https://my.website.com/podcast.mp3")
+    await player.play_url("https://my.website.com/podcast.mp3?patron-auth=qwerty")
 
 
 @pytest.mark.parametrize("quick_select", [0, 7])

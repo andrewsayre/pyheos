@@ -50,9 +50,9 @@ class HeosCommand:
         for key in sorted(items.keys()):
             value = const.MASK if mask and key in const.MASKED_PARAMS else items[key]
             item = f"{key}={HeosCommand._quote(value)}"
-            # Ensure 'url' goes last per CLI spec
+            # Ensure 'url' goes last per CLI spec and is not quoted
             if key == const.ATTR_URL:
-                pairs.append(item)
+                pairs.append(f"{key}={value}")
             else:
                 pairs.insert(0, item)
         return "&".join(pairs)

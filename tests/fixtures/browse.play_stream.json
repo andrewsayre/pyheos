@@ -1,1 +1,1 @@
-{"heos": {"command": "browse/play_stream", "result": "success", "message": "pid=1&url=https://my.website.com/podcast.mp3"}}
+{"heos": {"command": "browse/play_stream", "result": "success", "message": "pid=1&url=https://my.website.com/podcast.mp3?patron-auth=qwerty"}}
