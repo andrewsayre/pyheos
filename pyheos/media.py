@@ -71,8 +71,7 @@ class MediaMusicSource(Media):
 
         Returns:
             A BrowseResult instance containing the items in this source."""
-        if self._heos is None:
-            raise ValueError("Must be initialized with the 'heos' parameter to browse")
+        assert self._heos, "Heos instance not set"
         return await self._heos.browse(self.source_id)
 
 
@@ -123,36 +122,6 @@ class MediaItem(Media):
             _heos=heos,
         )
 
-    async def browse(
-        self,
-        range_start: int | None = None,
-        range_end: int | None = None,
-    ) -> "BrowseResult":
-        """Browse the contents of the current media item (source or container).
-
-        Args:
-            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
-            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
-        Returns:
-            A BrowseResult instance containing the items in this media item (source or container)."""
-        if self._heos is None:
-            raise ValueError("Must be initialized with the 'heos' parameter to browse")
-        return await self._heos.browse_media(self, range_start, range_end)
-
-    async def play_media(
-        self,
-        player_id: int,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
-    ) -> None:
-        """Play this media item on the specified player.
-
-        Args:
-            player_id: The id of the player to play on.
-        """
-        if self._heos is None:
-            raise ValueError("Must be initialized with the 'heos' parameter to play")
-        await self._heos.play_media(player_id, self, add_criteria)
-
     def clone(self) -> "MediaItem":
         return MediaItem(
             source_id=self.source_id,
@@ -168,6 +137,34 @@ class MediaItem(Media):
             album_id=self.album_id,
             _heos=self._heos,
         )
+
+    async def browse(
+        self,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> "BrowseResult":
+        """Browse the contents of the current media item (source or container).
+
+        Args:
+            range_start: The index of the first item to return. Both range_start and range_end must be provided to return a range of items.
+            range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
+        Returns:
+            A BrowseResult instance containing the items in this media item (source or container)."""
+        assert self._heos, "Heos instance not set"
+        return await self._heos.browse_media(self, range_start, range_end)
+
+    async def play_media(
+        self,
+        player_id: int,
+        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """Play this media item on the specified player.
+
+        Args:
+            player_id: The id of the player to play on.
+        """
+        assert self._heos, "Heos instance not set"
+        await self._heos.play_media(player_id, self, add_criteria)
 
 
 @dataclass

@@ -33,8 +33,8 @@ async def test_media_music_source_from_data() -> None:
     assert source.available
     assert source.service_username == data[const.ATTR_SERVICE_USER_NAME]
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to browse",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.browse()
 
@@ -113,13 +113,13 @@ async def test_media_item_from_data() -> None:
     assert source.album_id == data[const.ATTR_ALBUM_ID]
     assert source.media_id == data[const.ATTR_MEDIA_ID]
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to browse",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.browse()
     with pytest.raises(
-        ValueError,
-        match="Must be initialized with the 'heos' parameter to play",
+        AssertionError,
+        match="Heos instance not set",
     ):
         await source.play_media(1)
 
