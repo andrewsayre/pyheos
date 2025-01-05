@@ -45,6 +45,7 @@ ATTR_PLAYERS: Final = "players"
 ATTR_PRESET: Final = "preset"
 ATTR_QUEUE_ID: Final = "qid"
 ATTR_RANGE: Final = "range"
+ATTR_REFRESH: Final = "refresh"
 ATTR_REPEAT: Final = "repeat"
 ATTR_RESULT: Final = "result"
 ATTR_RETURNED: Final = "returned"
@@ -252,6 +253,24 @@ INPUT_OPTICAL_IN_2: Final = "inputs/optical_in_2"
 INPUT_OPTICAL_IN_3: Final = "inputs/optical_in_3"
 INPUT_PHONO: Final = "inputs/phono"
 INPUT_RECORDER_IN_1: Final = "inputs/recorder_in_1"
+INPUT_SOURCE_1: Final = "inputs/source1"
+INPUT_SOURCE_2: Final = "inputs/source2"
+INPUT_SOURCE_3: Final = "inputs/source3"
+INPUT_SOURCE_4: Final = "inputs/source4"
+INPUT_SOURCE_5: Final = "inputs/source5"
+INPUT_SOURCE_6: Final = "inputs/source6"
+INPUT_SOURCE_7: Final = "inputs/source7"
+INPUT_SOURCE_8: Final = "inputs/source8"
+INPUT_SOURCE_9: Final = "inputs/source9"
+INPUT_SOURCE_10: Final = "inputs/source10"
+INPUT_SOURCE_11: Final = "inputs/source11"
+INPUT_SOURCE_12: Final = "inputs/source12"
+INPUT_SOURCE_13: Final = "inputs/source13"
+INPUT_SOURCE_14: Final = "inputs/source14"
+INPUT_SOURCE_15: Final = "inputs/source15"
+INPUT_SOURCE_16: Final = "inputs/source16"
+INPUT_SOURCE_17: Final = "inputs/source17"
+INPUT_SOURCE_18: Final = "inputs/source18"
 INPUT_TUNER: Final = "inputs/tuner"
 INPUT_TV: Final = "inputs/tv"
 INPUT_TV_AUDIO: Final = "inputs/tvaudio"
@@ -297,6 +316,25 @@ VALID_INPUTS: Final = (
     INPUT_OPTICAL_IN_3,
     INPUT_PHONO,
     INPUT_RECORDER_IN_1,
+    INPUT_SOURCE_1,
+    INPUT_SOURCE_2,
+    INPUT_SOURCE_3,
+    INPUT_SOURCE_4,
+    INPUT_SOURCE_5,
+    INPUT_SOURCE_6,
+    INPUT_SOURCE_7,
+    INPUT_SOURCE_8,
+    INPUT_SOURCE_9,
+    INPUT_SOURCE_10,
+    INPUT_SOURCE_11,
+    INPUT_SOURCE_12,
+    INPUT_SOURCE_13,
+    INPUT_SOURCE_14,
+    INPUT_SOURCE_15,
+    INPUT_SOURCE_16,
+    INPUT_SOURCE_17,
+    INPUT_SOURCE_18,
+    INPUT_SOURCE_18,
     INPUT_TUNER,
     INPUT_TV_AUDIO,
     INPUT_TV,

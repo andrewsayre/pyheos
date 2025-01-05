@@ -762,7 +762,7 @@ async def test_players_changed_event_new_ids(
     assert heos.players[102].name == "Front Porch"
 
 
-@calls_command("browse.get_music_sources")
+@calls_command("browse.get_music_sources", {})
 async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test sources changed fires dispatcher."""
     await heos.get_music_sources()
@@ -777,7 +777,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     # Write event through mock device
     command = mock_device.register(
         commands.COMMAND_BROWSE_GET_SOURCES,
-        None,
+        {const.ATTR_REFRESH: const.VALUE_ON},
         "browse.get_music_sources_changed",
         replace=True,
     )
@@ -1044,7 +1044,7 @@ async def test_play_media_station_missing_media_id_raises(
         await heos.play_media(1, media_item_station)
 
 
-@calls_command("browse.get_music_sources")
+@calls_command("browse.get_music_sources", {})
 async def test_get_music_sources(heos: Heos) -> None:
     """Test the heos connect method."""
     sources = await heos.get_music_sources()

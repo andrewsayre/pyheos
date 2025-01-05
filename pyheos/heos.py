@@ -210,7 +210,7 @@ class BrowseMixin(ConnectionMixin):
         return self._music_sources
 
     async def get_music_sources(
-        self, refresh: bool = True
+        self, refresh: bool = False
     ) -> dict[int, MediaMusicSource]:
         """
         Get available music sources.
@@ -219,7 +219,9 @@ class BrowseMixin(ConnectionMixin):
             4.4.1 Get Music Sources
         """
         if not self._music_sources_loaded or refresh:
-            message = await self._connection.command(BrowseCommands.get_music_sources())
+            message = await self._connection.command(
+                BrowseCommands.get_music_sources(refresh)
+            )
             self._music_sources.clear()
             for data in cast(Sequence[dict], message.payload):
                 source = MediaMusicSource.from_data(data, cast("Heos", self))

@@ -48,14 +48,17 @@ class BrowseCommands:
         return HeosCommand(command.COMMAND_BROWSE_BROWSE, params)
 
     @staticmethod
-    def get_music_sources() -> HeosCommand:
+    def get_music_sources(refresh: bool = False) -> HeosCommand:
         """
         Create a HEOS command to get the music sources.
 
         References:
             4.4.1 Get Music Sources
         """
-        return HeosCommand(command.COMMAND_BROWSE_GET_SOURCES)
+        params = {}
+        if refresh:
+            params[const.ATTR_REFRESH] = const.VALUE_ON
+        return HeosCommand(command.COMMAND_BROWSE_GET_SOURCES, params)
 
     @staticmethod
     def play_station(
