@@ -64,60 +64,50 @@ class HeosGroup:
 
     async def refresh(self) -> None:
         """Pull current state."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await asyncio.gather(self.refresh_volume(), self.refresh_mute())
 
     async def refresh_volume(self) -> None:
         """Pull the latest volume."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         self.volume = await self._heos.get_group_volume(self.group_id)
 
     async def refresh_mute(self) -> None:
         """Pull the latest mute status."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         self.is_muted = await self._heos.get_group_mute(self.group_id)
 
     async def set_volume(self, level: int) -> None:
         """Set the volume level."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self._heos.set_group_volume(self.group_id, level)
 
     async def volume_up(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self._heos.group_volume_up(self.group_id, step)
 
     async def volume_down(self, step: int = const.DEFAULT_STEP) -> None:
         """Raise the volume."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self._heos.group_volume_down(self.group_id, step)
 
     async def set_mute(self, state: bool) -> None:
         """Set the mute state."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self._heos.group_set_mute(self.group_id, state)
 
     async def mute(self) -> None:
         """Set mute state."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self.set_mute(True)
 
     async def unmute(self) -> None:
         """Clear mute state."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self.set_mute(False)
 
     async def toggle_mute(self) -> None:
         """Toggle mute state."""
-        if self._heos is None:
-            raise ValueError("Heos instance not set")
+        assert self._heos, "Heos instance not set"
         await self._heos.group_toggle_mute(self.group_id)

@@ -5,7 +5,51 @@ import pytest
 from pyheos import const
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
+from pyheos.message import HeosMessage
 from tests import calls_command, value
+
+
+def test_group_from_data_no_leader_raises() -> None:
+    """Test creating a group from data with no leader."""
+    data = {
+        const.ATTR_NAME: "Test Group",
+        const.ATTR_GROUP_ID: "1",
+        const.ATTR_PLAYERS: [
+            {const.ATTR_PLAYER_ID: "1", const.ATTR_ROLE: const.VALUE_MEMBER},
+            {const.ATTR_PLAYER_ID: "2", const.ATTR_ROLE: const.VALUE_MEMBER},
+        ],
+    }
+    with pytest.raises(ValueError, match="No leader found in group data"):
+        HeosGroup.from_data(data, None)
+
+
+@pytest.mark.parametrize(
+    ("command", "group_id", "result"),
+    [
+        (const.EVENT_GROUP_VOLUME_CHANGED, 1, True),
+        (const.EVENT_GROUP_VOLUME_CHANGED, 2, False),
+        (const.EVENT_PLAYER_VOLUME_CHANGED, 1, False),
+    ],
+)
+async def test_on_event_no_match_returns_false(
+    group: HeosGroup, command: str, group_id: int, result: bool
+) -> None:
+    """Test the set_volume command."""
+    event = HeosMessage(
+        command,
+        message={
+            const.ATTR_GROUP_ID: group_id,
+            const.ATTR_LEVEL: 10,
+            const.ATTR_MUTE: const.VALUE_ON,
+        },
+    )
+    assert result == await group.on_event(event)
+    if result:
+        assert group.volume == 10
+        assert group.is_muted
+    else:
+        assert group.volume == 0
+        assert not group.is_muted
 
 
 @calls_command("group.set_volume", {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"})

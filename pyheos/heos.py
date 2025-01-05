@@ -945,7 +945,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     async def _on_event(self, event: HeosMessage) -> None:
         """Handle a heos event."""
         if event.command in const.HEOS_EVENTS:
-            await self._handle_heos_event(event)
+            await self._on_event_heos(event)
         elif event.command in const.PLAYER_EVENTS:
             await self._on_event_player(event)
         elif event.command in const.GROUP_EVENTS:
@@ -953,7 +953,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         else:
             _LOGGER.debug("Unrecognized event: %s", event)
 
-    async def _handle_heos_event(self, event: HeosMessage) -> None:
+    async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
         result: dict[str, list | dict] | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
