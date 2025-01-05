@@ -20,6 +20,7 @@ classifiers = [
     "Topic :: Home Automation",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [project.urls]
@@ -37,7 +38,7 @@ exclude = ["tests", "tests.*"]
 required-version = ">=0.8.0"
 
 [tool.pylint.MAIN]
-py-version = "3.12"
+py-version = "3.13"
 jobs = 2
 load-plugins = [
     "pylint.extensions.code_style",
@@ -54,7 +55,7 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 platform = "linux"
 plugins = ["pydantic.mypy", "pydantic.v1.mypy"]
 show_error_codes = true
