@@ -2,7 +2,17 @@
 
 from . import const
 from .credentials import Credentials
-from .dispatch import Dispatcher
+from .dispatch import (
+    CallbackType,
+    ConnectType,
+    ControllerEventCallbackType,
+    DisconnectType,
+    Dispatcher,
+    EventCallbackType,
+    PlayerEventCallbackType,
+    SendType,
+    TargetType,
+)
 from .error import CommandError, CommandFailedError, HeosError
 from .group import HeosGroup
 from .heos import Heos, HeosOptions
@@ -17,11 +27,16 @@ from .system import HeosHost, HeosSystem
 
 __all__ = [
     "BrowseResult",
-    "const",
+    "CallbackType",
     "CommandError",
     "CommandFailedError",
+    "ConnectType",
+    "const",
+    "ControllerEventCallbackType",
     "Credentials",
+    "DisconnectType",
     "Dispatcher",
+    "EventCallbackType",
     "Heos",
     "HeosError",
     "HeosGroup",
@@ -33,5 +48,8 @@ __all__ = [
     "Media",
     "MediaItem",
     "MediaMusicSource",
+    "PlayerEventCallbackType",
     "PlayMode",
+    "SendType",
+    "TargetType",
 ]
