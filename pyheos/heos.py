@@ -30,6 +30,9 @@ from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 
+HeosEventCallbackType = Callable[[str], Any]
+CallbackType = Callable[[], Any]
+
 _LOGGER: Final = logging.getLogger(__name__)
 
 
@@ -856,10 +859,6 @@ class GroupMixin(PlayerMixin):
         await self._connection.command(GroupCommands.group_toggle_mute(group_id))
 
 
-HeosEventCallbackType = Callable[[str], Any]
-CallbackType = Callable[[], Any]
-
-
 class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
@@ -918,7 +917,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Disconnect from the CLI."""
         await self._connection.disconnect()
 
-    def add_on_heos_event(self, callback: Callable[[str], Any]) -> DisconnectType:
+    def add_on_heos_event(self, callback: HeosEventCallbackType) -> DisconnectType:
         """Connect a callback to receive HEOS events.
 
         Args:
@@ -928,9 +927,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         return self._dispatcher.connect(const.SIGNAL_HEOS_EVENT, callback)
 
     @staticmethod
-    def _get_callback_event_wrapper(event: str, callback: CallbackType) -> CallbackType:
+    def _get_callback_event_wrapper(
+        event: str, callback: CallbackType
+    ) -> HeosEventCallbackType:
         """Create a callback wrapper filtered to the target event."""
-        wrapper: CallbackType
+        wrapper: HeosEventCallbackType
         check_target = callback
         while isinstance(check_target, functools.partial):
             check_target = check_target.func
