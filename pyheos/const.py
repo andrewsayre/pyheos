@@ -114,17 +114,20 @@ class RepeatType(StrEnum):
     OFF = "off"
 
 
-MEDIA_TYPE_ALBUM = "album"
-MEDIA_TYPE_ARTIST = "artist"
-MEDIA_TYPE_CONTAINER = "container"
-MEDIA_TYPE_DLNA_SERVER = "dlna_server"
-MEDIA_TYPE_GENRE = "genre"
-MEDIA_TYPE_HEOS_SERVER = "heos_server"
-MEDIA_TYPE_HEOS_SERVICE = "heos_service"
-MEDIA_TYPE_MUSIC_SERVICE = "music_service"
-MEDIA_TYPE_PLAYLIST = "playlist"
-MEDIA_TYPE_SONG = "song"
-MEDIA_TYPE_STATION = "station"
+class MediaType(StrEnum):
+    """Define the media types."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    CONTAINER = "container"
+    DLNA_SERVER = "dlna_server"
+    GENRE = "genre"
+    HEOS_SERVER = "heos_server"
+    HEOS_SERVICE = "heos_service"
+    MUSIC_SERVICE = "music_service"
+    PLAYLIST = "playlist"
+    SONG = "song"
+    STATION = "station"
 
 
 # Music Sources
