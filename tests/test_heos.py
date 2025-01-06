@@ -397,7 +397,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
-    assert player._heos == heos
+    assert player.heos == heos
 
 
 @calls_player_commands()

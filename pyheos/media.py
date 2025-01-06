@@ -23,7 +23,7 @@ class Media:
     name: str
     type: const.MediaType
     image_url: str = field(repr=False)
-    _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
+    heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
 
 @dataclass
@@ -51,7 +51,7 @@ class MediaMusicSource(Media):
             image_url=data[const.ATTR_IMAGE_URL],
             available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
             service_username=data.get(const.ATTR_SERVICE_USER_NAME),
-            _heos=heos,
+            heos=heos,
         )
 
     def clone(self) -> "MediaMusicSource":
@@ -63,7 +63,7 @@ class MediaMusicSource(Media):
             image_url=self.image_url,
             available=self.available,
             service_username=self.service_username,
-            _heos=self._heos,
+            heos=self.heos,
         )
 
     async def browse(self) -> "BrowseResult":
@@ -71,8 +71,8 @@ class MediaMusicSource(Media):
 
         Returns:
             A BrowseResult instance containing the items in this source."""
-        assert self._heos, "Heos instance not set"
-        return await self._heos.browse(self.source_id)
+        assert self.heos, "Heos instance not set"
+        return await self.heos.browse(self.source_id)
 
 
 @dataclass
@@ -119,7 +119,7 @@ class MediaItem(Media):
             artist=data.get(const.ATTR_ARTIST),
             album=data.get(const.ATTR_ALBUM),
             album_id=data.get(const.ATTR_ALBUM_ID),
-            _heos=heos,
+            heos=heos,
         )
 
     def clone(self) -> "MediaItem":
@@ -135,7 +135,7 @@ class MediaItem(Media):
             artist=self.artist,
             album=self.album,
             album_id=self.album_id,
-            _heos=self._heos,
+            heos=self.heos,
         )
 
     async def browse(
@@ -150,8 +150,8 @@ class MediaItem(Media):
             range_end: The index of the last item to return. Both range_start and range_end must be provided to return a range of items.
         Returns:
             A BrowseResult instance containing the items in this media item (source or container)."""
-        assert self._heos, "Heos instance not set"
-        return await self._heos.browse_media(self, range_start, range_end)
+        assert self.heos, "Heos instance not set"
+        return await self.heos.browse_media(self, range_start, range_end)
 
     async def play_media(
         self,
@@ -163,8 +163,8 @@ class MediaItem(Media):
         Args:
             player_id: The id of the player to play on.
         """
-        assert self._heos, "Heos instance not set"
-        await self._heos.play_media(player_id, self, add_criteria)
+        assert self.heos, "Heos instance not set"
+        await self.heos.play_media(player_id, self, add_criteria)
 
 
 @dataclass
@@ -176,7 +176,7 @@ class BrowseResult:
     source_id: int
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
-    _heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
+    heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
     @classmethod
     def from_data(
@@ -197,5 +197,5 @@ class BrowseResult:
                     for item in cast(Sequence[dict], message.payload)
                 ]
             ),
-            _heos=heos,
+            heos=heos,
         )
