@@ -1,11 +1,9 @@
 """Define the heos manager module."""
 
 import asyncio
-import functools
 import logging
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from functools import wraps
 from typing import Any, Final, cast
 
 from pyheos.command import COMMAND_SIGN_IN
@@ -14,7 +12,12 @@ from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
-from pyheos.dispatch import DisconnectType
+from pyheos.dispatch import (
+    CallbackType,
+    DisconnectType,
+    EventCallbackType,
+    callback_wrapper,
+)
 from pyheos.error import CommandError, CommandFailedError
 from pyheos.media import (
     BrowseResult,
@@ -29,9 +32,6 @@ from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
-
-HeosEventCallbackType = Callable[[str], Any]
-CallbackType = Callable[[], Any]
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -917,7 +917,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Disconnect from the CLI."""
         await self._connection.disconnect()
 
-    def add_on_heos_event(self, callback: HeosEventCallbackType) -> DisconnectType:
+    def add_on_heos_event(self, callback: EventCallbackType) -> DisconnectType:
         """Connect a callback to receive HEOS events.
 
         Args:
@@ -926,30 +926,6 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             A function that disconnects the callback."""
         return self._dispatcher.connect(const.SIGNAL_HEOS_EVENT, callback)
 
-    @staticmethod
-    def _get_callback_event_wrapper(
-        event: str, callback: CallbackType
-    ) -> HeosEventCallbackType:
-        """Create a callback wrapper filtered to the target event."""
-        wrapper: HeosEventCallbackType
-        check_target = callback
-        while isinstance(check_target, functools.partial):
-            check_target = check_target.func
-        if asyncio.iscoroutinefunction(check_target):
-
-            @wraps(callback)
-            async def wrapper(raised_event: str) -> None:
-                if raised_event == event:
-                    await callback()
-        else:
-
-            @wraps(callback)
-            def wrapper(raised_event: str) -> None:
-                if raised_event == event:
-                    callback()
-
-        return wrapper
-
     def add_on_connected(self, callback: CallbackType) -> DisconnectType:
         """Connect a callback to be invoked when connected.
 
@@ -957,9 +933,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             callback: The callback to be invoked.
         Returns:
             A function that disconnects the callback."""
-
         return self.add_on_heos_event(
-            Heos._get_callback_event_wrapper(const.EVENT_CONNECTED, callback),
+            callback_wrapper(callback, {0: const.EVENT_CONNECTED}),
         )
 
     def add_on_disconnected(self, callback: CallbackType) -> DisconnectType:
@@ -970,7 +945,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            Heos._get_callback_event_wrapper(const.EVENT_DISCONNECTED, callback),
+            callback_wrapper(callback, {0: const.EVENT_DISCONNECTED}),
         )
 
     def add_on_user_credentials_invalid(self, callback: CallbackType) -> DisconnectType:
@@ -981,9 +956,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            Heos._get_callback_event_wrapper(
-                const.EVENT_USER_CREDENTIALS_INVALID, callback
-            ),
+            callback_wrapper(callback, {0: const.EVENT_USER_CREDENTIALS_INVALID}),
         )
 
     async def _on_connected(self) -> None:

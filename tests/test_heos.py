@@ -438,12 +438,11 @@ async def test_player_state_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str) -> None:
-        assert player_id == player.player_id
+    async def handler(event: str) -> None:
         assert event == const.EVENT_PLAYER_STATE_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    player.add_on_player_event(handler)
 
     # Write event through mock device
     await mock_device.write_event(

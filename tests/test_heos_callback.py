@@ -20,9 +20,15 @@ async def test_add_on_connected() -> None:
     # Simulate sending event
     await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     assert called
+    called = False
+
+    # Test other events don't raise
+    #
+    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    assert not called
 
     # Test disconnct
-    called = False
+
     disconnect()
     await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     assert not called

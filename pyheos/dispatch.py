@@ -14,6 +14,53 @@ DisconnectType = Callable[[], None]
 ConnectType = Callable[[str, TargetType], DisconnectType]
 SendType = Callable[..., Sequence[asyncio.Future]]
 
+EventCallbackType = Callable[[str], Any]
+CallbackType = Callable[[], Any]
+PlayerEventCallbackType = Callable[[int, str], Any]
+
+
+def _is_coroutine_function(func: TargetType) -> bool:
+    """Return True if func is a decorated coroutine function."""
+
+    while isinstance(func, functools.partial):
+        func = func.func
+    return asyncio.iscoroutinefunction(func)
+
+
+def _filter_args(
+    args: tuple[Any], arg_filter: dict[int, Any]
+) -> tuple[bool, tuple[Any]]:
+    """Filters the supplied args and returns True if matched and the updated args list."""
+    for key, value in arg_filter.items():
+        resolved_value = value() if callable(value) else value
+        if args[key] != resolved_value:
+            return False, args
+        list_args = list(args)
+        list_args.pop(key)
+        args = tuple(list_args)
+    return True, args
+
+
+def callback_wrapper(callback: TargetType, args_filter: dict[int, Any]) -> TargetType:
+    """Create a wrapper for the callback and filters the arguments supplied."""
+    wrapper: TargetType
+    if _is_coroutine_function(callback):
+
+        @functools.wraps(callback)
+        async def wrapper(*args: Any, **kwargs: Any) -> None:
+            match, new_args = _filter_args(args, args_filter)
+            if match:
+                await callback(*new_args, **kwargs)
+    else:
+
+        @functools.wraps(callback)
+        def wrapper(*args: Any, **kwargs: Any) -> None:
+            match, new_args = _filter_args(args, args_filter)
+            if match:
+                callback(*new_args, **kwargs)
+
+    return wrapper
+
 
 class Dispatcher:
     """Define the dispatch class."""
@@ -106,10 +153,7 @@ class Dispatcher:
         return futures
 
     def _call_target(self, target: Callable, *args: Any) -> asyncio.Future:
-        check_target = target
-        while isinstance(check_target, functools.partial):
-            check_target = check_target.func
-        if asyncio.iscoroutinefunction(check_target):
+        if _is_coroutine_function(target):
             return self._loop.create_task(target(*args))
         return self._loop.run_in_executor(None, target, *args)
 

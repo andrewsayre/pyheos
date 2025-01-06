@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
@@ -168,7 +169,12 @@ class HeosPlayer:
         self.line_out = int(data[const.ATTR_LINE_OUT])
 
     async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
-        """Return True if player update event changed state."""
+        """Updates the player based on the received HEOS event.
+
+        This is an internal method invoked by the Heos class and is not intended for direct use.
+
+        Returns:
+            True if the player event changed state, other wise False."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self.now_playing_media.on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
@@ -187,6 +193,20 @@ class HeosPlayer:
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
             self.playback_error = event.get_message_value(const.ATTR_ERROR)
         return True
+
+    def add_on_player_event(self, callback: EventCallbackType) -> DisconnectType:
+        """Connect a callback to be invoked when connected.
+
+        Args:
+            callback: The callback to be invoked.
+        Returns:
+            A function that disconnects the callback."""
+        assert self._heos, "Heos instance not set"
+        # Use lambda to yield player_id since the value can change
+        return self._heos.dispatcher.connect(
+            const.SIGNAL_PLAYER_EVENT,
+            callback_wrapper(callback, {0: lambda: self.player_id}),
+        )
 
     async def refresh(self) -> None:
         """Pull current state."""
