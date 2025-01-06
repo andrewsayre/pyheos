@@ -14,6 +14,7 @@ from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
 from pyheos.dispatch import (
     CallbackType,
+    ControllerEventCallbackType,
     DisconnectType,
     EventCallbackType,
     callback_wrapper,
@@ -916,6 +917,17 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
     async def disconnect(self) -> None:
         """Disconnect from the CLI."""
         await self._connection.disconnect()
+
+    def add_on_controller_event(
+        self, callback: ControllerEventCallbackType
+    ) -> DisconnectType:
+        """Connect a callback to receive controller events.
+
+        Args:
+            callback: The callback to receive the controller events.
+        Returns:
+            A function that disconnects the callback."""
+        return self._dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, callback)
 
     def add_on_heos_event(self, callback: EventCallbackType) -> DisconnectType:
         """Connect a callback to receive HEOS events.

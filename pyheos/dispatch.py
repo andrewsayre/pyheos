@@ -16,6 +16,7 @@ SendType = Callable[..., Sequence[asyncio.Future]]
 
 EventCallbackType = Callable[[str], Any]
 CallbackType = Callable[[], Any]
+ControllerEventCallbackType = Callable[[str, Any], Any]
 PlayerEventCallbackType = Callable[[int, str], Any]
 
 
