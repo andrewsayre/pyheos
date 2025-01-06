@@ -2,7 +2,7 @@
 	"heos": {
 		"command": "browse/browse",
 		"result": "success",
-		"message": "sid=1027&returned=3&count=3"
+		"message": "sid=1027&returned=2&count=2"
 	},
 	"payload": [{
 			"name": "Theater Receiver",
