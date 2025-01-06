@@ -77,10 +77,10 @@ async def test_browse_result_from_data() -> None:
     assert result.returned == 1
     assert result.count == 1
     assert result.source_id == 1025
-    assert result._heos == heos
+    assert result.heos == heos
     assert len(result.items) == 1
     item = result.items[0]
-    assert item._heos == heos
+    assert item.heos == heos
 
 
 async def test_media_item_from_data() -> None:

@@ -1,6 +1,5 @@
 """Define tests for the Dispatch module."""
 
-import asyncio
 import functools
 from collections.abc import Callable
 from typing import Any
@@ -65,7 +64,7 @@ async def test_send_async_handler(async_handler: Callable) -> None:
     dispatcher = Dispatcher()
     dispatcher.connect("TEST", async_handler)
     # Act
-    await asyncio.gather(*dispatcher.send("TEST"))
+    await dispatcher.wait_send("TEST")
     # Assert
     assert async_handler.fired  # type: ignore[attr-defined]
 
@@ -113,7 +112,7 @@ async def test_send_async_partial_handler(async_handler: Callable) -> None:
     dispatcher = Dispatcher()
     dispatcher.connect("TEST", partial)
     # Act
-    await asyncio.gather(*dispatcher.send("TEST"))
+    await dispatcher.wait_send("TEST")
     # Assert
     assert async_handler.fired  # type: ignore[attr-defined]
 
@@ -125,7 +124,7 @@ async def test_send(handler: Callable) -> None:
     dispatcher.connect("TEST", handler)
     args = object()
     # Act
-    await asyncio.gather(*dispatcher.send("TEST", args))
+    await dispatcher.wait_send("TEST", args)
     # Assert
     assert handler.fired  # type: ignore[attr-defined]
     assert handler.args[0] == args  # type: ignore[attr-defined]

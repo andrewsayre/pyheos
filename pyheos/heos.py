@@ -12,6 +12,13 @@ from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
 from pyheos.credentials import Credentials
+from pyheos.dispatch import (
+    CallbackType,
+    ControllerEventCallbackType,
+    DisconnectType,
+    EventCallbackType,
+    callback_wrapper,
+)
 from pyheos.error import CommandError, CommandFailedError
 from pyheos.media import (
     BrowseResult,
@@ -907,9 +914,70 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Connect to the CLI."""
         await self._connection.connect()
 
+    async def disconnect(self) -> None:
+        """Disconnect from the CLI."""
+        await self._connection.disconnect()
+
+    def add_on_controller_event(
+        self, callback: ControllerEventCallbackType
+    ) -> DisconnectType:
+        """Connect a callback to receive controller events.
+
+        Args:
+            callback: The callback to receive the controller events.
+        Returns:
+            A function that disconnects the callback."""
+        return self._dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, callback)
+
+    def add_on_heos_event(self, callback: EventCallbackType) -> DisconnectType:
+        """Connect a callback to receive HEOS events.
+
+        Args:
+            callback: The callback to receive the HEOS events. The callback should accept a single string argument which will contain the event name.
+        Returns:
+            A function that disconnects the callback."""
+        return self._dispatcher.connect(const.SIGNAL_HEOS_EVENT, callback)
+
+    def add_on_connected(self, callback: CallbackType) -> DisconnectType:
+        """Connect a callback to be invoked when connected.
+
+        Args:
+            callback: The callback to be invoked.
+        Returns:
+            A function that disconnects the callback."""
+        return self.add_on_heos_event(
+            callback_wrapper(callback, {0: const.EVENT_CONNECTED}),
+        )
+
+    def add_on_disconnected(self, callback: CallbackType) -> DisconnectType:
+        """Connect a callback to be invoked when disconnected.
+
+        Args:
+            callback: The callback to be invoked.
+        Returns:
+            A function that disconnects the callback."""
+        return self.add_on_heos_event(
+            callback_wrapper(callback, {0: const.EVENT_DISCONNECTED}),
+        )
+
+    def add_on_user_credentials_invalid(self, callback: CallbackType) -> DisconnectType:
+        """Connect a callback to be invoked when the user credentials are invalid.
+
+        Args:
+            callback: The callback to be invoked.
+        Returns:
+            A function that disconnects the callback."""
+        return self.add_on_heos_event(
+            callback_wrapper(callback, {0: const.EVENT_USER_CREDENTIALS_INVALID}),
+        )
+
     async def _on_connected(self) -> None:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
+
+        await self._dispatcher.wait_send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
+        )
 
         if self._current_credentials:
             # Sign-in to the account if provided
@@ -923,8 +991,10 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 _LOGGER.debug(
                     "Failed to sign-in to HEOS Account after connection: %s", err
                 )
-                self._dispatcher.send(
-                    const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+                await self._dispatcher.wait_send(
+                    const.SIGNAL_HEOS_EVENT,
+                    const.EVENT_USER_CREDENTIALS_INVALID,
+                    return_exceptions=True,
                 )
         else:
             # Determine the logged in user
@@ -936,11 +1006,15 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         if self._players_loaded:
             await self.load_players()
 
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
-
-    async def disconnect(self) -> None:
-        """Disconnect from the CLI."""
-        await self._connection.disconnect()
+    async def _on_disconnected(self, from_error: bool) -> None:
+        """Handle when disconnected, which may occur more than once."""
+        assert self._connection.state == const.STATE_DISCONNECTED
+        # Mark loaded players unavailable
+        for player in self.players.values():
+            player.available = False
+        await self._dispatcher.wait_send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED, return_exceptions=True
+        )
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
         """Handle when a command error occurs."""
@@ -951,17 +1025,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 error.error_text,
                 exc_info=error,
             )
-            self._dispatcher.send(
-                const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+            await self._dispatcher.wait_send(
+                const.SIGNAL_HEOS_EVENT,
+                const.EVENT_USER_CREDENTIALS_INVALID,
+                return_exceptions=True,
             )
-
-    async def _on_disconnected(self, from_error: bool) -> None:
-        """Handle when disconnected, which may occur more than once."""
-        assert self._connection.state == const.STATE_DISCONNECTED
-        # Mark loaded players unavailable
-        for player in self.players.values():
-            player.available = False
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
 
     async def _on_event(self, event: HeosMessage) -> None:
         """Handle a heos event."""
@@ -989,7 +1057,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
             await self.get_groups(refresh=True)
 
-        self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
+        await self._dispatcher.wait_send(
+            const.SIGNAL_CONTROLLER_EVENT, event.command, result, return_exceptions=True
+        )
         _LOGGER.debug("Event received: %s", event)
 
     async def _on_event_player(self, event: HeosMessage) -> None:
@@ -997,7 +1067,12 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
         if player and (await player.on_event(event, self._options.all_progress_events)):
-            self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
+            await self.dispatcher.wait_send(
+                const.SIGNAL_PLAYER_EVENT,
+                player_id,
+                event.command,
+                return_exceptions=True,
+            )
             _LOGGER.debug("Event received for player %s: %s", player, event)
 
     async def _on_event_group(self, event: HeosMessage) -> None:
@@ -1005,7 +1080,12 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
         if group and await group.on_event(event):
-            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+            await self.dispatcher.wait_send(
+                const.SIGNAL_GROUP_EVENT,
+                group_id,
+                event.command,
+                return_exceptions=True,
+            )
             _LOGGER.debug("Event received for group %s: %s", group_id, event)
 
     @property

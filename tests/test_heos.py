@@ -70,7 +70,7 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
     )
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     await heos.connect()
-    await signal.wait()
+    assert signal.is_set()
     assert heos.connection_state == const.STATE_CONNECTED
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
@@ -120,7 +120,7 @@ async def test_connect_with_bad_credentials_dispatches_event(
     )
 
     await heos.connect()
-    await signal.wait()
+    assert signal.is_set()
 
     assert not heos.is_signed_in
     assert heos.signed_in_username is None
@@ -145,7 +145,7 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
     with pytest.raises(CommandFailedError):
         await heos.get_favorites()
 
-    await signal.wait()
+    assert signal.is_set()
     assert not heos.is_signed_in
     assert heos.signed_in_username is None  # type: ignore[unreachable]
 
@@ -210,7 +210,7 @@ async def test_disconnect(mock_device: MockHeosDevice, heos: Heos) -> None:
     # Fixture automatically connects
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
     await heos.disconnect()
-    await signal.wait()
+    assert signal.is_set()
     assert heos.connection_state == const.STATE_DISCONNECTED
 
 
@@ -283,7 +283,7 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
 
     # Assert open and fires connected
     await heos.connect()
-    await connect_signal.wait()
+    assert connect_signal.is_set()
     assert heos.connection_state == const.STATE_CONNECTED
     connect_signal.clear()
 
@@ -322,7 +322,7 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
 
     # Assert open and fires connected
     await heos.connect()
-    await connect_signal.wait()
+    assert connect_signal.is_set()
     assert heos.connection_state == const.STATE_CONNECTED
     connect_signal.clear()
 
@@ -361,7 +361,7 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 
     # Assert open and fires connected
     await heos.connect()
-    await connect_signal.wait()
+    assert connect_signal.is_set()
     assert heos.connection_state == const.STATE_CONNECTED
     connect_signal.clear()
 
@@ -372,7 +372,7 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 
     await asyncio.sleep(0.3)
 
-    # Assert reconnects once server is back up and fires connected
+    # Assert calling disconnect sets state to disconnected
     await heos.disconnect()
     assert heos.connection_state == const.STATE_DISCONNECTED
 
@@ -397,7 +397,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.repeat == const.RepeatType.OFF
     assert not player.shuffle
     assert player.available
-    assert player._heos == heos
+    assert player.heos == heos
 
 
 @calls_player_commands()
@@ -438,12 +438,11 @@ async def test_player_state_changed_event(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(player_id: int, event: str) -> None:
-        assert player_id == player.player_id
+    async def handler(event: str) -> None:
         assert event == const.EVENT_PLAYER_STATE_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    player.add_on_player_event(handler)
 
     # Write event through mock device
     await mock_device.write_event(
@@ -1288,6 +1287,7 @@ async def test_reboot() -> None:
         assert heos.connection_state == const.STATE_CONNECTED
     finally:
         await heos.disconnect()
+    assert heos.connection_state == const.STATE_DISCONNECTED
 
 
 async def test_unrecognized_event_logs(

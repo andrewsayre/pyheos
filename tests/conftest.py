@@ -71,63 +71,63 @@ def async_handler() -> Callable[..., Coroutine]:
 @pytest.fixture
 def media_music_source(heos: MockHeos) -> MediaMusicSource:
     source = MediaMusicSources.FAVORITES.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_music_source_unavailable(heos: MockHeos) -> MediaMusicSource:
     source = MediaMusicSources.PANDORA.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_music_source_tidal(heos: MockHeos) -> MediaMusicSource:
     source = MediaMusicSources.TIDAL.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_item_album(heos: MockHeos) -> MediaItem:
     source = MediaItems.ALBUM.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_item_song(heos: MockHeos) -> MediaItem:
     source = MediaItems.SONG.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture(name="media_item_input")
 def media_item_input_fixture(heos: MockHeos) -> MediaItem:
     source = MediaItems.INPUT.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_item_station(heos: MockHeos) -> MediaItem:
     source = MediaItems.STATION.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_item_playlist(heos: MockHeos) -> MediaItem:
     source = MediaItems.PLAYLIST.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
 @pytest.fixture
 def media_item_device(heos: MockHeos) -> MediaItem:
     source = MediaItems.DEVICE.clone()
-    source._heos = heos
+    source.heos = heos
     return source
 
 
@@ -143,7 +143,7 @@ async def player_fixture(heos: MockHeos) -> HeosPlayer:
         ip_address="127.0.0.1",
         network=const.NETWORK_TYPE_WIRED,
         line_out=1,
-        _heos=heos,
+        heos=heos,
     )
 
 
@@ -159,7 +159,7 @@ async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
         ip_address="127.0.0.2",
         network=const.NETWORK_TYPE_WIFI,
         line_out=1,
-        _heos=heos,
+        heos=heos,
     )
 
 
@@ -170,5 +170,5 @@ async def group_fixture(heos: MockHeos) -> HeosGroup:
         group_id=1,
         lead_player_id=1,
         member_player_ids=[1, 2],
-        _heos=heos,
+        heos=heos,
     )
