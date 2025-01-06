@@ -45,6 +45,17 @@ class Dispatcher:
         """Fire a signal.  Must be ran in the event loop."""
         return self._send(self._signal_prefix + signal, *args)
 
+    async def wait_send(
+        self,
+        signal: str,
+        *args: Any,
+        return_exceptions: bool = False,
+    ) -> list[asyncio.Future[Any] | BaseException]:
+        """Fire a signal and wait for all to complete."""
+        return await asyncio.gather(  # type: ignore[no-any-return]
+            *self.send(signal, *args), return_exceptions=return_exceptions
+        )
+
     def disconnect_all(self) -> None:
         """Disconnect all connected."""
         disconnects = self._disconnects.copy()
@@ -53,7 +64,7 @@ class Dispatcher:
             disconnect()
 
     async def wait_all(self, cancel: bool = False) -> None:
-        """Wait for all signals to complete."""
+        """Wait for all targets to complete."""
         if cancel:
             for task in self._running_tasks:
                 task.cancel()
@@ -73,15 +84,14 @@ class Dispatcher:
 
         return remove_dispatcher
 
-    def _done_callback(self, future: asyncio.Future) -> None:
-        """Remove task from running tasks."""
+    def _log_target_exception(self, future: asyncio.Future) -> None:
+        """Log the exception from the target, if raised."""
         if not future.cancelled() and future.exception():
             _LOGGER.exception(
                 "Exception in target callback: %s",
                 future,
                 exc_info=future.exception(),
             )
-        self._running_tasks.discard(future)
 
     def _default_send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
         """Fire a signal.  Must be ran in the event loop."""
@@ -90,7 +100,8 @@ class Dispatcher:
         for target in targets:
             task = self._call_target(target, *args)
             self._running_tasks.add(task)
-            task.add_done_callback(self._done_callback)
+            task.add_done_callback(self._running_tasks.discard)
+            task.add_done_callback(self._log_target_exception)
             futures.append(task)
         return futures
 

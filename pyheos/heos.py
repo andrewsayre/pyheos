@@ -911,6 +911,10 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == const.STATE_CONNECTED
 
+        await self._dispatcher.wait_send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
+        )
+
         if self._current_credentials:
             # Sign-in to the account if provided
             try:
@@ -923,8 +927,10 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 _LOGGER.debug(
                     "Failed to sign-in to HEOS Account after connection: %s", err
                 )
-                self._dispatcher.send(
-                    const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+                await self._dispatcher.wait_send(
+                    const.SIGNAL_HEOS_EVENT,
+                    const.EVENT_USER_CREDENTIALS_INVALID,
+                    return_exceptions=True,
                 )
         else:
             # Determine the logged in user
@@ -935,8 +941,6 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         # Refresh players and mark available
         if self._players_loaded:
             await self.load_players()
-
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
 
     async def disconnect(self) -> None:
         """Disconnect from the CLI."""
@@ -951,8 +955,10 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 error.error_text,
                 exc_info=error,
             )
-            self._dispatcher.send(
-                const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+            await self._dispatcher.wait_send(
+                const.SIGNAL_HEOS_EVENT,
+                const.EVENT_USER_CREDENTIALS_INVALID,
+                return_exceptions=True,
             )
 
     async def _on_disconnected(self, from_error: bool) -> None:
@@ -961,7 +967,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         # Mark loaded players unavailable
         for player in self.players.values():
             player.available = False
-        self._dispatcher.send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+        await self._dispatcher.wait_send(
+            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED, return_exceptions=True
+        )
 
     async def _on_event(self, event: HeosMessage) -> None:
         """Handle a heos event."""
@@ -989,7 +997,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
             await self.get_groups(refresh=True)
 
-        self._dispatcher.send(const.SIGNAL_CONTROLLER_EVENT, event.command, result)
+        await self._dispatcher.wait_send(
+            const.SIGNAL_CONTROLLER_EVENT, event.command, result, return_exceptions=True
+        )
         _LOGGER.debug("Event received: %s", event)
 
     async def _on_event_player(self, event: HeosMessage) -> None:
@@ -997,7 +1007,12 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
         if player and (await player.on_event(event, self._options.all_progress_events)):
-            self.dispatcher.send(const.SIGNAL_PLAYER_EVENT, player_id, event.command)
+            await self.dispatcher.wait_send(
+                const.SIGNAL_PLAYER_EVENT,
+                player_id,
+                event.command,
+                return_exceptions=True,
+            )
             _LOGGER.debug("Event received for player %s: %s", player, event)
 
     async def _on_event_group(self, event: HeosMessage) -> None:
@@ -1005,7 +1020,12 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
         if group and await group.on_event(event):
-            self.dispatcher.send(const.SIGNAL_GROUP_EVENT, group_id, event.command)
+            await self.dispatcher.wait_send(
+                const.SIGNAL_GROUP_EVENT,
+                group_id,
+                event.command,
+                return_exceptions=True,
+            )
             _LOGGER.debug("Event received for group %s: %s", group_id, event)
 
     @property
