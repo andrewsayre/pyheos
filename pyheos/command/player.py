@@ -4,8 +4,6 @@ Define the player command module.
 This module creates HEOS player commands.
 
 Commands not currently implemented:
-    4.2.16 Play Queue Item
-    4.2.17 Remove Item(s) from Queue
     4.2.18 Save Queue as Playlist
     4.2.20 Move Queue
 """
@@ -201,6 +199,20 @@ class PlayerCommands:
         return HeosCommand(
             command.COMMAND_PLAY_QUEUE,
             {const.ATTR_PLAYER_ID: player_id, const.ATTR_QUEUE_ID: queue_id},
+        )
+
+    @staticmethod
+    def remove_from_queue(player_id: int, queue_ids: list[int]) -> HeosCommand:
+        """Remove an item from the queue.
+
+        References:
+            4.2.17 Remove Item(s) from Queue"""
+        return HeosCommand(
+            command.COMMAND_REMOVE_FROM_QUEUE,
+            {
+                const.ATTR_PLAYER_ID: player_id,
+                const.ATTR_QUEUE_ID: ",".join(map(str, queue_ids)),
+            },
         )
 
     @staticmethod

@@ -737,6 +737,17 @@ class PlayerMixin(ConnectionMixin):
             4.2.16 Play Queue Item"""
         await self._connection.command(PlayerCommands.play_queue(player_id, queue_id))
 
+    async def player_remove_from_queue(
+        self, player_id: int, queue_ids: list[int]
+    ) -> None:
+        """Remove an item from the queue.
+
+        References:
+            4.2.17 Remove Item(s) from Queue"""
+        await self._connection.command(
+            PlayerCommands.remove_from_queue(player_id, queue_ids)
+        )
+
     async def player_clear_queue(self, player_id: int) -> None:
         """Clear the queue.
 

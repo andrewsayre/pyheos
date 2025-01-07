@@ -232,6 +232,14 @@ async def test_play_queue(player: HeosPlayer) -> None:
     await player.play_queue(1)
 
 
+@calls_command(
+    "player.remove_from_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: "1,2,3"}
+)
+async def test_remove_from_queue(player: HeosPlayer) -> None:
+    """Test the play_queue command."""
+    await player.remove_from_queue([1, 2, 3])
+
+
 @calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})
 async def test_get_queue_with_range(player: HeosPlayer) -> None:
     """Test the check_update command."""

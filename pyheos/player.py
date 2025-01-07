@@ -329,6 +329,11 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         await self.heos.player_play_queue(self.player_id, queue_id)
 
+    async def remove_from_queue(self, queue_ids: list[int]) -> None:
+        """Remove the specified queue items from the queue."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_remove_from_queue(self.player_id, queue_ids)
+
     async def clear_queue(self) -> None:
         """Clear the queue of the player."""
         assert self.heos, "Heos instance not set"
