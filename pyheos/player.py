@@ -136,7 +136,14 @@ class HeosPlayer:
     )
     now_playing_media: HeosNowPlayingMedia = field(default_factory=HeosNowPlayingMedia)
     available: bool = field(repr=False, hash=False, compare=False, default=True)
+    group_id: int | None = field(repr=False, hash=False, compare=False, default=None)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
+
+    @staticmethod
+    def __get_optional_int(value: str | None) -> int | None:
+        if value is not None:
+            return int(value)
+        return None
 
     @classmethod
     def from_data(
@@ -154,6 +161,7 @@ class HeosPlayer:
             ip_address=data[const.ATTR_IP_ADDRESS],
             network=data[const.ATTR_NETWORK],
             line_out=int(data[const.ATTR_LINE_OUT]),
+            group_id=HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID)),
             heos=heos,
         )
 
@@ -167,6 +175,7 @@ class HeosPlayer:
         self.ip_address = data[const.ATTR_IP_ADDRESS]
         self.network = data[const.ATTR_NETWORK]
         self.line_out = int(data[const.ATTR_LINE_OUT])
+        self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
 
     async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.

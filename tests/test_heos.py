@@ -432,6 +432,8 @@ async def test_get_players(heos: Heos) -> None:
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
+    assert player.group_id is None
+    assert heos.players[2].group_id == 2
 
 
 @calls_commands(

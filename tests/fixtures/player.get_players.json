@@ -16,6 +16,7 @@
 		}, {
 			"name": "Front Porch",
 			"pid": 2,
+			"gid": 2,
 			"model": "HEOS Drive",
 			"version": "1.493.180",
 			"ip": "127.0.0.2",

@@ -4,7 +4,6 @@ Define the player command module.
 This module creates HEOS player commands.
 
 Commands not currently implemented:
-    4.2.2 Get Player Info
     4.2.15 Get Queue
     4.2.16 Play Queue Item
     4.2.17 Remove Item(s) from Queue
