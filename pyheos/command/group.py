@@ -2,10 +2,6 @@
 Define the group command module.
 
 This module creates HEOS group commands.
-
-Commands not currently implemented:
-    4.3.2 Get Group Info
-
 """
 
 from collections.abc import Sequence
