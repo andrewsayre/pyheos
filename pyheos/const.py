@@ -78,7 +78,7 @@ VALUE_NO: Final = "no"
 VALUE_SUCCESS: Final = "success"
 VALUE_LEADER: Final = "leader"
 VALUE_MEMBER: Final = "member"
-VALUE_UPDATE_EXISTS: Final = "update_exist"
+VALUE_UPDATE_EXIST: Final = "update_exist"
 
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8
