@@ -11,6 +11,7 @@ from pyheos import const
 from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import CommandError, CommandFailedError, HeosError
+from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 from tests.common import MediaItems
@@ -1246,6 +1247,71 @@ async def test_get_groups(heos: Heos) -> None:
     assert group.member_player_ids[0] == 2
     assert group.volume == 42
     assert not group.is_muted
+
+
+@calls_commands(
+    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+)
+async def test_get_group_info_by_id(heos: Heos) -> None:
+    """Test retrieving group info by group id."""
+    group = await heos.get_group_info(-263109739)
+    assert group.name == "Zone 1 + Zone 2"
+    assert group.group_id == -263109739
+    assert group.lead_player_id == -263109739
+    assert group.member_player_ids == [845195621]
+    assert group.volume == 42
+    assert not group.is_muted
+
+
+@calls_group_commands()
+async def test_get_group_info_by_id_already_loaded(heos: Heos) -> None:
+    """Test retrieving group info by group id for already loaded group does not update."""
+    groups = await heos.get_groups()
+    original_group = groups[1]
+
+    group = await heos.get_group_info(1)
+    assert original_group == group
+
+
+@calls_group_commands(
+    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+)
+async def test_get_group_info_by_id_already_loaded_refresh(heos: Heos) -> None:
+    """Test retrieving group info by group id for already loaded group updates."""
+    groups = await heos.get_groups()
+    original_group = groups[1]
+
+    group = await heos.get_group_info(1, refresh=True)
+    assert original_group == group
+    assert group.name == "Zone 1 + Zone 2"
+    assert group.group_id == -263109739
+    assert group.lead_player_id == -263109739
+    assert group.member_player_ids == [845195621]
+    assert group.volume == 42
+    assert not group.is_muted
+
+
+@pytest.mark.parametrize(
+    ("group_id", "group", "error"),
+    [
+        (None, None, "Either group_id or group must be provided"),
+        (
+            1,
+            HeosGroup("", 0, 0, []),
+            "Only one of group_id or group should be provided",
+        ),
+    ],
+)
+async def test_get_group_info_invalid_parameters_raises(
+    heos: Heos, group_id: int | None, group: HeosGroup | None, error: str
+) -> None:
+    """Test retrieving group info with invalid parameters raises."""
+    with pytest.raises(ValueError, match=error):
+        await heos.get_group_info(group_id=group_id, group=group)
 
 
 @calls_command("group.set_group_create", {const.ATTR_PLAYER_ID: "1,2,3"})
