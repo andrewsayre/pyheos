@@ -64,6 +64,7 @@ ATTR_STEP: Final = "step"
 ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
 ATTR_TEXT: Final = "text"
 ATTR_TYPE: Final = "type"
+ATTR_UPDATE: Final = "update"
 ATTR_URL: Final = "url"
 ATTR_USER_NAME: Final = "un"
 ATTR_VERSION: Final = "version"
@@ -77,6 +78,7 @@ VALUE_NO: Final = "no"
 VALUE_SUCCESS: Final = "success"
 VALUE_LEADER: Final = "leader"
 VALUE_MEMBER: Final = "member"
+VALUE_UPDATE_EXISTS: Final = "update_exist"
 
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8

@@ -9,8 +9,6 @@ Commands not currently implemented:
     4.2.17 Remove Item(s) from Queue
     4.2.18 Save Queue as Playlist
     4.2.20 Move Queue
-    4.2.26 Check for Firmware Update
-
 """
 
 from pyheos import command, const
@@ -241,4 +239,14 @@ class PlayerCommands:
             4.2.25 Get QuickSelects"""
         return HeosCommand(
             command.COMMAND_GET_QUICK_SELECTS, {const.ATTR_PLAYER_ID: player_id}
+        )
+
+    @staticmethod
+    def check_update(player_id: int) -> HeosCommand:
+        """Check for a firmware update.
+
+        References:
+            4.2.26 Check for Firmware Update"""
+        return HeosCommand(
+            command.COMMAND_CHECK_UPDATE, {const.ATTR_PLAYER_ID: player_id}
         )

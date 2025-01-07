@@ -390,3 +390,11 @@ class HeosPlayer:
         """Get a list of quick selects."""
         assert self.heos, "Heos instance not set"
         return await self.heos.get_player_quick_selects(self.player_id)
+
+    async def check_update(self) -> bool:
+        """Check for a firmware update.
+
+        Returns:
+            True if an update is available, otherwise False."""
+        assert self.heos, "Heos instance not set"
+        return await self.heos.check_update(self.player_id)

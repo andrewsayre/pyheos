@@ -773,6 +773,19 @@ class PlayerMixin(ConnectionMixin):
             for data in cast(list[dict], result.payload)
         }
 
+    async def check_update(self, player_id: int) -> bool:
+        """Check for a firmware update.
+
+        Args:
+            player_id: The identifier of the player to check for a firmware update.
+        Returns:
+            True if an update is available, otherwise False.
+
+        References:
+            4.2.26 Check for Firmware Update"""
+        result = await self._connection.command(PlayerCommands.check_update(player_id))
+        return result.get_message_value(const.ATTR_UPDATE) == const.VALUE_UPDATE_EXISTS
+
 
 class GroupMixin(PlayerMixin):
     """A mixin to provide access to the group commands."""
