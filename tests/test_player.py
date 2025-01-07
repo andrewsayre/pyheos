@@ -396,3 +396,10 @@ async def test_refresh_no_base_update(player: HeosPlayer) -> None:
 
     assert player.name == "Back Patio"
     assert player.player_id == 1
+
+
+@calls_command("player.check_update", {const.ATTR_PLAYER_ID: 1})
+async def test_check_update(player: HeosPlayer) -> None:
+    """Test the check_update command."""
+    result = await player.check_update()
+    assert result

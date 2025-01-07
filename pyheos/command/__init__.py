@@ -31,6 +31,7 @@ COMMAND_PLAY_PREVIOUS: Final = "player/play_previous"
 COMMAND_PLAY_QUICK_SELECT: Final = "player/play_quickselect"
 COMMAND_SET_QUICK_SELECT: Final = "player/set_quickselect"
 COMMAND_GET_QUICK_SELECTS: Final = "player/get_quickselects"
+COMMAND_CHECK_UPDATE: Final = "player/check_update"
 
 # Group commands
 COMMAND_GET_GROUPS: Final = "group/get_groups"
