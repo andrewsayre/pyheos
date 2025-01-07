@@ -522,9 +522,9 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.2 Get Player Info"""
         if player_id is None and player is None:
-            raise ValueError("Either palyer_id or player must be provided")
+            raise ValueError("Either player_id or player must be provided")
         if player_id is not None and player is not None:
-            raise ValueError("Only one of palyer_id or player should be provided")
+            raise ValueError("Only one of player_id or player should be provided")
 
         # if only palyer_id provided, try getting from loaded
         if player is None:
