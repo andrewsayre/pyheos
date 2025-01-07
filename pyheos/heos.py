@@ -739,7 +739,10 @@ class GroupMixin(PlayerMixin):
         return self._groups
 
     async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
-        """Get available groups."""
+        """Get available groups.
+
+        References:
+            4.3.1 Get Groups"""
         if not self._groups_loaded or refresh:
             groups = {}
             result = await self._connection.command(GroupCommands.get_groups())
@@ -749,9 +752,37 @@ class GroupMixin(PlayerMixin):
                 groups[group.group_id] = group
             self._groups = groups
             # Update all statuses
-            await asyncio.gather(*[group.refresh() for group in self._groups.values()])
+            await asyncio.gather(
+                *[
+                    group.refresh(refresh_base_info=False)
+                    for group in self._groups.values()
+                ]
+            )
             self._groups_loaded = True
         return self._groups
+
+    async def get_group_info(self, group_id: int, refresh: bool = False) -> HeosGroup:
+        """Get information about a group.
+
+        Args:
+            group_id: The identifier of the group to get information about.
+            refresh: Set to True to force a refresh of the group information.
+
+        References:
+            4.3.2 Get Group Info"""
+        group = self._groups.get(group_id)
+        if group is None or refresh:
+            # Get the latest information
+            result = await self._connection.command(
+                GroupCommands.get_group_info(group_id)
+            )
+            payload = cast(dict[str, Any], result.payload)
+            if group is None:
+                group = HeosGroup.from_data(payload, cast("Heos", self))
+            else:
+                group._update_from_data(payload)
+            await group.refresh(refresh_base_info=False)
+        return group
 
     async def set_group(self, player_ids: Sequence[int]) -> None:
         """Create, modify, or ungroup players.

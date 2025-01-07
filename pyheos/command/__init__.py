@@ -33,6 +33,7 @@ COMMAND_GET_QUICK_SELECTS: Final = "player/get_quickselects"
 
 # Group commands
 COMMAND_GET_GROUPS: Final = "group/get_groups"
+COMMAND_GET_GROUP_INFO: Final = "group/get_group_info"
 COMMAND_SET_GROUP: Final = "group/set_group"
 COMMAND_GET_GROUP_VOLUME: Final = "group/get_volume"
 COMMAND_SET_GROUP_VOLUME: Final = "group/set_volume"

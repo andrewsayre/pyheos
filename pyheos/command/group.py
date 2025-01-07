@@ -26,6 +26,16 @@ class GroupCommands:
         return HeosCommand(command.COMMAND_GET_GROUPS)
 
     @staticmethod
+    def get_group_info(group_id: int) -> HeosCommand:
+        """Get information about a group.
+
+        References:
+            4.3.2 Get Group Info"""
+        return HeosCommand(
+            command.COMMAND_GET_GROUP_INFO, {const.ATTR_GROUP_ID: group_id}
+        )
+
+    @staticmethod
     def set_group(player_ids: Sequence[int]) -> HeosCommand:
         """Create, modify, or ungroup players.
 

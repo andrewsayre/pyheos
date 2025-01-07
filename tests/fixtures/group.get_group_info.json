@@ -1,0 +1,1 @@
+{"heos": {"command": "groups/get_group_info", "result": "success", "message": "gid=-263109739"}, "payload": {"name": "Zone 1 + Zone 2", "gid": -263109739, "players": [{"name": "Zone 2", "pid": 845195621, "role": "member"}, {"name": "Zone 1", "pid": -263109739, "role": "leader"}]}}
