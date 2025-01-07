@@ -14,6 +14,7 @@ from pyheos.error import CommandError, CommandFailedError, HeosError
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.player import HeosPlayer
 from tests.common import MediaItems
 
 from . import (
@@ -431,6 +432,72 @@ async def test_get_players(heos: Heos) -> None:
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
+    assert player.group_id is None
+    assert heos.players[2].group_id == 2
+
+
+@calls_commands(
+    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+)
+async def test_get_player_info_by_id(heos: Heos) -> None:
+    """Test retrieving player info by player id."""
+    player = await heos.get_player_info(-263109739)
+    assert player.name == "Zone 1"
+    assert player.player_id == -263109739
+
+
+@calls_player_commands()
+async def test_get_player_info_by_id_already_loaded(heos: Heos) -> None:
+    """Test retrieving player info by player id for already loaded player does not update."""
+    players = await heos.get_players()
+    original_player = players[1]
+
+    player = await heos.get_player_info(1)
+    assert original_player == player
+
+
+@calls_player_commands(
+    (1, 2),
+    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+)
+async def test_get_player_info_by_id_already_loaded_refresh(heos: Heos) -> None:
+    """Test retrieving player info by player id for already loaded player updates."""
+    players = await heos.get_players()
+    original_player = players[1]
+
+    player = await heos.get_player_info(1, refresh=True)
+    assert original_player == player
+    assert player.name == "Zone 1"
+    assert player.player_id == -263109739
+
+
+@pytest.mark.parametrize(
+    ("player_id", "player", "error"),
+    [
+        (None, None, "Either player_id or player must be provided"),
+        (
+            1,
+            object(),
+            "Only one of player_id or player should be provided",
+        ),
+    ],
+)
+async def test_get_player_info_invalid_parameters_raises(
+    heos: Heos, player_id: int | None, player: HeosPlayer | None, error: str
+) -> None:
+    """Test retrieving player info with invalid parameters raises."""
+    with pytest.raises(ValueError, match=error):
+        await heos.get_player_info(player_id=player_id, player=player)
 
 
 @calls_player_commands()

@@ -501,6 +501,52 @@ class PlayerMixin(ConnectionMixin):
             await self.load_players()
         return self._players
 
+    async def get_player_info(
+        self,
+        player_id: int | None = None,
+        player: HeosPlayer | None = None,
+        *,
+        refresh: bool = False,
+    ) -> HeosPlayer:
+        """Get information about a player.
+
+        Only one of player_id or player should be provided.
+
+        Args:
+            palyer_id: The identifier of the group to get information about. Only one of player_id or player should be provided.
+            player: The HeosPlayer instance to update with the latest information. Only one of player_id or player should be provided.
+            refresh: Set to True to force a refresh of the group information.
+        Returns:
+            A HeosPlayer instance containing the player information.
+
+        References:
+            4.2.2 Get Player Info"""
+        if player_id is None and player is None:
+            raise ValueError("Either player_id or player must be provided")
+        if player_id is not None and player is not None:
+            raise ValueError("Only one of player_id or player should be provided")
+
+        # if only palyer_id provided, try getting from loaded
+        if player is None:
+            assert player_id is not None
+            player = self._players.get(player_id)
+        else:
+            player_id = player.player_id
+
+        if player is None or refresh:
+            # Get the latest information
+            result = await self._connection.command(
+                PlayerCommands.get_player_info(player_id)
+            )
+
+            payload = cast(dict[str, Any], result.payload)
+            if player is None:
+                player = HeosPlayer.from_data(payload, cast("Heos", self))
+            else:
+                player._update_from_data(payload)
+            await player.refresh(refresh_base_info=False)
+        return player
+
     async def load_players(self) -> dict[str, list | dict]:
         """Refresh the players."""
         new_player_ids = []
@@ -528,7 +574,7 @@ class PlayerMixin(ConnectionMixin):
                 # Existing player matched - update
                 if player.player_id != player_id:
                     mapped_player_ids[player_id] = player.player_id
-                player.update_from_data(player_data)
+                player._update_from_data(player_data)
                 player.available = True
                 players[player_id] = player
                 existing.remove(player)
@@ -544,7 +590,11 @@ class PlayerMixin(ConnectionMixin):
 
         # Update all statuses
         await asyncio.gather(
-            *[player.refresh() for player in players.values() if player.available]
+            *[
+                player.refresh(refresh_base_info=False)
+                for player in players.values()
+                if player.available
+            ]
         )
         self._players = players
         self._players_loaded = True

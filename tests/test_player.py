@@ -7,7 +7,7 @@ import pytest
 from pyheos import const
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
-from tests import calls_command, value
+from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
 
@@ -47,7 +47,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
         const.ATTR_LINE_OUT: "0",
         const.ATTR_SERIAL: "0987654321",
     }
-    player.update_from_data(data)
+    player._update_from_data(data)
 
     assert player.name == "Patio"
     assert player.player_id == 2
@@ -361,3 +361,38 @@ async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
     assert player.now_playing_media.image_url is None
     assert player.now_playing_media.album_id is None
     assert player.now_playing_media.media_id is None
+
+
+@calls_commands(
+    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+)
+async def test_refresh(player: HeosPlayer) -> None:
+    """Test refresh, including base, updates the correct information."""
+    await player.refresh()
+
+    assert player.name == "Zone 1"
+    assert player.player_id == -263109739
+    assert player.model == "HEOS Drive"
+    assert player.version == "3.34.620"
+    assert player.ip_address == "127.0.0.1"
+    assert player.serial == "123456789"
+
+
+@calls_commands(
+    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: 1}),
+)
+async def test_refresh_no_base_update(player: HeosPlayer) -> None:
+    """Test refresh updates the correct information."""
+    await player.refresh(refresh_base_info=False)
+
+    assert player.name == "Back Patio"
+    assert player.player_id == 1

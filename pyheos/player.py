@@ -136,7 +136,14 @@ class HeosPlayer:
     )
     now_playing_media: HeosNowPlayingMedia = field(default_factory=HeosNowPlayingMedia)
     available: bool = field(repr=False, hash=False, compare=False, default=True)
+    group_id: int | None = field(repr=False, hash=False, compare=False, default=None)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
+
+    @staticmethod
+    def __get_optional_int(value: str | None) -> int | None:
+        if value is not None:
+            return int(value)
+        return None
 
     @classmethod
     def from_data(
@@ -154,10 +161,11 @@ class HeosPlayer:
             ip_address=data[const.ATTR_IP_ADDRESS],
             network=data[const.ATTR_NETWORK],
             line_out=int(data[const.ATTR_LINE_OUT]),
+            group_id=HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID)),
             heos=heos,
         )
 
-    def update_from_data(self, data: dict[str, Any]) -> None:
+    def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the attributes from the supplied data."""
         self.name = data[const.ATTR_NAME]
         self.player_id = int(data[const.ATTR_PLAYER_ID])
@@ -167,6 +175,7 @@ class HeosPlayer:
         self.ip_address = data[const.ATTR_IP_ADDRESS]
         self.network = data[const.ATTR_NETWORK]
         self.line_out = int(data[const.ATTR_LINE_OUT])
+        self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
 
     async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
@@ -208,16 +217,23 @@ class HeosPlayer:
             callback_wrapper(callback, {0: lambda: self.player_id}),
         )
 
-    async def refresh(self) -> None:
-        """Pull current state."""
+    async def refresh(self, *, refresh_base_info: bool = True) -> None:
+        """Pull current state.
+
+        Args:
+            refresh_base_info: When True, the base information of the player, including the name, will also be pulled. Defaults is False.
+        """
         assert self.heos, "Heos instance not set"
-        await asyncio.gather(
-            self.refresh_state(),
-            self.refresh_now_playing_media(),
-            self.refresh_volume(),
-            self.refresh_mute(),
-            self.refresh_play_mode(),
-        )
+        if refresh_base_info:
+            await self.heos.get_player_info(player=self, refresh=True)
+        else:
+            await asyncio.gather(
+                self.refresh_state(),
+                self.refresh_now_playing_media(),
+                self.refresh_volume(),
+                self.refresh_mute(),
+                self.refresh_play_mode(),
+            )
 
     async def refresh_state(self) -> None:
         """Refresh the now playing state."""

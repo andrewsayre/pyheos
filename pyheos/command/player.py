@@ -4,7 +4,6 @@ Define the player command module.
 This module creates HEOS player commands.
 
 Commands not currently implemented:
-    4.2.2 Get Player Info
     4.2.15 Get Queue
     4.2.16 Play Queue Item
     4.2.17 Remove Item(s) from Queue
@@ -30,6 +29,16 @@ class PlayerCommands:
             4.2.1 Get Players
         """
         return HeosCommand(command.COMMAND_GET_PLAYERS)
+
+    @staticmethod
+    def get_player_info(player_id: int) -> HeosCommand:
+        """Get player information.
+
+        References:
+            4.2.2 Get Player Info"""
+        return HeosCommand(
+            command.COMMAND_GET_PLAYER_INFO, {const.ATTR_PLAYER_ID: player_id}
+        )
 
     @staticmethod
     def get_play_state(player_id: int) -> HeosCommand:

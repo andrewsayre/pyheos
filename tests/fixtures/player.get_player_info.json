@@ -1,0 +1,1 @@
+{"heos": {"command": "player/get_player_info", "result": "success", "message": "pid=-263109739"}, "payload": {"name": "Zone 1", "pid": -263109739, "gid": -263109739, "model": "HEOS Drive", "version": "3.34.620", "ip": "127.0.0.1", "network": "wired", "lineout": 1, "serial": "123456789"}}
