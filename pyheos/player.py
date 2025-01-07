@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
-from pyheos.media import MediaItem
+from pyheos.media import MediaItem, QueueItem
 from pyheos.message import HeosMessage
 
 from . import const
@@ -316,6 +316,13 @@ class HeosPlayer:
         """Set the play mode of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_mode(self.player_id, repeat, shuffle)
+
+    async def get_queue(
+        self, range_start: int | None = None, range_end: int | None = None
+    ) -> list[QueueItem]:
+        """Get the queue of the player."""
+        assert self.heos, "Heos instance not set"
+        return await self.heos.get_queue(self.player_id, range_start, range_end)
 
     async def clear_queue(self) -> None:
         """Clear the queue of the player."""

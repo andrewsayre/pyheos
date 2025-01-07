@@ -20,11 +20,7 @@ from pyheos.dispatch import (
     callback_wrapper,
 )
 from pyheos.error import CommandError, CommandFailedError
-from pyheos.media import (
-    BrowseResult,
-    MediaItem,
-    MediaMusicSource,
-)
+from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -716,6 +712,23 @@ class PlayerMixin(ConnectionMixin):
         await self._connection.command(
             PlayerCommands.set_play_mode(player_id, repeat, shuffle)
         )
+
+    async def get_queue(
+        self,
+        player_id: int,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> list[QueueItem]:
+        """Get the queue for the current player.
+
+        References:
+            4.2.15 Get Queue
+        """
+        result = await self._connection.command(
+            PlayerCommands.get_queue(player_id, range_start, range_end)
+        )
+        payload = cast(list[dict[str, str]], result.payload)
+        return [QueueItem.from_data(data) for data in payload]
 
     async def player_clear_queue(self, player_id: int) -> None:
         """Clear the queue.

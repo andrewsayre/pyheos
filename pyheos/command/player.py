@@ -4,12 +4,13 @@ Define the player command module.
 This module creates HEOS player commands.
 
 Commands not currently implemented:
-    4.2.15 Get Queue
     4.2.16 Play Queue Item
     4.2.17 Remove Item(s) from Queue
     4.2.18 Save Queue as Playlist
     4.2.20 Move Queue
 """
+
+from typing import Any
 
 from pyheos import command, const
 from pyheos.message import HeosCommand
@@ -176,6 +177,20 @@ class PlayerCommands:
                 const.ATTR_SHUFFLE: const.VALUE_ON if shuffle else const.VALUE_OFF,
             },
         )
+
+    @staticmethod
+    def get_queue(
+        player_id: int, range_start: int | None = None, range_end: int | None = None
+    ) -> HeosCommand:
+        """Get the queue for the current player.
+
+        References:
+            4.2.15 Get Queue
+        """
+        params: dict[str, Any] = {const.ATTR_PLAYER_ID: player_id}
+        if isinstance(range_start, int) and isinstance(range_end, int):
+            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
+        return HeosCommand(command.COMMAND_GET_QUEUE, params)
 
     @staticmethod
     def clear_queue(player_id: int) -> HeosCommand:

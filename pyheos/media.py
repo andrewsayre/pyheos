@@ -11,6 +11,32 @@ if TYPE_CHECKING:
     from . import Heos
 
 
+@dataclass
+class QueueItem:
+    """Define an item in the queue."""
+
+    queue_id: int
+    song: str
+    album: str
+    artist: str
+    image_url: str
+    media_id: str
+    album_id: str
+
+    @classmethod
+    def from_data(cls, data: dict[str, str]) -> "QueueItem":
+        """Create a new instance from the provided data."""
+        return cls(
+            queue_id=int(data[const.ATTR_QUEUE_ID]),
+            song=data[const.ATTR_SONG],
+            album=data[const.ATTR_ALBUM],
+            artist=data[const.ATTR_ARTIST],
+            image_url=data[const.ATTR_IMAGE_URL],
+            media_id=data[const.ATTR_MEDIA_ID],
+            album_id=data[const.ATTR_ALBUM_ID],
+        )
+
+
 @dataclass(init=False)
 class Media:
     """
