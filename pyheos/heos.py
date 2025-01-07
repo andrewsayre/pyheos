@@ -761,16 +761,36 @@ class GroupMixin(PlayerMixin):
             self._groups_loaded = True
         return self._groups
 
-    async def get_group_info(self, group_id: int, refresh: bool = False) -> HeosGroup:
+    async def get_group_info(
+        self,
+        group_id: int | None = None,
+        group: HeosGroup | None = None,
+        *,
+        refresh: bool = False,
+    ) -> HeosGroup:
         """Get information about a group.
 
+        Only one of group_id or group should be provided.
+
         Args:
-            group_id: The identifier of the group to get information about.
+            group_id: The identifier of the group to get information about. Only one of group_id or group should be provided.
+            group: The HeosGroup instance to update with the latest information. Only one of group_id or group should be provided.
             refresh: Set to True to force a refresh of the group information.
 
         References:
             4.3.2 Get Group Info"""
-        group = self._groups.get(group_id)
+        if group_id is None and group is None:
+            raise ValueError("Either group_id or group must be provided")
+        if group_id is not None and group is not None:
+            raise ValueError("Only one of group_id or group should be provided")
+
+        # if only group_id provided, try getting from loaded
+        if group is None:
+            assert group_id is not None
+            group = self._groups.get(group_id)
+        else:
+            group_id = group.group_id
+
         if group is None or refresh:
             # Get the latest information
             result = await self._connection.command(

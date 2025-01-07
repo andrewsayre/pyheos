@@ -169,6 +169,6 @@ async def group_fixture(heos: MockHeos) -> HeosGroup:
         name="Back Patio + Front Porch",
         group_id=1,
         lead_player_id=1,
-        member_player_ids=[1, 2],
+        member_player_ids=[2],
         heos=heos,
     )

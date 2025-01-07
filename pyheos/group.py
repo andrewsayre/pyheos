@@ -86,7 +86,7 @@ class HeosGroup:
         """
         assert self.heos, "Heos instance not set"
         if refresh_base_info:
-            await self.heos.get_group_info(self.group_id, refresh=True)
+            await self.heos.get_group_info(group=self, refresh=True)
         else:
             await asyncio.gather(self.refresh_volume(), self.refresh_mute())
 
