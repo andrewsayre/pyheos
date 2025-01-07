@@ -150,6 +150,38 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
     assert heos.signed_in_username is None  # type: ignore[unreachable]
 
 
+@calls_commands(
+    CallCommand(
+        "browse.browse_fail_user_not_logged_in",
+        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        add_command_under_process=True,
+    ),
+    CallCommand("browse.get_music_sources"),
+)
+async def test_command_credential_error_dispatches_event_call_other_command(
+    heos: Heos,
+) -> None:
+    """Test calling another command during the credential error in the callback"""
+    assert heos.is_signed_in
+    assert heos.signed_in_username is not None
+
+    callback_invoked = False
+
+    async def callback() -> None:
+        nonlocal callback_invoked
+        callback_invoked = True
+        assert not heos.is_signed_in
+        assert heos.signed_in_username is None
+        sources = await heos.get_music_sources(True)
+        assert sources
+
+    heos.add_on_user_credentials_invalid(callback)
+
+    with pytest.raises(CommandFailedError):
+        await heos.get_favorites()
+    assert callback_invoked
+
+
 @calls_command("system.heart_beat")
 async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     """Test heart beat fires at interval."""

@@ -219,14 +219,17 @@ class ConnectionBase:
             return response
 
         # Run the within the lock
+        command_error: CommandFailedError | None = None
         await self._command_lock.acquire()
         try:
             return await _command_impl()
         except CommandFailedError as error:
-            await self._on_command_error(error)
+            command_error = error
             raise  # Re-raise to send the error to the caller.
         finally:
             self._command_lock.release()
+            if command_error:
+                await self._on_command_error(command_error)
 
     async def connect(self) -> None:
         """Connect to the HEOS device."""
