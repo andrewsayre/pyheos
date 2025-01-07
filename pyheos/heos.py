@@ -784,7 +784,8 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.26 Check for Firmware Update"""
         result = await self._connection.command(PlayerCommands.check_update(player_id))
-        return result.payload[const.ATTR_UPDATE] == const.VALUE_UPDATE_EXIST
+        payload = cast(dict[str, Any], result.payload)
+        return bool(payload[const.ATTR_UPDATE] == const.VALUE_UPDATE_EXIST)
 
 
 class GroupMixin(PlayerMixin):
