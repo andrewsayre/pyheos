@@ -4,7 +4,6 @@ Define the player command module.
 This module creates HEOS player commands.
 
 Commands not currently implemented:
-    4.2.18 Save Queue as Playlist
     4.2.20 Move Queue
 """
 
@@ -213,6 +212,19 @@ class PlayerCommands:
                 const.ATTR_PLAYER_ID: player_id,
                 const.ATTR_QUEUE_ID: ",".join(map(str, queue_ids)),
             },
+        )
+
+    @staticmethod
+    def save_queue(player_id: int, name: str) -> HeosCommand:
+        """Save the queue as a playlist.
+
+        References:
+            4.2.18 Save Queue as Playlist"""
+        if len(name) >= 128:
+            raise ValueError("'name' must be less than or equal to 128 characters")
+        return HeosCommand(
+            command.COMMAND_SAVE_QUEUE,
+            {const.ATTR_PLAYER_ID: player_id, const.ATTR_NAME: name},
         )
 
     @staticmethod

@@ -748,6 +748,13 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.remove_from_queue(player_id, queue_ids)
         )
 
+    async def player_save_queue(self, player_id: int, name: str) -> None:
+        """Save the queue as a playlist.
+
+        References:
+            4.2.18 Save Queue as Playlist"""
+        await self._connection.command(PlayerCommands.save_queue(player_id, name))
+
     async def player_clear_queue(self, player_id: int) -> None:
         """Clear the queue.
 

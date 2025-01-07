@@ -240,6 +240,12 @@ async def test_remove_from_queue(player: HeosPlayer) -> None:
     await player.remove_from_queue([1, 2, 3])
 
 
+@calls_command("player.save_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_NAME: "Test"})
+async def test_save_queue(player: HeosPlayer) -> None:
+    """Test the save_queue command."""
+    await player.save_queue("Test")
+
+
 @calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})
 async def test_get_queue_with_range(player: HeosPlayer) -> None:
     """Test the check_update command."""

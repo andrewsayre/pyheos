@@ -339,6 +339,11 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         await self.heos.player_clear_queue(self.player_id)
 
+    async def save_queue(self, name: str) -> None:
+        """Save the queue as a playlist."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_save_queue(self.player_id, name)
+
     async def play_next(self) -> None:
         """Clear the queue of the player."""
         assert self.heos, "Heos instance not set"
