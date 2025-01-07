@@ -2,9 +2,6 @@
 Define the player command module.
 
 This module creates HEOS player commands.
-
-Commands not currently implemented:
-    4.2.20 Move Queue
 """
 
 from typing import Any
@@ -235,6 +232,23 @@ class PlayerCommands:
             4.2.19 Clear Queue"""
         return HeosCommand(
             command.COMMAND_CLEAR_QUEUE, {const.ATTR_PLAYER_ID: player_id}
+        )
+
+    @staticmethod
+    def move_queue_item(
+        player_id: int, source_queue_ids: list[int], destination_queue_id: int
+    ) -> HeosCommand:
+        """Move one or more items in the queue.
+
+        References:
+            4.2.20 Move Queue"""
+        return HeosCommand(
+            command.COMMAND_MOVE_QUEUE_ITEM,
+            {
+                const.ATTR_PLAYER_ID: player_id,
+                const.ATTR_SOURCE_QUEUE_ID: ",".join(map(str, source_queue_ids)),
+                const.ATTR_DESTINATION_QUEUE_ID: destination_queue_id,
+            },
         )
 
     @staticmethod

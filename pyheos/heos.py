@@ -762,6 +762,19 @@ class PlayerMixin(ConnectionMixin):
             4.2.19 Clear Queue"""
         await self._connection.command(PlayerCommands.clear_queue(player_id))
 
+    async def player_move_queue_item(
+        self, player_id: int, source_queue_ids: list[int], destination_queue_id: int
+    ) -> None:
+        """Move one or more items in the queue.
+
+        References:
+            4.2.20 Move Queue"""
+        await self._connection.command(
+            PlayerCommands.move_queue_item(
+                player_id, source_queue_ids, destination_queue_id
+            )
+        )
+
     async def player_play_next(self, player_id: int) -> None:
         """Play next.
 

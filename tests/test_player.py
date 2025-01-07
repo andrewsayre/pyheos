@@ -246,6 +246,19 @@ async def test_save_queue(player: HeosPlayer) -> None:
     await player.save_queue("Test")
 
 
+@calls_command(
+    "player.move_queue_item",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_SOURCE_QUEUE_ID: "2,3,4",
+        const.ATTR_DESTINATION_QUEUE_ID: 1,
+    },
+)
+async def test_move_queue_item(player: HeosPlayer) -> None:
+    """Test the move_queue_item command."""
+    await player.move_queue_item([2, 3, 4], 1)
+
+
 @calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})
 async def test_get_queue_with_range(player: HeosPlayer) -> None:
     """Test the check_update command."""
