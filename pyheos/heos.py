@@ -713,7 +713,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.set_play_mode(player_id, repeat, shuffle)
         )
 
-    async def get_queue(
+    async def player_get_queue(
         self,
         player_id: int,
         range_start: int | None = None,
@@ -729,6 +729,13 @@ class PlayerMixin(ConnectionMixin):
         )
         payload = cast(list[dict[str, str]], result.payload)
         return [QueueItem.from_data(data) for data in payload]
+
+    async def player_play_queue(self, player_id: int, queue_id: int) -> None:
+        """Play a queue item.
+
+        References:
+            4.2.16 Play Queue Item"""
+        await self._connection.command(PlayerCommands.play_queue(player_id, queue_id))
 
     async def player_clear_queue(self, player_id: int) -> None:
         """Clear the queue.
@@ -773,7 +780,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.play_quick_select(player_id, quick_select_id)
         )
 
-    async def get_player_quick_selects(self, player_id: int) -> dict[int, str]:
+    async def player_get_quick_selects(self, player_id: int) -> dict[int, str]:
         """Get quick selects.
 
         References:
@@ -786,7 +793,7 @@ class PlayerMixin(ConnectionMixin):
             for data in cast(list[dict], result.payload)
         }
 
-    async def check_update(self, player_id: int) -> bool:
+    async def player_check_update(self, player_id: int) -> bool:
         """Check for a firmware update.
 
         Args:

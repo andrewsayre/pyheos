@@ -322,7 +322,12 @@ class HeosPlayer:
     ) -> list[QueueItem]:
         """Get the queue of the player."""
         assert self.heos, "Heos instance not set"
-        return await self.heos.get_queue(self.player_id, range_start, range_end)
+        return await self.heos.player_get_queue(self.player_id, range_start, range_end)
+
+    async def play_queue(self, queue_id: int) -> None:
+        """Play the queue of the player."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_play_queue(self.player_id, queue_id)
 
     async def clear_queue(self) -> None:
         """Clear the queue of the player."""
@@ -396,7 +401,7 @@ class HeosPlayer:
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         assert self.heos, "Heos instance not set"
-        return await self.heos.get_player_quick_selects(self.player_id)
+        return await self.heos.player_get_quick_selects(self.player_id)
 
     async def check_update(self) -> bool:
         """Check for a firmware update.
@@ -404,4 +409,4 @@ class HeosPlayer:
         Returns:
             True if an update is available, otherwise False."""
         assert self.heos, "Heos instance not set"
-        return await self.heos.check_update(self.player_id)
+        return await self.heos.player_check_update(self.player_id)

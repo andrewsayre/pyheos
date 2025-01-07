@@ -209,7 +209,7 @@ async def test_clear_queue(player: HeosPlayer) -> None:
 
 @calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1})
 async def test_get_queue(player: HeosPlayer) -> None:
-    """Test the check_update command."""
+    """Test the get queue command."""
     result = await player.get_queue()
 
     assert len(result) == 11
@@ -224,6 +224,12 @@ async def test_get_queue(player: HeosPlayer) -> None:
     assert item.queue_id == 1
     assert item.media_id == "199555606"
     assert item.album_id == "199555605"
+
+
+@calls_command("player.play_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: 1})
+async def test_play_queue(player: HeosPlayer) -> None:
+    """Test the play_queue command."""
+    await player.play_queue(1)
 
 
 @calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})

@@ -193,6 +193,17 @@ class PlayerCommands:
         return HeosCommand(command.COMMAND_GET_QUEUE, params)
 
     @staticmethod
+    def play_queue(player_id: int, queue_id: int) -> HeosCommand:
+        """Play a queue item.
+
+        References:
+            4.2.16 Play Queue Item"""
+        return HeosCommand(
+            command.COMMAND_PLAY_QUEUE,
+            {const.ATTR_PLAYER_ID: player_id, const.ATTR_QUEUE_ID: queue_id},
+        )
+
+    @staticmethod
     def clear_queue(player_id: int) -> HeosCommand:
         """Clear the queue.
 
