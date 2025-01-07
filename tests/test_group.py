@@ -6,7 +6,7 @@ from pyheos import const
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
 from pyheos.message import HeosMessage
-from tests import calls_command, value
+from tests import CallCommand, calls_command, calls_commands, value
 
 
 def test_group_from_data_no_leader_raises() -> None:
@@ -126,3 +126,36 @@ async def test_unmute(group: HeosGroup) -> None:
 async def test_toggle_mute(group: HeosGroup) -> None:
     """Test toggle mute command."""
     await group.toggle_mute()
+
+
+@calls_commands(
+    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+)
+async def test_refresh(group: HeosGroup) -> None:
+    """Test refresh, including base, updates the correct information."""
+    await group.refresh()
+
+    assert group.name == "Zone 1 + Zone 2"
+    assert group.group_id == -263109739
+    assert group.lead_player_id == -263109739
+    assert group.member_player_ids == [845195621]
+    assert group.volume == 42
+    assert not group.is_muted
+
+
+@calls_commands(
+    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
+)
+async def test_refresh_no_base_update(group: HeosGroup) -> None:
+    """Test refresh updates the correct information."""
+    await group.refresh(refresh_base_info=False)
+
+    assert group.name == "Back Patio + Front Porch"
+    assert group.group_id == 1
+    assert group.lead_player_id == 1
+    assert group.member_player_ids == [2]
+    assert group.volume == 42
+    assert not group.is_muted

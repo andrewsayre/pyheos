@@ -2,10 +2,6 @@
 Define the group command module.
 
 This module creates HEOS group commands.
-
-Commands not currently implemented:
-    4.3.2 Get Group Info
-
 """
 
 from collections.abc import Sequence
@@ -24,6 +20,16 @@ class GroupCommands:
         References:
             4.3.1 Get Groups"""
         return HeosCommand(command.COMMAND_GET_GROUPS)
+
+    @staticmethod
+    def get_group_info(group_id: int) -> HeosCommand:
+        """Get information about a group.
+
+        References:
+            4.3.2 Get Group Info"""
+        return HeosCommand(
+            command.COMMAND_GET_GROUP_INFO, {const.ATTR_GROUP_ID: group_id}
+        )
 
     @staticmethod
     def set_group(player_ids: Sequence[int]) -> HeosCommand:
