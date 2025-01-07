@@ -157,7 +157,7 @@ class HeosPlayer:
             heos=heos,
         )
 
-    def update_from_data(self, data: dict[str, Any]) -> None:
+    def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the attributes from the supplied data."""
         self.name = data[const.ATTR_NAME]
         self.player_id = int(data[const.ATTR_PLAYER_ID])
@@ -208,16 +208,23 @@ class HeosPlayer:
             callback_wrapper(callback, {0: lambda: self.player_id}),
         )
 
-    async def refresh(self) -> None:
-        """Pull current state."""
+    async def refresh(self, *, refresh_base_info: bool = True) -> None:
+        """Pull current state.
+
+        Args:
+            refresh_base_info: When True, the base information of the player, including the name, will also be pulled. Defaults is False.
+        """
         assert self.heos, "Heos instance not set"
-        await asyncio.gather(
-            self.refresh_state(),
-            self.refresh_now_playing_media(),
-            self.refresh_volume(),
-            self.refresh_mute(),
-            self.refresh_play_mode(),
-        )
+        if refresh_base_info:
+            await self.heos.get_player_info(player=self, refresh=True)
+        else:
+            await asyncio.gather(
+                self.refresh_state(),
+                self.refresh_now_playing_media(),
+                self.refresh_volume(),
+                self.refresh_mute(),
+                self.refresh_play_mode(),
+            )
 
     async def refresh_state(self) -> None:
         """Refresh the now playing state."""

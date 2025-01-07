@@ -47,7 +47,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
         const.ATTR_LINE_OUT: "0",
         const.ATTR_SERIAL: "0987654321",
     }
-    player.update_from_data(data)
+    player._update_from_data(data)
 
     assert player.name == "Patio"
     assert player.player_id == 2

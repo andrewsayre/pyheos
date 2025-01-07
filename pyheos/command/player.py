@@ -32,6 +32,16 @@ class PlayerCommands:
         return HeosCommand(command.COMMAND_GET_PLAYERS)
 
     @staticmethod
+    def get_player_info(player_id: int) -> HeosCommand:
+        """Get player information.
+
+        References:
+            4.2.2 Get Player Info"""
+        return HeosCommand(
+            command.COMMAND_GET_PLAYER_INFO, {const.ATTR_PLAYER_ID: player_id}
+        )
+
+    @staticmethod
     def get_play_state(player_id: int) -> HeosCommand:
         """Get the state of the player.
 

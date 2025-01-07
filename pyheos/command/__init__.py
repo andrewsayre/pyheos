@@ -12,6 +12,7 @@ COMMAND_BROWSE_ADD_TO_QUEUE: Final = "browse/add_to_queue"
 
 # Player commands
 COMMAND_GET_PLAYERS: Final = "player/get_players"
+COMMAND_GET_PLAYER_INFO: Final = "player/get_player_info"
 COMMAND_GET_PLAY_STATE: Final = "player/get_play_state"
 COMMAND_SET_PLAY_STATE: Final = "player/set_play_state"
 COMMAND_GET_NOW_PLAYING_MEDIA: Final = "player/get_now_playing_media"
