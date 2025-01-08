@@ -246,6 +246,14 @@ async def test_save_queue(player: HeosPlayer) -> None:
     await player.save_queue("Test")
 
 
+async def test_save_queue_too_long_raises(player: HeosPlayer) -> None:
+    """Test the save_queue command."""
+    with pytest.raises(
+        ValueError, match="'name' must be less than or equal to 128 characters"
+    ):
+        await player.save_queue("S" * 129)
+
+
 @calls_command(
     "player.move_queue_item",
     {
