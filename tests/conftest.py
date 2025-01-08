@@ -31,10 +31,7 @@ async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
 
     await try_connect()
     yield device
-    try:
-        await device.stop()
-    except Exception:  # pylint: disable=broad-except
-        pass
+    await device.stop()
 
 
 @pytest_asyncio.fixture(name="heos")

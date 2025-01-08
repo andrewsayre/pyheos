@@ -292,12 +292,17 @@ class MockHeosDevice:
         if not self._started:
             return
         self._started = False
+
+        # Stop the server
+        assert self._server is not None
+        self._server.close()
+
+        # Disconnect all connections
         for connection in self.connections:
             await connection.disconnect()
         self.connections.clear()
 
-        assert self._server is not None
-        self._server.close()
+        # Wait for server to close
         await self._server.wait_closed()
 
     async def write_event(
