@@ -505,7 +505,10 @@ class ConnectionLog:
     async def disconnect(self) -> None:
         """Close the connection."""
         self._writer.close()
-        await self._writer.wait_closed()
+        try:
+            await self._writer.wait_closed()
+        except ConnectionError:
+            pass
 
     async def write(self, payload: str) -> None:
         """Write the payload to the stream."""

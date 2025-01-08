@@ -1,6 +1,5 @@
 """Test fixtures for pyheos."""
 
-import asyncio
 from collections.abc import AsyncGenerator, Callable, Coroutine
 from typing import Any
 
