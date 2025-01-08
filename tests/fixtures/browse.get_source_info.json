@@ -1,0 +1,1 @@
+{"heos": {"command": "browse/get_source_info", "result": "success", "message": ""}, "payload": {"name": "Pandora", "image_url": "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png", "type": "music_service", "sid": 1, "available": "true", "service_username": "email@email.com"}}

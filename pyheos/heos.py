@@ -238,6 +238,43 @@ class BrowseMixin(ConnectionMixin):
             self._music_sources_loaded = True
         return self._music_sources
 
+    async def get_music_source_info(
+        self,
+        source_id: int | None = None,
+        music_source: MediaMusicSource | None = None,
+        *,
+        refresh: bool = False,
+    ) -> MediaMusicSource:
+        """
+        Get information about a specific music source.
+
+        References:
+            4.4.2 Get Source Info
+        """
+        if source_id is None and music_source is None:
+            raise ValueError("Either source_id or music_source must be provided")
+        if source_id is not None and music_source is not None:
+            raise ValueError("Only one of source_id or music_source should be provided")
+
+        # if only source_id provided, try getting from loaded
+        if music_source is None:
+            assert source_id is not None
+            music_source = self._music_sources.get(source_id)
+        else:
+            source_id = music_source.source_id
+
+        if music_source is None or refresh:
+            # Get the latest information
+            result = await self._connection.command(
+                BrowseCommands.get_music_source_info(source_id)
+            )
+            payload = cast(dict[str, Any], result.payload)
+            if music_source is None:
+                music_source = MediaMusicSource.from_data(payload, cast("Heos", self))
+            else:
+                music_source._update_from_data(payload)
+        return music_source
+
     async def browse(
         self,
         source_id: int,
@@ -844,7 +881,7 @@ class PlayerMixin(ConnectionMixin):
         return bool(payload[const.ATTR_UPDATE] == const.VALUE_UPDATE_EXIST)
 
 
-class GroupMixin(PlayerMixin):
+class GroupMixin(ConnectionMixin):
     """A mixin to provide access to the group commands."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

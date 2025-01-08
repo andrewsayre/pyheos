@@ -80,6 +80,15 @@ class MediaMusicSource(Media):
             heos=heos,
         )
 
+    def _update_from_data(self, data: dict[str, Any]) -> None:
+        """Update the instance with new data."""
+        self.source_id = int(data[const.ATTR_SOURCE_ID])
+        self.name = data[const.ATTR_NAME]
+        self.type = const.MediaType(data[const.ATTR_TYPE])
+        self.image_url = data[const.ATTR_IMAGE_URL]
+        self.available = data[const.ATTR_AVAILABLE] == const.VALUE_TRUE
+        self.service_username = data.get(const.ATTR_SERVICE_USER_NAME)
+
     def clone(self) -> "MediaMusicSource":
         """Create a new instance from the current instance."""
         return MediaMusicSource(
@@ -91,6 +100,11 @@ class MediaMusicSource(Media):
             service_username=self.service_username,
             heos=self.heos,
         )
+
+    async def refresh(self) -> None:
+        """Refresh the instance with the latest data."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.get_music_source_info(music_source=self, refresh=True)
 
     async def browse(self) -> "BrowseResult":
         """Browse the contents of this source.

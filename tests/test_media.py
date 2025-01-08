@@ -10,7 +10,7 @@ from pyheos.heos import Heos
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource
 from pyheos.message import HeosMessage
 from tests import calls_command
-from tests.common import MediaItems
+from tests.common import MediaItems, MediaMusicSources
 
 
 async def test_media_music_source_from_data() -> None:
@@ -203,6 +203,24 @@ async def test_media_item_browse(media_item_device: MediaItem) -> None:
     assert result.returned == 8
     assert result.count == 8
     assert len(result.items) == 8
+
+
+@calls_command(
+    "browse.get_source_info",
+    {const.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
+)
+async def test_refresh(media_music_source: MediaMusicSource) -> None:
+    """Test refresh updates the data."""
+    await media_music_source.refresh()
+    assert media_music_source.source_id == 1
+    assert media_music_source.name == "Pandora"
+    assert (
+        media_music_source.image_url
+        == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
+    )
+    assert media_music_source.type == const.MediaType.MUSIC_SERVICE
+    assert media_music_source.available
+    assert media_music_source.service_username == "email@email.com"
 
 
 @calls_command(
