@@ -1,5 +1,6 @@
 """Test fixtures for pyheos."""
 
+import asyncio
 from collections.abc import AsyncGenerator, Callable, Coroutine
 from typing import Any
 
@@ -20,9 +21,20 @@ from . import MockHeos, MockHeosDevice
 async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
     """Fixture for mocking a HEOS device connection."""
     device = MockHeosDevice()
-    await device.start()
+
+    async def try_connect():
+        try:
+            await device.start()
+        except OSError:
+            await asyncio.sleep(0.5)
+            await try_connect()
+
+    await try_connect()
     yield device
-    await device.stop()
+    try:
+        await device.stop()
+    except Exception:  # pylint: disable=broad-except
+        pass
 
 
 @pytest_asyncio.fixture(name="heos")
