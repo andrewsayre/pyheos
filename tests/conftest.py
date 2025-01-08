@@ -22,7 +22,7 @@ async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
     """Fixture for mocking a HEOS device connection."""
     device = MockHeosDevice()
 
-    async def try_connect():
+    async def try_connect() -> None:
         try:
             await device.start()
         except OSError:
