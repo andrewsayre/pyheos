@@ -32,7 +32,7 @@ class HeosError(Exception):
 
 
 class CommandError(HeosError):
-    """Define an error for when a HEOS cammand send fails."""
+    """Define an error for when a HEOS command send fails."""
 
     def __init__(self, command: str, message: str):
         """Create a new instance of the error."""

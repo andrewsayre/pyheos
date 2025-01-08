@@ -19,7 +19,7 @@ from pyheos.dispatch import (
     EventCallbackType,
     callback_wrapper,
 )
-from pyheos.error import CommandError, CommandFailedError
+from pyheos.error import CommandAuthenticationError, CommandFailedError
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
@@ -115,6 +115,11 @@ class SystemMixin(ConnectionMixin):
         """Return the current credential, if any set."""
         return self._current_credentials
 
+    @current_credentials.setter
+    def current_credentials(self, credentials: Credentials | None) -> None:
+        """Update the current credential."""
+        self._current_credentials = credentials
+
     async def register_for_change_events(self, enable: bool) -> None:
         """Register for change events.
 
@@ -156,7 +161,7 @@ class SystemMixin(ConnectionMixin):
         )
         self._signed_in_username = result.get_message_value(const.ATTR_USER_NAME)
         if update_credential:
-            self._current_credentials = Credentials(username, password)
+            self.current_credentials = Credentials(username, password)
         return self._signed_in_username
 
     async def sign_out(self, *, update_credential: bool = True) -> None:
@@ -170,7 +175,7 @@ class SystemMixin(ConnectionMixin):
         await self._connection.command(SystemCommands.sign_out())
         self._signed_in_username = None
         if update_credential:
-            self._current_credentials = None
+            self.current_credentials = None
 
     async def heart_beat(self) -> None:
         """Send a heart beat message to the HEOS device.
@@ -1145,18 +1150,18 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
         )
 
-        if self._current_credentials:
+        if self.current_credentials:
             # Sign-in to the account if provided
             try:
                 await self.sign_in(
-                    self._current_credentials.username,
-                    self._current_credentials.password,
+                    self.current_credentials.username,
+                    self.current_credentials.password,
                 )
-            except CommandError as err:
-                self._signed_in_username = None
+            except CommandAuthenticationError as err:
                 _LOGGER.debug(
                     "Failed to sign-in to HEOS Account after connection: %s", err
                 )
+                self.current_credentials = None
                 await self._dispatcher.wait_send(
                     const.SIGNAL_HEOS_EVENT,
                     const.EVENT_USER_CREDENTIALS_INVALID,
@@ -1184,13 +1189,19 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
         """Handle when a command error occurs."""
-        if isinstance(error, CommandFailedError) and error.command != COMMAND_SIGN_IN:
-            self._signed_in_username = None
-            _LOGGER.debug(
-                "HEOS Account credentials are no longer valid: %s",
-                error.error_text,
-                exc_info=error,
-            )
+        if (
+            isinstance(error, CommandAuthenticationError)
+            and error.command != COMMAND_SIGN_IN
+        ):
+            # If we're managing credentials, clear them
+            if self.current_credentials is not None:
+                _LOGGER.debug(
+                    "HEOS Account credentials are no longer valid: %s",
+                    error.error_text,
+                    exc_info=error,
+                )
+            # Ensure a stale credential is cleared
+            await self.sign_out()
             await self._dispatcher.wait_send(
                 const.SIGNAL_HEOS_EVENT,
                 const.EVENT_USER_CREDENTIALS_INVALID,

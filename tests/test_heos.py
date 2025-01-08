@@ -106,6 +106,7 @@ async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> 
     heos = await Heos.create_and_connect(
         "127.0.0.1", credentials=credentials, heart_beat=False
     )
+    assert heos.current_credentials == credentials
     assert heos.is_signed_in
     assert heos.signed_in_username == "example@example.com"
     await heos.disconnect()
@@ -128,17 +129,45 @@ async def test_connect_with_bad_credentials_dispatches_event(
 
     await heos.connect()
     assert signal.is_set()
-
+    assert heos.current_credentials is None
     assert not heos.is_signed_in
     assert heos.signed_in_username is None
 
     await heos.disconnect()
 
 
-@calls_command(
-    "browse.browse_fail_user_not_logged_in",
-    {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
-    add_command_under_process=True,
+@calls_commands(
+    CallCommand(
+        "browse.browse_fail_user_not_logged_in",
+        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        add_command_under_process=True,
+    ),
+    CallCommand("system.sign_out"),
+)
+async def test_stale_credentials_cleared_afer_auth_error(heos: Heos) -> None:
+    """Test that a credential is cleared when an auth issue occurs later"""
+    credentials = Credentials("example@example.com", "example")
+    heos.current_credentials = credentials
+
+    assert heos.is_signed_in
+    assert heos.signed_in_username == "example@example.com"
+    assert heos.current_credentials == credentials
+
+    with pytest.raises(CommandAuthenticationError):
+        await heos.get_favorites()
+
+    assert not heos.is_signed_in
+    assert heos.signed_in_username is None  # type: ignore[unreachable]
+    assert heos.current_credentials is None
+
+
+@calls_commands(
+    CallCommand(
+        "browse.browse_fail_user_not_logged_in",
+        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        add_command_under_process=True,
+    ),
+    CallCommand("system.sign_out"),
 )
 async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
     """Test command error with credential error dispatches event."""
@@ -163,6 +192,7 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
         {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
         add_command_under_process=True,
     ),
+    CallCommand("system.sign_out"),
     CallCommand("browse.get_music_sources"),
 )
 async def test_command_credential_error_dispatches_event_call_other_command(
@@ -532,6 +562,7 @@ async def test_get_players_error(heos: Heos) -> None:
         await heos.get_players()
     assert exc_info.value.error_id == 12
     assert exc_info.value.system_error_number == -519
+    assert exc_info.value.error_text == "System error -519"
 
 
 @calls_player_commands()
