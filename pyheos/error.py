@@ -1,7 +1,6 @@
 """Define the error module for HEOS."""
 
 import asyncio
-from functools import cached_property
 from typing import Final
 
 from pyheos import const
@@ -27,13 +26,13 @@ def format_error_message(error: Exception) -> str:
 
 
 class HeosError(Exception):
-    """Define an error from the heos library."""
+    """Define an error from the HEOS library."""
 
     pass
 
 
 class CommandError(HeosError):
-    """Define an error command response."""
+    """Define an error for when a HEOS cammand send fails."""
 
     def __init__(self, command: str, message: str):
         """Create a new instance of the error."""
@@ -47,7 +46,7 @@ class CommandError(HeosError):
 
 
 class CommandFailedError(CommandError):
-    """Define an error when a HEOS command fails."""
+    """Define an error for when a HEOS command is sent, but a failure response is returned."""
 
     def __init__(
         self,
@@ -61,10 +60,26 @@ class CommandFailedError(CommandError):
         self._error_text = text
         self._error_id = error_id
         self._system_error_number = system_error_number
+        self._is_credential_error: bool = False
         super().__init__(command, f"{text} ({error_id})")
 
+    @staticmethod
+    def __is_authentication_error(
+        error_id: int, system_error_number: int | None
+    ) -> bool:
+        """Return True if the error is related to authentication, otherwise False."""
+        if error_id == const.ERROR_SYSTEM_ERROR:
+            return system_error_number in (
+                const.SYSTEM_ERROR_USER_NOT_LOGGED_IN,
+                const.SYSTEM_ERROR_USER_NOT_FOUND,
+            )
+        return error_id in (
+            const.ERROR_USER_NOT_LOGGED_IN,
+            const.ERROR_USER_NOT_FOUND,
+        )
+
     @classmethod
-    def from_message(cls, message: HeosMessage) -> "CommandFailedError":
+    def _from_message(cls, message: HeosMessage) -> "CommandFailedError":
         """Create a new instance of the error from a message."""
         error_text = message.get_message_value(const.ATTR_TEXT)
         system_error_number = None
@@ -74,6 +89,11 @@ class CommandFailedError(CommandError):
                 const.ATTR_SYSTEM_ERROR_NUMBER
             )
             error_text += f" {system_error_number}"
+
+        if CommandFailedError.__is_authentication_error(error_id, system_error_number):
+            return CommandAuthenticationError(
+                message.command, error_text, error_id, system_error_number
+            )
 
         return CommandFailedError(
             message.command, error_text, error_id, system_error_number
@@ -94,16 +114,27 @@ class CommandFailedError(CommandError):
         """Return the system error number if available."""
         return self._system_error_number
 
-    @cached_property
+    @property
     def is_credential_error(self) -> bool:
         """Return True if the error is related to authentication, otherwise False."""
-        if self.error_id == const.ERROR_SYSTEM_ERROR:
-            return self.system_error_number in (
-                const.SYSTEM_ERROR_USER_NOT_LOGGED_IN,
-                const.SYSTEM_ERROR_USER_NOT_FOUND,
-            )
-        return self._error_id in (
-            const.ERROR_INVALID_CREDNETIALS,
-            const.ERROR_USER_NOT_LOGGED_IN,
-            const.ERROR_USER_NOT_FOUND,
-        )
+        return self._is_credential_error
+
+
+class CommandAuthenticationError(CommandFailedError):
+    """Define an error for when a command succeeds, but an authentication error is returned."""
+
+    def __init__(
+        self,
+        command: str,
+        text: str,
+        error_id: int,
+        system_error_number: int | None = None,
+    ):
+        """Create a new instance of the error."""
+        super().__init__(command, text, error_id, system_error_number)
+        self._is_credential_error = True
+
+    @property
+    def is_credential_error(self) -> bool:
+        """Return True if the error is related to authentication, otherwise False."""
+        return self._is_credential_error

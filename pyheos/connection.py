@@ -213,7 +213,7 @@ class ConnectionBase:
             # Check the result
             if not response.result:
                 _LOGGER.debug(f"Command failed '{command.uri_masked}': '{response}'")
-                raise CommandFailedError.from_message(response)
+                raise CommandFailedError._from_message(response)
 
             _LOGGER.debug(f"Command executed '{command.uri_masked}': '{response}'")
             return response

@@ -13,7 +13,12 @@ from .dispatch import (
     SendType,
     TargetType,
 )
-from .error import CommandError, CommandFailedError, HeosError
+from .error import (
+    CommandAuthenticationError,
+    CommandError,
+    CommandFailedError,
+    HeosError,
+)
 from .group import HeosGroup
 from .heos import Heos, HeosOptions
 from .media import (
@@ -28,6 +33,7 @@ from .system import HeosHost, HeosSystem
 __all__ = [
     "BrowseResult",
     "CallbackType",
+    "CommandAuthenticationError",
     "CommandError",
     "CommandFailedError",
     "ConnectType",
