@@ -401,7 +401,7 @@ class MockHeosDevice:
             if command == COMMAND_REBOOT:
                 # Simulate a reboot by shutting down the server
                 await self.stop()
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(0.3)
                 await self.start()
                 return
             if command == COMMAND_REGISTER_FOR_CHANGE_EVENTS:
