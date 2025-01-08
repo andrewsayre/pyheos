@@ -20,11 +20,7 @@ from pyheos.dispatch import (
     callback_wrapper,
 )
 from pyheos.error import CommandError, CommandFailedError
-from pyheos.media import (
-    BrowseResult,
-    MediaItem,
-    MediaMusicSource,
-)
+from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
 from pyheos.message import HeosMessage
 from pyheos.system import HeosHost, HeosSystem
 
@@ -717,12 +713,67 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.set_play_mode(player_id, repeat, shuffle)
         )
 
+    async def player_get_queue(
+        self,
+        player_id: int,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> list[QueueItem]:
+        """Get the queue for the current player.
+
+        References:
+            4.2.15 Get Queue
+        """
+        result = await self._connection.command(
+            PlayerCommands.get_queue(player_id, range_start, range_end)
+        )
+        payload = cast(list[dict[str, str]], result.payload)
+        return [QueueItem.from_data(data) for data in payload]
+
+    async def player_play_queue(self, player_id: int, queue_id: int) -> None:
+        """Play a queue item.
+
+        References:
+            4.2.16 Play Queue Item"""
+        await self._connection.command(PlayerCommands.play_queue(player_id, queue_id))
+
+    async def player_remove_from_queue(
+        self, player_id: int, queue_ids: list[int]
+    ) -> None:
+        """Remove an item from the queue.
+
+        References:
+            4.2.17 Remove Item(s) from Queue"""
+        await self._connection.command(
+            PlayerCommands.remove_from_queue(player_id, queue_ids)
+        )
+
+    async def player_save_queue(self, player_id: int, name: str) -> None:
+        """Save the queue as a playlist.
+
+        References:
+            4.2.18 Save Queue as Playlist"""
+        await self._connection.command(PlayerCommands.save_queue(player_id, name))
+
     async def player_clear_queue(self, player_id: int) -> None:
         """Clear the queue.
 
         References:
             4.2.19 Clear Queue"""
         await self._connection.command(PlayerCommands.clear_queue(player_id))
+
+    async def player_move_queue_item(
+        self, player_id: int, source_queue_ids: list[int], destination_queue_id: int
+    ) -> None:
+        """Move one or more items in the queue.
+
+        References:
+            4.2.20 Move Queue"""
+        await self._connection.command(
+            PlayerCommands.move_queue_item(
+                player_id, source_queue_ids, destination_queue_id
+            )
+        )
 
     async def player_play_next(self, player_id: int) -> None:
         """Play next.
@@ -760,7 +811,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.play_quick_select(player_id, quick_select_id)
         )
 
-    async def get_player_quick_selects(self, player_id: int) -> dict[int, str]:
+    async def player_get_quick_selects(self, player_id: int) -> dict[int, str]:
         """Get quick selects.
 
         References:
@@ -773,7 +824,7 @@ class PlayerMixin(ConnectionMixin):
             for data in cast(list[dict], result.payload)
         }
 
-    async def check_update(self, player_id: int) -> bool:
+    async def player_check_update(self, player_id: int) -> bool:
         """Check for a firmware update.
 
         Args:

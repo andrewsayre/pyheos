@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
-from pyheos.media import MediaItem
+from pyheos.media import MediaItem, QueueItem
 from pyheos.message import HeosMessage
 
 from . import const
@@ -317,10 +317,41 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_mode(self.player_id, repeat, shuffle)
 
+    async def get_queue(
+        self, range_start: int | None = None, range_end: int | None = None
+    ) -> list[QueueItem]:
+        """Get the queue of the player."""
+        assert self.heos, "Heos instance not set"
+        return await self.heos.player_get_queue(self.player_id, range_start, range_end)
+
+    async def play_queue(self, queue_id: int) -> None:
+        """Play the queue of the player."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_play_queue(self.player_id, queue_id)
+
+    async def remove_from_queue(self, queue_ids: list[int]) -> None:
+        """Remove the specified queue items from the queue."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_remove_from_queue(self.player_id, queue_ids)
+
     async def clear_queue(self) -> None:
         """Clear the queue of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_clear_queue(self.player_id)
+
+    async def save_queue(self, name: str) -> None:
+        """Save the queue as a playlist."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_save_queue(self.player_id, name)
+
+    async def move_queue_item(
+        self, source_queue_ids: list[int], destination_queue_id: int
+    ) -> None:
+        """Move one or more items in the queue."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.player_move_queue_item(
+            self.player_id, source_queue_ids, destination_queue_id
+        )
 
     async def play_next(self) -> None:
         """Clear the queue of the player."""
@@ -389,7 +420,7 @@ class HeosPlayer:
     async def get_quick_selects(self) -> dict[int, str]:
         """Get a list of quick selects."""
         assert self.heos, "Heos instance not set"
-        return await self.heos.get_player_quick_selects(self.player_id)
+        return await self.heos.player_get_quick_selects(self.player_id)
 
     async def check_update(self) -> bool:
         """Check for a firmware update.
@@ -397,4 +428,4 @@ class HeosPlayer:
         Returns:
             True if an update is available, otherwise False."""
         assert self.heos, "Heos instance not set"
-        return await self.heos.check_update(self.player_id)
+        return await self.heos.player_check_update(self.player_id)

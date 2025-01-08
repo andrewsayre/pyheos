@@ -207,6 +207,85 @@ async def test_clear_queue(player: HeosPlayer) -> None:
     await player.clear_queue()
 
 
+@calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1})
+async def test_get_queue(player: HeosPlayer) -> None:
+    """Test the get queue command."""
+    result = await player.get_queue()
+
+    assert len(result) == 11
+    item = result[0]
+    assert item.song == "Baby"
+    assert item.album == "22 Break"
+    assert item.artist == "Oh Wonder"
+    assert (
+        item.image_url
+        == "http://resources.wimpmusic.com/images/bdfd93c2/0b3a/495e/a557/4493fcbb7ab3/640x640.jpg"
+    )
+    assert item.queue_id == 1
+    assert item.media_id == "199555606"
+    assert item.album_id == "199555605"
+
+
+@calls_command("player.play_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: 1})
+async def test_play_queue(player: HeosPlayer) -> None:
+    """Test the play_queue command."""
+    await player.play_queue(1)
+
+
+@calls_command(
+    "player.remove_from_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: "1,2,3"}
+)
+async def test_remove_from_queue(player: HeosPlayer) -> None:
+    """Test the play_queue command."""
+    await player.remove_from_queue([1, 2, 3])
+
+
+@calls_command("player.save_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_NAME: "Test"})
+async def test_save_queue(player: HeosPlayer) -> None:
+    """Test the save_queue command."""
+    await player.save_queue("Test")
+
+
+async def test_save_queue_too_long_raises(player: HeosPlayer) -> None:
+    """Test the save_queue command."""
+    with pytest.raises(
+        ValueError, match="'name' must be less than or equal to 128 characters"
+    ):
+        await player.save_queue("S" * 129)
+
+
+@calls_command(
+    "player.move_queue_item",
+    {
+        const.ATTR_PLAYER_ID: 1,
+        const.ATTR_SOURCE_QUEUE_ID: "2,3,4",
+        const.ATTR_DESTINATION_QUEUE_ID: 1,
+    },
+)
+async def test_move_queue_item(player: HeosPlayer) -> None:
+    """Test the move_queue_item command."""
+    await player.move_queue_item([2, 3, 4], 1)
+
+
+@calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})
+async def test_get_queue_with_range(player: HeosPlayer) -> None:
+    """Test the check_update command."""
+    result = await player.get_queue(0, 10)
+
+    assert len(result) == 11
+    item = result[0]
+    assert item.song == "Baby"
+    assert item.album == "22 Break"
+    assert item.artist == "Oh Wonder"
+    assert (
+        item.image_url
+        == "http://resources.wimpmusic.com/images/bdfd93c2/0b3a/495e/a557/4493fcbb7ab3/640x640.jpg"
+    )
+    assert item.queue_id == 1
+    assert item.media_id == "199555606"
+    assert item.album_id == "199555605"
+
+
 @calls_command(
     "browse.play_input",
     {
