@@ -60,7 +60,6 @@ class CommandFailedError(CommandError):
         self._error_text = text
         self._error_id = error_id
         self._system_error_number = system_error_number
-        self._is_credential_error: bool = False
         super().__init__(command, f"{text} ({error_id})")
 
     @staticmethod
@@ -74,6 +73,7 @@ class CommandFailedError(CommandError):
                 const.SYSTEM_ERROR_USER_NOT_FOUND,
             )
         return error_id in (
+            const.ERROR_INVALID_CREDNETIALS,
             const.ERROR_USER_NOT_LOGGED_IN,
             const.ERROR_USER_NOT_FOUND,
         )
@@ -114,27 +114,8 @@ class CommandFailedError(CommandError):
         """Return the system error number if available."""
         return self._system_error_number
 
-    @property
-    def is_credential_error(self) -> bool:
-        """Return True if the error is related to authentication, otherwise False."""
-        return self._is_credential_error
-
 
 class CommandAuthenticationError(CommandFailedError):
     """Define an error for when a command succeeds, but an authentication error is returned."""
 
-    def __init__(
-        self,
-        command: str,
-        text: str,
-        error_id: int,
-        system_error_number: int | None = None,
-    ):
-        """Create a new instance of the error."""
-        super().__init__(command, text, error_id, system_error_number)
-        self._is_credential_error = True
-
-    @property
-    def is_credential_error(self) -> bool:
-        """Return True if the error is related to authentication, otherwise False."""
-        return self._is_credential_error
+    pass

@@ -1184,7 +1184,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
         """Handle when a command error occurs."""
-        if error.is_credential_error and error.command != COMMAND_SIGN_IN:
+        if isinstance(error, CommandFailedError) and error.command != COMMAND_SIGN_IN:
             self._signed_in_username = None
             _LOGGER.debug(
                 "HEOS Account credentials are no longer valid: %s",

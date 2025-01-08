@@ -10,7 +10,12 @@ from pyheos import command as commands
 from pyheos import const
 from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
-from pyheos.error import CommandError, CommandFailedError, HeosError
+from pyheos.error import (
+    CommandAuthenticationError,
+    CommandError,
+    CommandFailedError,
+    HeosError,
+)
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
@@ -144,7 +149,7 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
         heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
     )
 
-    with pytest.raises(CommandFailedError):
+    with pytest.raises(CommandAuthenticationError):
         await heos.get_favorites()
 
     assert signal.is_set()
@@ -179,7 +184,7 @@ async def test_command_credential_error_dispatches_event_call_other_command(
 
     heos.add_on_user_credentials_invalid(callback)
 
-    with pytest.raises(CommandFailedError):
+    with pytest.raises(CommandAuthenticationError):
         await heos.get_favorites()
     assert callback_invoked
 
@@ -521,8 +526,12 @@ async def test_player_availability_matches_connection_state(heos: Heos) -> None:
 @calls_command("player.get_players_error")
 async def test_get_players_error(heos: Heos) -> None:
     """Test the get_players method load players."""
-    with pytest.raises(CommandFailedError, match=re.escape("System error -519 (12)")):
+    with pytest.raises(
+        CommandFailedError, match=re.escape("System error -519 (12)")
+    ) as exc_info:
         await heos.get_players()
+    assert exc_info.value.error_id == 12
+    assert exc_info.value.system_error_number == -519
 
 
 @calls_player_commands()
@@ -1258,7 +1267,7 @@ async def test_sign_in_and_out(heos: Heos, caplog: pytest.LogCaptureFixture) -> 
     assert heos.signed_in_username is None
 
     # Test sign-in failure
-    with pytest.raises(CommandFailedError, match="User not found"):
+    with pytest.raises(CommandAuthenticationError, match="User not found"):
         await heos.sign_in("example@example.com", "example")
     assert (
         "Command failed 'heos://system/sign_in?un=example@example.com&pw=********':"
