@@ -96,6 +96,12 @@ class BrowseCommands:
         References:
             4.4.6 Search
         """
+        if search == "":
+            raise ValueError("'search' parameter must not be empty")
+        if len(search) > 128:
+            raise ValueError(
+                "'search' parameter must be less than or equal to 128 characters"
+            )
         params = {
             const.ATTR_SOURCE_ID: source_id,
             const.ATTR_SEARCH: search,

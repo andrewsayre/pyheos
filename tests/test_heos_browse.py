@@ -105,6 +105,23 @@ async def test_search(heos: Heos) -> None:
     assert len(result.items) == 15
 
 
+@pytest.mark.parametrize(
+    ("search", "error"),
+    [
+        ("", "'search' parameter must not be empty"),
+        ("x" * 129, "'search' parameter must be less than or equal to 128 characters"),
+    ],
+)
+async def test_search_invalid_raises(heos: Heos, search: str, error: str) -> None:
+    """Test the search method with an invalid search raises."""
+
+    with pytest.raises(
+        ValueError,
+        match=error,
+    ):
+        await heos.search(const.MUSIC_SOURCE_TIDAL, search, 3)
+
+
 @calls_command(
     "browse.search",
     {
