@@ -13,6 +13,7 @@ COMMAND_BROWSE_PLAY_INPUT: Final = "browse/play_input"
 COMMAND_BROWSE_PLAY_PRESET: Final = "browse/play_preset"
 COMMAND_BROWSE_PLAY_STREAM: Final = "browse/play_stream"
 COMMAND_BROWSE_RENAME_PLAYLIST: Final = "browse/rename_playlist"
+COMMAND_BROWSE_RETRIEVE_METADATA: Final = "browse/retrieve_metadata"
 COMMAND_BROWSE_SEARCH: Final = "browse/search"
 
 # Player commands

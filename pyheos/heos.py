@@ -20,7 +20,13 @@ from pyheos.dispatch import (
     callback_wrapper,
 )
 from pyheos.error import CommandAuthenticationError, CommandFailedError
-from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
+from pyheos.media import (
+    BrowseResult,
+    MediaItem,
+    MediaMusicSource,
+    QueueItem,
+    RetreiveMetadataResult,
+)
 from pyheos.message import HeosMessage
 from pyheos.search import SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
@@ -489,6 +495,20 @@ class BrowseMixin(ConnectionMixin):
         await self._connection.command(
             BrowseCommands.delete_playlist(source_id, container_id)
         )
+
+    async def retrieve_metadata(
+        self, source_it: int, container_id: str
+    ) -> RetreiveMetadataResult:
+        """
+        Create a HEOS command to retrieve metadata. Only supported by Rhapsody/Napster music sources.
+
+        References:
+            4.4.17 Retrieve Metadata
+        """
+        result = await self._connection.command(
+            BrowseCommands.retrieve_metadata(source_it, container_id)
+        )
+        return RetreiveMetadataResult._from_message(result)
 
     async def play_media(
         self,

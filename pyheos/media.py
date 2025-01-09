@@ -239,3 +239,63 @@ class BrowseResult:
             ),
             heos=heos,
         )
+
+
+@dataclass
+class ImageMetadata:
+    """Define metadata for an image."""
+
+    image_url: str
+    width: int
+
+    @staticmethod
+    def _from_data(data: dict[str, Any]) -> "ImageMetadata":
+        """Create a new instance from the provided data."""
+        return ImageMetadata(
+            image_url=data[const.ATTR_IMAGE_URL],
+            width=int(data[const.ATTR_WIDTH]),
+        )
+
+
+@dataclass
+class AlbumMetadata:
+    """Define metadata for an album."""
+
+    album_id: str
+    images: Sequence[ImageMetadata] = field(repr=False, hash=False, compare=False)
+
+    @staticmethod
+    def _from_data(data: dict[str, Any]) -> "AlbumMetadata":
+        """Create a new instance from the provided data."""
+        return AlbumMetadata(
+            album_id=data[const.ATTR_ALBUM_ID],
+            images=[
+                ImageMetadata._from_data(cast(dict[str, Any], image))
+                for image in data[const.ATTR_IMAGES]
+            ],
+        )
+
+
+@dataclass
+class RetreiveMetadataResult:
+    "Define the result of a retrieve metadata operation."
+
+    source_id: int
+    container_id: str
+    returned: int
+    count: int
+    metadata: Sequence[AlbumMetadata] = field(repr=False, hash=False, compare=False)
+
+    @staticmethod
+    def _from_message(message: HeosMessage) -> "RetreiveMetadataResult":
+        "Create a new instance from the provided data."
+        return RetreiveMetadataResult(
+            source_id=message.get_message_value_int(const.ATTR_SOURCE_ID),
+            container_id=message.get_message_value(const.ATTR_CONTAINER_ID),
+            returned=message.get_message_value_int(const.ATTR_RETURNED),
+            count=message.get_message_value_int(const.ATTR_COUNT),
+            metadata=[
+                AlbumMetadata._from_data(item)
+                for item in cast(Sequence[dict[str, Any]], message.payload)
+            ],
+        )

@@ -4,13 +4,12 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.17 Retrieve Album Metadata
     4.4.19 Set service option
     4.4.20 Universal Search (Multi-Search)
 
-Not implemented:
+Not implemented (commands do not exist):
     4.4.13 Get HEOS Playlists: Refer to Browse Sources and Browse Source Containers
-
+    4.4.16 Get HEOS History: Refer to Browse Sources and Browse Source Containers
 """
 
 from typing import Any
@@ -241,4 +240,17 @@ class BrowseCommands:
         return HeosCommand(
             command.COMMAND_BROWSE_DELETE__PLAYLIST,
             {const.ATTR_SOURCE_ID: source_id, const.ATTR_CONTAINER_ID: container_id},
+        )
+
+    @staticmethod
+    def retrieve_metadata(source_it: int, container_id: str) -> HeosCommand:
+        """
+        Create a HEOS command to retrieve metadata.
+
+        References:
+            4.4.17 Retrieve Metadata
+        """
+        return HeosCommand(
+            command.COMMAND_BROWSE_RETRIEVE_METADATA,
+            {const.ATTR_SOURCE_ID: source_it, const.ATTR_CONTAINER_ID: container_id},
         )

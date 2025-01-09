@@ -190,3 +190,29 @@ async def test_rename_playlist_invalid_name_raises(
 async def test_delete_playlist(heos: Heos) -> None:
     """Test deleting a playlist."""
     await heos.delete_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566")
+
+
+@calls_command(
+    "browse.retrieve_metadata",
+    {
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_NAPSTER,
+        const.ATTR_CONTAINER_ID: 123456,
+    },
+)
+async def test_retrieve_metadata(heos: Heos) -> None:
+    """Test deleting a playlist."""
+    result = await heos.retrieve_metadata(const.MUSIC_SOURCE_NAPSTER, "123456")
+    assert result.source_id == const.MUSIC_SOURCE_NAPSTER
+    assert result.container_id == "123456"
+    assert result.returned == 1
+    assert result.count == 1
+    assert len(result.metadata) == 1
+    metadata = result.metadata[0]
+    assert metadata.album_id == "7890"
+    assert len(metadata.images) == 2
+    image = metadata.images[0]
+    assert (
+        image.image_url
+        == "http://resources.wimpmusic.com/images/fbfe5e8b/b775/4d97/9053/8f0ac7daf4fd/640x640.jpg"
+    )
+    assert image.width == 640
