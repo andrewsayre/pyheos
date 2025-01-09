@@ -15,6 +15,7 @@ COMMAND_BROWSE_PLAY_STREAM: Final = "browse/play_stream"
 COMMAND_BROWSE_RENAME_PLAYLIST: Final = "browse/rename_playlist"
 COMMAND_BROWSE_RETRIEVE_METADATA: Final = "browse/retrieve_metadata"
 COMMAND_BROWSE_SEARCH: Final = "browse/search"
+COMMAND_BROWSE_SET_SERVICE_OPTION: Final = "browse/set_service_option"
 
 # Player commands
 COMMAND_GET_PLAYERS: Final = "player/get_players"

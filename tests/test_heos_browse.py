@@ -5,7 +5,7 @@ import pytest
 from pyheos import const
 from pyheos.heos import Heos
 from pyheos.media import MediaMusicSource
-from tests import calls_command
+from tests import calls_command, value
 from tests.common import MediaMusicSources
 
 
@@ -216,3 +216,165 @@ async def test_retrieve_metadata(heos: Heos) -> None:
         == "http://resources.wimpmusic.com/images/fbfe5e8b/b775/4d97/9053/8f0ac7daf4fd/640x640.jpg"
     )
     assert image.width == 640
+
+
+@calls_command(
+    "browse.set_service_option_add_favorite",
+    {
+        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_TO_FAVORITES,
+        const.ATTR_PLAYER_ID: 1,
+    },
+)
+async def test_set_service_option_add_favorite_play(heos: Heos) -> None:
+    """Test setting a service option for adding to favorites."""
+    await heos.set_service_option(const.SERVICE_OPTION_ADD_TO_FAVORITES, player_id=1)
+
+
+@calls_command(
+    "browse.set_service_option_add_favorite_browse",
+    {
+        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_TO_FAVORITES,
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_MEDIA_ID: 123456,
+        const.ATTR_NAME: "Test Radio",
+    },
+)
+async def test_set_service_option_add_favorite_browse(heos: Heos) -> None:
+    """Test setting a service option for adding to favorites."""
+    await heos.set_service_option(
+        const.SERVICE_OPTION_ADD_TO_FAVORITES,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        media_id=123456,
+        name="Test Radio",
+    )
+
+
+@calls_command(
+    "browse.set_service_option_remove_favorite",
+    {
+        const.ATTR_OPTION_ID: const.SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+        const.ATTR_MEDIA_ID: 4277097921440801039,
+    },
+)
+async def test_set_service_option_remove_favorite(heos: Heos) -> None:
+    """Test setting a service option for adding to favorites."""
+    await heos.set_service_option(
+        const.SERVICE_OPTION_REMOVE_FROM_FAVORITES, media_id=4277097921440801039
+    )
+
+
+@pytest.mark.parametrize(
+    "option", [const.SERVICE_OPTION_THUMBS_UP, const.SERVICE_OPTION_THUMBS_DOWN]
+)
+@calls_command(
+    "browse.set_service_option_thumbs_up_down",
+    {
+        const.ATTR_OPTION_ID: value(arg_name="option"),
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_PLAYER_ID: 1,
+    },
+)
+async def test_set_service_option_thumbs_up_down(heos: Heos, option: int) -> None:
+    """Test setting thumbs up/down."""
+    await heos.set_service_option(
+        option,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        player_id=1,
+    )
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+        const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+    ],
+)
+@calls_command(
+    "browse.set_service_option_track_station",
+    {
+        const.ATTR_OPTION_ID: value(arg_name="option"),
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_MEDIA_ID: 1234,
+    },
+)
+async def test_set_service_option_track_station(heos: Heos, option: int) -> None:
+    """Test setting track and station options."""
+    await heos.set_service_option(
+        option,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        media_id=1234,
+    )
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+    ],
+)
+@calls_command(
+    "browse.set_service_option_album_remove_playlist",
+    {
+        const.ATTR_OPTION_ID: value(arg_name="option"),
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_CONTAINER_ID: 1234,
+    },
+)
+async def test_set_service_option_album_remove_playlist(
+    heos: Heos, option: int
+) -> None:
+    """Test setting albumn options and remove playlist options."""
+    await heos.set_service_option(
+        option,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        container_id=1234,
+    )
+
+
+@calls_command(
+    "browse.set_service_option_add_playlist",
+    {
+        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_CONTAINER_ID: 1234,
+        const.ATTR_NAME: "Test Playlist",
+    },
+)
+async def test_set_service_option_add_playlist(heos: Heos) -> None:
+    """Test setting albumn options and remove playlist options."""
+    await heos.set_service_option(
+        const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        container_id=1234,
+        name="Test Playlist",
+    )
+
+
+@calls_command(
+    "browse.set_service_option_new_station",
+    {
+        const.ATTR_OPTION_ID: const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
+        const.ATTR_SEARCH_CRITERIA_ID: 1234,
+        const.ATTR_NAME: "Test",
+        const.ATTR_RANGE: "0,14",
+    },
+)
+async def test_set_service_option_new_station(heos: Heos) -> None:
+    """Test setting creating a new station option."""
+    await heos.set_service_option(
+        const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+        source_id=const.MUSIC_SOURCE_PANDORA,
+        criteria_id=1234,
+        name="Test",
+        range_start=0,
+        range_end=14,
+    )
+
+
+#

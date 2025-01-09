@@ -4,7 +4,6 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.19 Set service option
     4.4.20 Universal Search (Multi-Search)
 
 Not implemented (commands do not exist/obsolete):
@@ -255,3 +254,161 @@ class BrowseCommands:
             command.COMMAND_BROWSE_RETRIEVE_METADATA,
             {const.ATTR_SOURCE_ID: source_it, const.ATTR_CONTAINER_ID: container_id},
         )
+
+    @staticmethod
+    def set_service_option(
+        option_id: int,
+        source_id: int | None,
+        container_id: str | None,
+        media_id: str | None,
+        player_id: int | None,
+        name: str | None,
+        criteria_id: int | None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> HeosCommand:
+        """
+        Create a HEOS command to set a service option.
+
+        References:
+            4.4.19 Set Service Option
+        """
+        params: dict[str, Any] = {const.ATTR_OPTION_ID: option_id}
+        disallowed_params = {}
+
+        if option_id in (
+            const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+            const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+            const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+            const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+        ):
+            if source_id is None or media_id is None:
+                raise ValueError(
+                    f"source_id and media_id parameters are required for service option_id {option_id}"
+                )
+            disallowed_params = {
+                "container_id": container_id,
+                "player_id": player_id,
+                "name": name,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+            params[const.ATTR_SOURCE_ID] = source_id
+            params[const.ATTR_MEDIA_ID] = media_id
+        elif option_id in (
+            const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+            const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+            const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+        ):
+            if source_id is None or container_id is None:
+                raise ValueError(
+                    f"source_id and container_id parameters are required for service option_id {option_id}"
+                )
+            disallowed_params = {
+                "media_id": media_id,
+                "player_id": player_id,
+                "name": name,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+            params[const.ATTR_SOURCE_ID] = source_id
+            params[const.ATTR_CONTAINER_ID] = container_id
+        elif option_id == const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY:
+            if source_id is None or container_id is None or name is None:
+                raise ValueError(
+                    f"source_id, container_id, and name parameters are required for service option_id {option_id}"
+                )
+            disallowed_params = {
+                "media_id": media_id,
+                "player_id": player_id,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+            params[const.ATTR_SOURCE_ID] = source_id
+            params[const.ATTR_CONTAINER_ID] = container_id
+            params[const.ATTR_NAME] = name
+        elif option_id in (
+            const.SERVICE_OPTION_THUMBS_UP,
+            const.SERVICE_OPTION_THUMBS_DOWN,
+        ):
+            if source_id is None or player_id is None:
+                raise ValueError(
+                    f"source_id and player_id parameters are required for service option_id {option_id}"
+                )
+            disallowed_params = {
+                "media_id": media_id,
+                "container_id": container_id,
+                "name": name,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+            params[const.ATTR_SOURCE_ID] = source_id
+            params[const.ATTR_PLAYER_ID] = player_id
+        elif option_id == const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA:
+            if source_id is None or name is None or criteria_id is None:
+                raise ValueError(
+                    f"source_id, name, and criteria_id parameters are required for service option_id {option_id}"
+                )
+            disallowed_params = {
+                "media_id": media_id,
+                "container_id": container_id,
+                "player_id": player_id,
+            }
+            params[const.ATTR_SOURCE_ID] = source_id
+            params[const.ATTR_SEARCH_CRITERIA_ID] = criteria_id
+            params[const.ATTR_NAME] = name
+            if isinstance(range_start, int) and isinstance(range_end, int):
+                params[const.ATTR_RANGE] = f"{range_start},{range_end}"
+        elif option_id == const.SERVICE_OPTION_ADD_TO_FAVORITES:
+            if not bool(player_id) ^ (
+                source_id is not None and media_id is not None and name is not None
+            ):
+                raise ValueError(
+                    f"Either parameters player_id OR source_id, media_id, and name are required for service option_id {option_id}"
+                )
+            if player_id is not None:
+                if source_id is not None or media_id is not None or name is not None:
+                    raise ValueError(
+                        f"source_id, media_id, and name parameters are not allowed when using player_id for service option_id {option_id}"
+                    )
+                params[const.ATTR_PLAYER_ID] = player_id
+            else:
+                params[const.ATTR_SOURCE_ID] = source_id
+                params[const.ATTR_MEDIA_ID] = media_id
+                params[const.ATTR_NAME] = name
+            disallowed_params = {
+                "container_id": container_id,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+        elif option_id == const.SERVICE_OPTION_REMOVE_FROM_FAVORITES:
+            if media_id is None:
+                raise ValueError(
+                    f"media_id parameter is required for service option_id {option_id}"
+                )
+            params[const.ATTR_MEDIA_ID] = media_id
+            disallowed_params = {
+                "source_id": source_id,
+                "player_id": player_id,
+                "container_id": container_id,
+                "name": name,
+                "criteria_id": criteria_id,
+                "range_start": range_start,
+                "range_end": range_end,
+            }
+        else:
+            raise ValueError(f"Unknown option_id: {option_id}")
+
+        # Raise if any disallowed parameters are provided
+        if any(param is not None for param in disallowed_params.values()):
+            raise ValueError(
+                f"{', '.join(disallowed_params.keys())} parameters are not allowed for service option_id {option_id}"
+            )
+
+        # return the command
+        return HeosCommand(command.COMMAND_BROWSE_SET_SERVICE_OPTION, params)

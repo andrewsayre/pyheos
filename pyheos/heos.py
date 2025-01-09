@@ -510,6 +510,38 @@ class BrowseMixin(ConnectionMixin):
         )
         return RetreiveMetadataResult._from_message(result)
 
+    async def set_service_option(
+        this,
+        option_id: int,
+        source_id: int | None = None,
+        container_id: str | None = None,
+        media_id: str | None = None,
+        player_id: int | None = None,
+        name: str | None = None,
+        criteria_id: int | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> None:
+        """
+        Create a HEOS command to set a service option.
+
+        References:
+            4.4.19 Set Service Option
+        """
+        return await this._connection.command(
+            BrowseCommands.set_service_option(
+                option_id,
+                source_id,
+                container_id,
+                media_id,
+                player_id,
+                name,
+                criteria_id,
+                range_start,
+                range_end,
+            )
+        )
+
     async def play_media(
         self,
         player_id: int,

@@ -8,6 +8,7 @@ from urllib.parse import parse_qsl
 
 from pyheos import const
 
+BASE_URI: Final = "heos://"
 QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
 MASKED_PARAMS: Final = {const.ATTR_PASSWORD}
 MASK: Final = "********"
@@ -37,7 +38,7 @@ class HeosCommand:
             if self.parameters
             else ""
         )
-        return f"{const.BASE_URI}{self.command}{query_string}"
+        return f"{BASE_URI}{self.command}{query_string}"
 
     @classmethod
     def _quote(cls, value: Any) -> str:
