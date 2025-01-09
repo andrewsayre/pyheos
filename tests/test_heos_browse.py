@@ -1,9 +1,11 @@
 """Tests for the browse mixin of the Heos module."""
 
+from typing import Any
+
 import pytest
 
 from pyheos import const
-from pyheos.heos import Heos
+from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaMusicSource
 from tests import calls_command, value
 from tests.common import MediaMusicSources
@@ -244,7 +246,7 @@ async def test_set_service_option_add_favorite_browse(heos: Heos) -> None:
     await heos.set_service_option(
         const.SERVICE_OPTION_ADD_TO_FAVORITES,
         source_id=const.MUSIC_SOURCE_PANDORA,
-        media_id=123456,
+        media_id="123456",
         name="Test Radio",
     )
 
@@ -259,7 +261,7 @@ async def test_set_service_option_add_favorite_browse(heos: Heos) -> None:
 async def test_set_service_option_remove_favorite(heos: Heos) -> None:
     """Test setting a service option for adding to favorites."""
     await heos.set_service_option(
-        const.SERVICE_OPTION_REMOVE_FROM_FAVORITES, media_id=4277097921440801039
+        const.SERVICE_OPTION_REMOVE_FROM_FAVORITES, media_id="4277097921440801039"
     )
 
 
@@ -305,7 +307,7 @@ async def test_set_service_option_track_station(heos: Heos, option: int) -> None
     await heos.set_service_option(
         option,
         source_id=const.MUSIC_SOURCE_PANDORA,
-        media_id=1234,
+        media_id="1234",
     )
 
 
@@ -332,7 +334,7 @@ async def test_set_service_option_album_remove_playlist(
     await heos.set_service_option(
         option,
         source_id=const.MUSIC_SOURCE_PANDORA,
-        container_id=1234,
+        container_id="1234",
     )
 
 
@@ -350,7 +352,7 @@ async def test_set_service_option_add_playlist(heos: Heos) -> None:
     await heos.set_service_option(
         const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
         source_id=const.MUSIC_SOURCE_PANDORA,
-        container_id=1234,
+        container_id="1234",
         name="Test Playlist",
     )
 
@@ -377,4 +379,307 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
     )
 
 
-#
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        (
+            {"option_id": 200},
+            "Unknown option_id",
+        ),
+        # SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY
+        (
+            {"option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY},
+            "source_id, container_id, and name parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "source_id": 1234,
+            },
+            "source_id, container_id, and name parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "container_id": 1234,
+            },
+            "source_id, container_id, and name parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "name": 1234,
+            },
+            "source_id, container_id, and name parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "source_id": 1234,
+                "name": 1234,
+                "media_id": 1234,
+                "container_id": 1234,
+            },
+            "parameters are not allowed",
+        ),
+        # SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA
+        (
+            {"option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA},
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "source_id": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "name": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "criteria_id": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "criteria_id": 1234,
+                "name": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "criteria_id": 1234,
+                "source_id": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "name": 1234,
+                "source_id": 1234,
+            },
+            "source_id, name, and criteria_id parameters are required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "criteria_id": 1234,
+                "name": 1234,
+                "source_id": 1234,
+                "player_id": 1234,
+            },
+            "parameters are not allowed",
+        ),
+        # SERVICE_OPTION_REMOVE_FROM_FAVORITES
+        (
+            {"option_id": const.SERVICE_OPTION_REMOVE_FROM_FAVORITES},
+            "media_id parameter is required",
+        ),
+        (
+            {
+                "option_id": const.SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+                "media_id": 1234,
+                "container_id": 1234,
+            },
+            "parameters are not allowed",
+        ),
+    ],
+)
+async def test_set_sevice_option_invalid_raises(
+    kwargs: dict[str, Any], error: str
+) -> None:
+    """Test calling with invalid combinations of parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+
+    with pytest.raises(ValueError, match=error):
+        await heos.set_service_option(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+        const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+    ],
+)
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        (
+            {},
+            "source_id and media_id parameters are required",
+        ),
+        (
+            {"media_id": 1234},
+            "source_id and media_id parameters are required",
+        ),
+        (
+            {"source_id": 1234},
+            "source_id and media_id parameters are required",
+        ),
+        (
+            {"source_id": 1234, "media_id": 1234, "container_id": 1234},
+            "parameters are not allowed for service option_id",
+        ),
+    ],
+)
+async def test_set_sevice_option_invalid_track_station_raises(
+    option: int, kwargs: dict[str, Any], error: str
+) -> None:
+    """Test calling with invalid combinations of parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+    with pytest.raises(ValueError, match=error):
+        await heos.set_service_option(option_id=option, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+        const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+    ],
+)
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        (
+            {},
+            "source_id and container_id parameters are required",
+        ),
+        (
+            {"source_id": 1234},
+            "source_id and container_id parameters are required",
+        ),
+        (
+            {"container_id": 1234},
+            "source_id and container_id parameters are required",
+        ),
+        (
+            {"source_id": 1234, "media_id": 1234, "container_id": 1234},
+            "parameters are not allowed for service option_id",
+        ),
+    ],
+)
+async def test_set_sevice_option_invalid_album_remove_playlist_raises(
+    option: int, kwargs: dict[str, Any], error: str
+) -> None:
+    """Test calling with invalid combinations of parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+    with pytest.raises(ValueError, match=error):
+        await heos.set_service_option(option_id=option, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        const.SERVICE_OPTION_THUMBS_UP,
+        const.SERVICE_OPTION_THUMBS_DOWN,
+    ],
+)
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        (
+            {},
+            "source_id and player_id parameters are required",
+        ),
+        (
+            {"source_id": 1234},
+            "source_id and player_id parameters are required",
+        ),
+        (
+            {"player_id": 1234},
+            "source_id and player_id parameters are required",
+        ),
+        (
+            {"source_id": 1234, "player_id": 1234, "container_id": 1234},
+            "parameters are not allowed for service option_id",
+        ),
+    ],
+)
+async def test_set_sevice_option_invalid_thumbs_up_down_raises(
+    option: int, kwargs: dict[str, Any], error: str
+) -> None:
+    """Test calling with invalid combinations of parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+    with pytest.raises(ValueError, match=error):
+        await heos.set_service_option(option_id=option, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "error"),
+    [
+        (
+            {},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"source_id": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"media_id": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"name": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"source_id": 1234, "media_id": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"source_id": 1234, "name": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"media_id": 1234, "name": 1234},
+            "Either parameters player_id OR source_id, media_id, and name are required",
+        ),
+        (
+            {"player_id": 1234, "media_id": 1234},
+            "source_id, media_id, and name parameters are not allowed",
+        ),
+        (
+            {"player_id": 1234, "source_id": 1234},
+            "source_id, media_id, and name parameters are not allowed",
+        ),
+        (
+            {"player_id": 1234, "name": 1234},
+            "source_id, media_id, and name parameters are not allowed",
+        ),
+        (
+            {"source_id": 1234, "media_id": 1234, "name": 1234, "container_id": 1234},
+            "parameters are not allowed for service option_id",
+        ),
+        (
+            {"player_id": 1234, "container_id": 1234},
+            "parameters are not allowed for service option_id",
+        ),
+    ],
+)
+async def test_set_sevice_option_invalid_add_favorite_raises(
+    kwargs: dict[str, Any], error: str
+) -> None:
+    """Test calling with invalid combinations of parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+    with pytest.raises(ValueError, match=error):
+        await heos.set_service_option(
+            option_id=const.SERVICE_OPTION_ADD_TO_FAVORITES, **kwargs
+        )

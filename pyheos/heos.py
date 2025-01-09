@@ -528,7 +528,7 @@ class BrowseMixin(ConnectionMixin):
         References:
             4.4.19 Set Service Option
         """
-        return await this._connection.command(
+        await this._connection.command(
             BrowseCommands.set_service_option(
                 option_id,
                 source_id,
