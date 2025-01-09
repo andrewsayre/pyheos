@@ -105,10 +105,10 @@ class PlayMode:
     repeat: const.RepeatType
     shuffle: bool
 
-    @classmethod
-    def from_data(cls, data: HeosMessage) -> "PlayMode":
+    @staticmethod
+    def _from_data(data: HeosMessage) -> "PlayMode":
         """Create a new instance from the provided data."""
-        return cls(
+        return PlayMode(
             repeat=const.RepeatType(data.get_message_value(const.ATTR_REPEAT)),
             shuffle=data.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON,
         )
@@ -149,14 +149,13 @@ class HeosPlayer:
             return int(value)
         return None
 
-    @classmethod
-    def from_data(
-        cls,
+    @staticmethod
+    def _from_data(
         data: dict[str, Any],
         heos: Optional["Heos"] = None,
     ) -> "HeosPlayer":
         """Create a new instance from the provided data."""
-        return cls(
+        return HeosPlayer(
             name=data[const.ATTR_NAME],
             player_id=int(data[const.ATTR_PLAYER_ID]),
             model=data[const.ATTR_MODEL],
@@ -181,7 +180,7 @@ class HeosPlayer:
         self.line_out = int(data[const.ATTR_LINE_OUT])
         self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
 
-    async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
+    async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
 
         This is an internal method invoked by the Heos class and is not intended for direct use.

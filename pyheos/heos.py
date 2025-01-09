@@ -689,7 +689,7 @@ class PlayerMixin(ConnectionMixin):
 
             payload = cast(dict[str, Any], result.payload)
             if player is None:
-                player = HeosPlayer.from_data(payload, cast("Heos", self))
+                player = HeosPlayer._from_data(payload, cast("Heos", self))
             else:
                 player._update_from_data(payload)
             await player.refresh(refresh_base_info=False)
@@ -728,7 +728,7 @@ class PlayerMixin(ConnectionMixin):
                 existing.remove(player)
             else:
                 # New player
-                player = HeosPlayer.from_data(player_data, cast("Heos", self))
+                player = HeosPlayer._from_data(player_data, cast("Heos", self))
                 new_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
@@ -852,7 +852,7 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.13 Get Play Mode"""
         result = await self._connection.command(PlayerCommands.get_play_mode(player_id))
-        return PlayMode.from_data(result)
+        return PlayMode._from_data(result)
 
     async def player_set_play_mode(
         self, player_id: int, repeat: const.RepeatType, shuffle: bool
@@ -1390,7 +1390,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Process an event about a player."""
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
-        if player and (await player.on_event(event, self._options.all_progress_events)):
+        if player and (
+            await player._on_event(event, self._options.all_progress_events)
+        ):
             await self.dispatcher.wait_send(
                 const.SIGNAL_PLAYER_EVENT,
                 player_id,

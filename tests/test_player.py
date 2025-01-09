@@ -23,7 +23,7 @@ def test_from_data() -> None:
         const.ATTR_LINE_OUT: 1,
         const.ATTR_SERIAL: "1234567890",
     }
-    player = HeosPlayer.from_data(data, None)
+    player = HeosPlayer._from_data(data, None)
 
     assert player.name == "Back Patio"
     assert player.player_id == 1
