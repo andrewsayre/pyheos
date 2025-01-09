@@ -109,14 +109,6 @@ DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"
 
 
-class PlayState(StrEnum):
-    """Define the play states."""
-
-    PLAY = "play"
-    PAUSE = "pause"
-    STOP = "stop"
-
-
 class RepeatType(StrEnum):
     """Define the repeat types."""
 

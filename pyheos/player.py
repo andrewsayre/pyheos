@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
@@ -14,6 +15,14 @@ from . import const
 
 if TYPE_CHECKING:
     from .heos import Heos
+
+
+class PlayState(StrEnum):
+    """Define the play states."""
+
+    PLAY = "play"
+    PAUSE = "pause"
+    STOP = "stop"
 
 
 @dataclass
@@ -126,9 +135,7 @@ class HeosPlayer:
     ip_address: str = field(repr=True, hash=False, compare=False)
     network: str = field(repr=False, hash=False, compare=False)
     line_out: int = field(repr=False, hash=False, compare=False)
-    state: const.PlayState | None = field(
-        repr=True, hash=False, compare=False, default=None
-    )
+    state: PlayState | None = field(repr=True, hash=False, compare=False, default=None)
     volume: int = field(repr=False, hash=False, compare=False, default=0)
     is_muted: bool = field(repr=False, hash=False, compare=False, default=False)
     repeat: const.RepeatType = field(
@@ -190,8 +197,8 @@ class HeosPlayer:
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self.now_playing_media._on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self.state = const.PlayState(event.get_message_value(const.ATTR_STATE))
-            if self.state == const.PlayState.PLAY:
+            self.state = PlayState(event.get_message_value(const.ATTR_STATE))
+            if self.state == PlayState.PLAY:
                 self.now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
@@ -265,22 +272,22 @@ class HeosPlayer:
         self.repeat = play_mode.repeat
         self.shuffle = play_mode.shuffle
 
-    async def set_state(self, state: const.PlayState) -> None:
+    async def set_state(self, state: PlayState) -> None:
         """Set the state of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_state(self.player_id, state)
 
     async def play(self) -> None:
         """Set the start to play."""
-        await self.set_state(const.PlayState.PLAY)
+        await self.set_state(PlayState.PLAY)
 
     async def pause(self) -> None:
         """Set the start to pause."""
-        await self.set_state(const.PlayState.PAUSE)
+        await self.set_state(PlayState.PAUSE)
 
     async def stop(self) -> None:
         """Set the start to stop."""
-        await self.set_state(const.PlayState.STOP)
+        await self.set_state(PlayState.STOP)
 
     async def set_volume(self, level: int) -> None:
         """Set the volume level."""

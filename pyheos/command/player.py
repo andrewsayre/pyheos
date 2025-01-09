@@ -8,6 +8,7 @@ from typing import Any
 
 from pyheos import command, const
 from pyheos.message import HeosCommand
+from pyheos.player import PlayState
 
 
 class PlayerCommands:
@@ -44,7 +45,7 @@ class PlayerCommands:
         )
 
     @staticmethod
-    def set_play_state(player_id: int, state: const.PlayState) -> HeosCommand:
+    def set_play_state(player_id: int, state: PlayState) -> HeosCommand:
         """Set the state of the player.
 
         References:

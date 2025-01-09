@@ -6,7 +6,7 @@ import pytest
 
 from pyheos import const
 from pyheos.media import MediaItem
-from pyheos.player import HeosPlayer
+from pyheos.player import HeosPlayer, PlayState
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
@@ -59,21 +59,19 @@ async def test_update_from_data(player: HeosPlayer) -> None:
     assert player.serial == "0987654321"
 
 
-@pytest.mark.parametrize(
-    "state", (const.PlayState.PAUSE, const.PlayState.PLAY, const.PlayState.STOP)
-)
+@pytest.mark.parametrize("state", (PlayState.PAUSE, PlayState.PLAY, PlayState.STOP))
 @calls_command(
     "player.set_play_state",
     {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: value(arg_name="state")},
 )
-async def test_set_state(player: HeosPlayer, state: const.PlayState) -> None:
+async def test_set_state(player: HeosPlayer, state: PlayState) -> None:
     """Test the play, pause, and stop commands."""
     await player.set_state(state)
 
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.PLAY},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.PLAY},
 )
 async def test_set_play(player: HeosPlayer) -> None:
     """Test the pause commands."""
@@ -82,7 +80,7 @@ async def test_set_play(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.PAUSE},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.PAUSE},
 )
 async def test_set_pause(player: HeosPlayer) -> None:
     """Test the play commands."""
@@ -91,7 +89,7 @@ async def test_set_pause(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.PlayState.STOP},
+    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.STOP},
 )
 async def test_set_stop(player: HeosPlayer) -> None:
     """Test the stop commands."""

@@ -33,7 +33,7 @@ from .media import (
     RetreiveMetadataResult,
     ServiceOption,
 )
-from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
 
@@ -68,6 +68,7 @@ __all__ = [
     "QueueItem",
     "ServiceOption",
     "PlayMode",
+    "PlayState",
     "PlayerEventCallbackType",
     "RetreiveMetadataResult",
     "SearchCriteria",

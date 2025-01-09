@@ -20,7 +20,7 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
-from pyheos.player import HeosPlayer
+from pyheos.player import HeosPlayer, PlayState
 from tests.common import MediaItems
 
 from . import (
@@ -461,7 +461,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
     assert player.network == const.NETWORK_TYPE_WIRED
-    assert player.state == const.PlayState.STOP
+    assert player.state == PlayState.STOP
     assert player.version == "1.493.180"
     assert player.volume == 36
     assert not player.is_muted
@@ -576,7 +576,7 @@ async def test_player_state_changed_event(
     # assert not playing
     await heos.get_players()
     player = heos.players[1]
-    assert player.state == const.PlayState.STOP
+    assert player.state == PlayState.STOP
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -590,14 +590,14 @@ async def test_player_state_changed_event(
     # Write event through mock device
     await mock_device.write_event(
         "event.player_state_changed",
-        {"player_id": player.player_id, "state": const.PlayState.PLAY},
+        {"player_id": player.player_id, "state": PlayState.PLAY},
     )
 
     # Wait until the signal
     await signal.wait()
     # Assert state changed
-    assert player.state == const.PlayState.PLAY  # type: ignore[comparison-overlap]
-    assert heos.players[2].state == const.PlayState.STOP  # type: ignore[unreachable]
+    assert player.state == PlayState.PLAY  # type: ignore[comparison-overlap]
+    assert heos.players[2].state == PlayState.STOP  # type: ignore[unreachable]
 
 
 @calls_player_commands()

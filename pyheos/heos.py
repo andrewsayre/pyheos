@@ -35,7 +35,7 @@ from . import const
 from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
-from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -768,7 +768,7 @@ class PlayerMixin(ConnectionMixin):
             const.DATA_MAPPED_IDS: mapped_player_ids,
         }
 
-    async def player_get_play_state(self, player_id: int) -> const.PlayState:
+    async def player_get_play_state(self, player_id: int) -> PlayState:
         """Get the state of the player.
 
         References:
@@ -776,11 +776,9 @@ class PlayerMixin(ConnectionMixin):
         response = await self._connection.command(
             PlayerCommands.get_play_state(player_id)
         )
-        return const.PlayState(response.get_message_value(const.ATTR_STATE))
+        return PlayState(response.get_message_value(const.ATTR_STATE))
 
-    async def player_set_play_state(
-        self, player_id: int, state: const.PlayState
-    ) -> None:
+    async def player_set_play_state(self, player_id: int, state: PlayState) -> None:
         """Set the state of the player.
 
         References:
