@@ -6,7 +6,7 @@ import pytest
 
 from pyheos import const
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import MediaMusicSource
+from pyheos.media import MediaMusicSource, MediaType
 from tests import calls_command, value
 from tests.common import MediaMusicSources
 
@@ -21,7 +21,7 @@ async def test_get_music_source_by_id(heos: Heos) -> None:
         source.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert source.type == const.MediaType.MUSIC_SERVICE
+    assert source.type == MediaType.MUSIC_SERVICE
     assert source.available
     assert source.service_username == "email@email.com"
 

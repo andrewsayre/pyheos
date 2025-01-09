@@ -2,6 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import const
@@ -9,6 +10,22 @@ from pyheos.message import HeosMessage
 
 if TYPE_CHECKING:
     from . import Heos
+
+
+class MediaType(StrEnum):
+    """Define the media types."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    CONTAINER = "container"
+    DLNA_SERVER = "dlna_server"
+    GENRE = "genre"
+    HEOS_SERVER = "heos_server"
+    HEOS_SERVICE = "heos_service"
+    MUSIC_SERVICE = "music_service"
+    PLAYLIST = "playlist"
+    SONG = "song"
+    STATION = "station"
 
 
 @dataclass
@@ -47,7 +64,7 @@ class Media:
 
     source_id: int
     name: str
-    type: const.MediaType
+    type: MediaType
     image_url: str = field(repr=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
@@ -73,7 +90,7 @@ class MediaMusicSource(Media):
         return cls(
             source_id=int(data[const.ATTR_SOURCE_ID]),
             name=data[const.ATTR_NAME],
-            type=const.MediaType(data[const.ATTR_TYPE]),
+            type=MediaType(data[const.ATTR_TYPE]),
             image_url=data[const.ATTR_IMAGE_URL],
             available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
             service_username=data.get(const.ATTR_SERVICE_USER_NAME),
@@ -84,7 +101,7 @@ class MediaMusicSource(Media):
         """Update the instance with new data."""
         self.source_id = int(data[const.ATTR_SOURCE_ID])
         self.name = data[const.ATTR_NAME]
-        self.type = const.MediaType(data[const.ATTR_TYPE])
+        self.type = MediaType(data[const.ATTR_TYPE])
         self.image_url = data[const.ATTR_IMAGE_URL]
         self.available = data[const.ATTR_AVAILABLE] == const.VALUE_TRUE
         self.service_username = data.get(const.ATTR_SERVICE_USER_NAME)
@@ -152,7 +169,7 @@ class MediaItem(Media):
             container_id=data.get(const.ATTR_CONTAINER_ID, container_id),
             browsable=new_browseable,
             name=data[const.ATTR_NAME],
-            type=const.MediaType(data[const.ATTR_TYPE]),
+            type=MediaType(data[const.ATTR_TYPE]),
             image_url=data[const.ATTR_IMAGE_URL],
             playable=data.get(const.ATTR_PLAYABLE) == const.VALUE_YES,
             media_id=data.get(const.ATTR_MEDIA_ID),

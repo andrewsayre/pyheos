@@ -19,7 +19,7 @@ from pyheos.error import (
 )
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.media import MediaItem, MediaMusicSource, MediaType
 from pyheos.player import HeosPlayer, PlayState, RepeatType
 from tests.common import MediaItems
 
@@ -1227,7 +1227,7 @@ async def test_get_music_sources(heos: Heos) -> None:
         pandora.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert pandora.type == const.MediaType.MUSIC_SERVICE
+    assert pandora.type == MediaType.MUSIC_SERVICE
     assert pandora.available
     assert pandora.service_username == "test@test.com"
 
@@ -1245,7 +1245,7 @@ async def test_get_input_sources(heos: Heos) -> None:
     assert len(sources) == 18
     source = sources[0]
     assert source.playable
-    assert source.type == const.MediaType.STATION
+    assert source.type == MediaType.STATION
     assert source.name == "Theater Receiver - CBL/SAT"
     assert source.media_id == const.INPUT_CABLE_SAT
     assert source.source_id == 546978854
@@ -1267,7 +1267,7 @@ async def test_get_favorites(heos: Heos) -> None:
         fav.image_url
         == "http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg"
     )
-    assert fav.type == const.MediaType.STATION
+    assert fav.type == MediaType.STATION
 
 
 @calls_command(
@@ -1282,7 +1282,7 @@ async def test_get_playlists(heos: Heos) -> None:
     assert playlist.container_id == "171566"
     assert playlist.name == "Rockin Songs"
     assert playlist.image_url == ""
-    assert playlist.type == const.MediaType.PLAYLIST
+    assert playlist.type == MediaType.PLAYLIST
     assert playlist.source_id == const.MUSIC_SOURCE_PLAYLISTS
 
 

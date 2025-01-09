@@ -5,16 +5,53 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
-from pyheos.media import MediaItem, QueueItem, ServiceOption
+from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
 
 from . import const
 
 if TYPE_CHECKING:
     from .heos import Heos
+
+SOURCE_CONTROLS: Final = {
+    const.MUSIC_SOURCE_CONNECT: {MediaType.STATION: const.CONTROLS_ALL},
+    const.MUSIC_SOURCE_PANDORA: {MediaType.STATION: const.CONTROLS_FORWARD_ONLY},
+    const.MUSIC_SOURCE_RHAPSODY: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_TUNEIN: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROL_PLAY_STOP,
+    },
+    const.MUSIC_SOURCE_SPOTIFY: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_DEEZER: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_NAPSTER: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_IHEARTRADIO: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROL_PLAY_STOP,
+    },
+    const.MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: const.CONTROL_PLAY_STOP},
+    const.MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: const.CONTROLS_ALL},
+    const.MUSIC_SOURCE_TIDAL: {MediaType.SONG: const.CONTROLS_ALL},
+    const.MUSIC_SOURCE_AMAZON: {
+        MediaType.SONG: const.CONTROLS_ALL,
+        MediaType.STATION: const.CONTROLS_ALL,
+    },
+    const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: const.CONTROL_PLAY_STOP},
+}
 
 
 class PlayState(StrEnum):
@@ -91,9 +128,9 @@ class HeosNowPlayingMedia:
             const.CONTROLS_ALL if self.source_id is not None else []
         )
         if self.source_id is not None and self.type is not None:
-            if controls := const.SOURCE_CONTROLS.get(self.source_id):
+            if controls := SOURCE_CONTROLS.get(self.source_id):
                 new_supported_controls = controls.get(
-                    const.MediaType(self.type), const.CONTROLS_ALL
+                    MediaType(self.type), const.CONTROLS_ALL
                 )
         self.supported_controls = new_supported_controls
 

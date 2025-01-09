@@ -1,6 +1,6 @@
 """Define consts for the pyheos package."""
 
-from enum import IntEnum, StrEnum
+from enum import IntEnum
 from typing import Final
 
 DEFAULT_TIMEOUT: Final = 10.0
@@ -108,23 +108,6 @@ NETWORK_TYPE_UNKNOWN: Final = "unknown"
 DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"
 
-
-class MediaType(StrEnum):
-    """Define the media types."""
-
-    ALBUM = "album"
-    ARTIST = "artist"
-    CONTAINER = "container"
-    DLNA_SERVER = "dlna_server"
-    GENRE = "genre"
-    HEOS_SERVER = "heos_server"
-    HEOS_SERVICE = "heos_service"
-    MUSIC_SERVICE = "music_service"
-    PLAYLIST = "playlist"
-    SONG = "song"
-    STATION = "station"
-
-
 # Music Sources
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1
@@ -169,43 +152,6 @@ CONTROLS_FORWARD_ONLY: Final = [
     CONTROL_PLAY_NEXT,
 ]
 CONTROL_PLAY_STOP: Final = [CONTROL_PLAY, CONTROL_STOP]
-
-SOURCE_CONTROLS: Final = {
-    MUSIC_SOURCE_CONNECT: {MediaType.STATION: CONTROLS_ALL},
-    MUSIC_SOURCE_PANDORA: {MediaType.STATION: CONTROLS_FORWARD_ONLY},
-    MUSIC_SOURCE_RHAPSODY: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_TUNEIN: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROL_PLAY_STOP,
-    },
-    MUSIC_SOURCE_SPOTIFY: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_DEEZER: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_NAPSTER: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_IHEARTRADIO: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROL_PLAY_STOP,
-    },
-    MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: CONTROL_PLAY_STOP},
-    MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_TIDAL: {MediaType.SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_AMAZON: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_ALL,
-    },
-    MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROL_PLAY_STOP},
-}
 
 
 # Inputs

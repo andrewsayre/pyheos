@@ -7,7 +7,7 @@ import pytest
 
 from pyheos import command, const
 from pyheos.heos import Heos
-from pyheos.media import BrowseResult, MediaItem, MediaMusicSource
+from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, MediaType
 from pyheos.message import HeosMessage
 from tests import calls_command
 from tests.common import MediaItems, MediaMusicSources
@@ -18,7 +18,7 @@ async def test_media_music_source_from_data() -> None:
     data = {
         const.ATTR_NAME: "Pandora",
         const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
-        const.ATTR_TYPE: const.MediaType.MUSIC_SERVICE,
+        const.ATTR_TYPE: MediaType.MUSIC_SERVICE,
         const.ATTR_SOURCE_ID: 1,
         const.ATTR_AVAILABLE: const.VALUE_TRUE,
         const.ATTR_SERVICE_USER_NAME: "test@test.com",
@@ -28,7 +28,7 @@ async def test_media_music_source_from_data() -> None:
 
     assert source.name == data[const.ATTR_NAME]
     assert source.image_url == data[const.ATTR_IMAGE_URL]
-    assert source.type == const.MediaType.MUSIC_SERVICE
+    assert source.type == MediaType.MUSIC_SERVICE
     assert source.source_id == data[const.ATTR_SOURCE_ID]
     assert source.available
     assert source.service_username == data[const.ATTR_SERVICE_USER_NAME]
@@ -70,7 +70,7 @@ async def test_browse_result_from_data() -> None:
         [
             {
                 const.ATTR_CONTAINER: const.VALUE_YES,
-                const.ATTR_TYPE: str(const.MediaType.PLAYLIST),
+                const.ATTR_TYPE: str(MediaType.PLAYLIST),
                 const.ATTR_CONTAINER_ID: "171566",
                 const.ATTR_PLAYABLE: const.VALUE_YES,
                 const.ATTR_NAME: "Rockin Songs",
@@ -97,7 +97,7 @@ async def test_media_item_from_data() -> None:
     data = {
         const.ATTR_NAME: "Imaginary Parties",
         const.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
-        const.ATTR_TYPE: str(const.MediaType.SONG),
+        const.ATTR_TYPE: str(MediaType.SONG),
         const.ATTR_CONTAINER: const.VALUE_NO,
         const.ATTR_MEDIA_ID: "78374741",
         const.ATTR_ARTIST: "Superfruit",
@@ -110,7 +110,7 @@ async def test_media_item_from_data() -> None:
 
     assert source.name == data[const.ATTR_NAME]
     assert source.image_url == data[const.ATTR_IMAGE_URL]
-    assert source.type == const.MediaType.SONG
+    assert source.type == MediaType.SONG
     assert source.container_id == container_id
     assert source.source_id == source_id
     assert source.playable is True
@@ -136,7 +136,7 @@ async def test_media_item_from_data_source_id_not_present_raises() -> None:
     data = {
         const.ATTR_NAME: "Video",
         const.ATTR_IMAGE_URL: "",
-        const.ATTR_TYPE: str(const.MediaType.CONTAINER),
+        const.ATTR_TYPE: str(MediaType.CONTAINER),
         const.ATTR_CONTAINER: const.VALUE_YES,
         const.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
     }
@@ -153,7 +153,7 @@ async def test_media_item_from_data_source() -> None:
     data = {
         const.ATTR_NAME: "Plex Media Server",
         const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_servers.png",
-        const.ATTR_TYPE: str(const.MediaType.HEOS_SERVER),
+        const.ATTR_TYPE: str(MediaType.HEOS_SERVER),
         const.ATTR_SOURCE_ID: 123456789,
     }
 
@@ -161,7 +161,7 @@ async def test_media_item_from_data_source() -> None:
 
     assert source.name == data[const.ATTR_NAME]
     assert source.image_url == data[const.ATTR_IMAGE_URL]
-    assert source.type == const.MediaType.HEOS_SERVER
+    assert source.type == MediaType.HEOS_SERVER
     assert source.source_id == data[const.ATTR_SOURCE_ID]
     assert source.container_id is None
     assert source.playable is False
@@ -178,7 +178,7 @@ async def test_media_item_from_data_container() -> None:
     data = {
         const.ATTR_NAME: "Video",
         const.ATTR_IMAGE_URL: "",
-        const.ATTR_TYPE: str(const.MediaType.CONTAINER),
+        const.ATTR_TYPE: str(MediaType.CONTAINER),
         const.ATTR_CONTAINER: const.VALUE_YES,
         const.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
     }
@@ -187,7 +187,7 @@ async def test_media_item_from_data_container() -> None:
 
     assert source.name == data[const.ATTR_NAME]
     assert source.image_url == data[const.ATTR_IMAGE_URL]
-    assert source.type == const.MediaType.CONTAINER
+    assert source.type == MediaType.CONTAINER
     assert source.container_id == data[const.ATTR_CONTAINER_ID]
     assert source.source_id == source_id
     assert source.playable is False
@@ -225,7 +225,7 @@ async def test_refresh(media_music_source: MediaMusicSource) -> None:
         media_music_source.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert media_music_source.type == const.MediaType.MUSIC_SERVICE
+    assert media_music_source.type == MediaType.MUSIC_SERVICE
     assert media_music_source.available
     assert media_music_source.service_username == "email@email.com"
 

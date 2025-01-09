@@ -24,6 +24,7 @@ from pyheos.media import (
     BrowseResult,
     MediaItem,
     MediaMusicSource,
+    MediaType,
     QueueItem,
     RetreiveMetadataResult,
 )
@@ -561,7 +562,7 @@ class BrowseMixin(ConnectionMixin):
 
         if media.media_id in const.VALID_INPUTS:
             await self.play_input_source(player_id, media.media_id, media.source_id)
-        elif media.type == const.MediaType.STATION:
+        elif media.type == MediaType.STATION:
             if media.media_id is None:
                 raise ValueError(f"'Media '{media}' cannot have a None media_id")
             await self.play_station(
