@@ -7,9 +7,10 @@ Commands not currently implemented:
     4.4.19 Set service option
     4.4.20 Universal Search (Multi-Search)
 
-Not implemented (commands do not exist):
+Not implemented (commands do not exist/obsolete):
     4.4.13 Get HEOS Playlists: Refer to Browse Sources and Browse Source Containers
     4.4.16 Get HEOS History: Refer to Browse Sources and Browse Source Containers
+    4.4.18 Get Service Options for now playing screen: OBSOLETE
 """
 
 from typing import Any

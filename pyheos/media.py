@@ -208,6 +208,44 @@ class MediaItem(Media):
 
 
 @dataclass
+class ServiceOption:
+    """Define a service option."""
+
+    context: str
+    id: int
+    name: str
+
+    @staticmethod
+    def _from_options(
+        data: list[dict[str, list[dict[str, Any]]]] | None,
+    ) -> list["ServiceOption"]:
+        """Create a list of instances from the provided data."""
+        options: list[ServiceOption] = []
+        if data is None:
+            return options
+
+        # Unpack the options and flatten structure. Example payload:
+        # [{"play": [{"id": 19, "name": "Add to HEOS Favorites"}]}]
+        for context in data:
+            for context_key, context_options in context.items():
+                options.extend(
+                    [
+                        ServiceOption._from_data(context_key, item)
+                        for item in context_options
+                    ]
+                )
+
+        return options
+
+    @staticmethod
+    def _from_data(context: str, data: dict[str, str]) -> "ServiceOption":
+        """Create a new instance from the provided data."""
+        return ServiceOption(
+            context=context, id=int(data[const.ATTR_ID]), name=data[const.ATTR_NAME]
+        )
+
+
+@dataclass
 class BrowseResult:
     """Define the result of a browse operation."""
 
@@ -215,18 +253,19 @@ class BrowseResult:
     returned: int
     source_id: int
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
+    options: Sequence[ServiceOption] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
-    @classmethod
-    def from_data(
-        cls, message: HeosMessage, heos: Optional["Heos"] = None
+    @staticmethod
+    def _from_message(
+        message: HeosMessage, heos: Optional["Heos"] = None
     ) -> "BrowseResult":
         """Create a new instance from the provided data."""
         source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
         container_id = message.message.get(const.ATTR_CONTAINER_ID)
 
-        return cls(
+        return BrowseResult(
             count=message.get_message_value_int(const.ATTR_COUNT),
             returned=message.get_message_value_int(const.ATTR_RETURNED),
             source_id=source_id,
@@ -237,6 +276,7 @@ class BrowseResult:
                     for item in cast(Sequence[dict], message.payload)
                 ]
             ),
+            options=ServiceOption._from_options(message.options),
             heos=heos,
         )
 

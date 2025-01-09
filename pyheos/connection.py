@@ -145,7 +145,7 @@ class ConnectionBase:
             else:
                 self._last_activity = datetime.now()
                 await self._handle_message(
-                    HeosMessage.from_raw_message(binary_result.decode())
+                    HeosMessage._from_raw_message(binary_result.decode())
                 )
 
     async def _handle_message(self, message: HeosMessage) -> None:

@@ -50,6 +50,13 @@ async def test_media_music_source_browse(
 
     assert result.returned == 3
     assert result.source_id == const.MUSIC_SOURCE_FAVORITES
+
+    assert len(result.options) == 1
+    option = result.options[0]
+    assert option.context == "browse"
+    assert option.name == "Remove from HEOS Favorites"
+    assert option.id == 20
+
     # further testing of the result is done in test_browse_result_from_data
 
 
@@ -72,7 +79,7 @@ async def test_browse_result_from_data() -> None:
         ],
     )
 
-    result = BrowseResult.from_data(message, heos)
+    result = BrowseResult._from_message(message, heos)
 
     assert result.returned == 1
     assert result.count == 1

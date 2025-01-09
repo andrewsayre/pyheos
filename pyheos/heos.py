@@ -308,7 +308,7 @@ class BrowseMixin(ConnectionMixin):
         message = await self._connection.command(
             BrowseCommands.browse(source_id, container_id, range_start, range_end)
         )
-        return BrowseResult.from_data(message, cast("Heos", self))
+        return BrowseResult._from_message(message, cast("Heos", self))
 
     async def browse_media(
         self,
