@@ -28,7 +28,7 @@ from pyheos.media import (
     RetreiveMetadataResult,
 )
 from pyheos.message import HeosMessage
-from pyheos.search import SearchCriteria, SearchResult
+from pyheos.search import MultiSearchResult, SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
 
 from . import const
@@ -622,6 +622,23 @@ class BrowseMixin(ConnectionMixin):
         """
         result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
         return result.items
+
+    async def multi_search(
+        self,
+        search: str,
+        source_ids: list[int] | None = None,
+        criteria_ids: list[int] | None = None,
+    ) -> MultiSearchResult:
+        """
+        Create a HEOS command to perform a multi-search.
+
+        References:
+            4.4.20 Multi Search
+        """
+        result = await self._connection.command(
+            BrowseCommands.multi_search(search, source_ids, criteria_ids)
+        )
+        return MultiSearchResult._from_message(result, cast("Heos", self))
 
 
 class PlayerMixin(ConnectionMixin):

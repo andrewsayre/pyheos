@@ -3,9 +3,6 @@ Define the browse command module.
 
 This module creates HEOS browse commands.
 
-Commands not currently implemented:
-    4.4.20 Universal Search (Multi-Search)
-
 Not implemented (commands do not exist/obsolete):
     4.4.13 Get HEOS Playlists: Refer to Browse Sources and Browse Source Containers
     4.4.16 Get HEOS History: Refer to Browse Sources and Browse Source Containers
@@ -412,3 +409,24 @@ class BrowseCommands:
 
         # return the command
         return HeosCommand(command.COMMAND_BROWSE_SET_SERVICE_OPTION, params)
+
+    @staticmethod
+    def multi_search(
+        search: str, source_ids: list[int] | None, criteria_ids: list[int] | None
+    ) -> HeosCommand:
+        """
+        Create a HEOS command to perform a multi-search.
+
+        References:
+            4.4.20 Multi Search
+        """
+        if len(search) > 128:
+            raise ValueError(
+                "'search' parameter must be less than or equal to 128 characters"
+            )
+        params = {const.ATTR_SEARCH: search}
+        if source_ids is not None:
+            params[const.ATTR_SOURCE_ID] = ",".join(map(str, source_ids))
+        if criteria_ids is not None:
+            params[const.ATTR_SEARCH_CRITERIA_ID] = ",".join(map(str, criteria_ids))
+        return HeosCommand(command.COMMAND_BROWSE_MULTI_SEARCH, params)

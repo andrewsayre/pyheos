@@ -683,3 +683,39 @@ async def test_set_sevice_option_invalid_add_favorite_raises(
         await heos.set_service_option(
             option_id=const.SERVICE_OPTION_ADD_TO_FAVORITES, **kwargs
         )
+
+
+@calls_command(
+    "browse.multi_search",
+    {
+        const.ATTR_SEARCH: "Tangerine Rays",
+        const.ATTR_SOURCE_ID: "1,4,8,13,10",
+        const.ATTR_SEARCH_CRITERIA_ID: "0,1,2,3",
+    },
+)
+async def test_multi_search(heos: Heos):
+    """Test the multi-search command."""
+    result = await heos.multi_search(
+        "Tangerine Rays",
+        [1, 4, 8, 13, 10],
+        [0, 1, 2, 3],
+    )
+
+    assert result.search == "Tangerine Rays"
+    assert result.source_ids == [1, 4, 8, 13, 10]
+    assert result.criteria_ids == [0, 1, 2, 3]
+    assert result.returned == 74
+    assert result.count == 74
+    assert len(result.items) == 74
+    assert len(result.statistics) == 4
+    assert len(result.errors) == 2
+
+
+async def test_multi_search_invalid_search_rasis():
+    """Test the multi-search command."""
+    heos = Heos(HeosOptions("127.0.0.1"))
+    with pytest.raises(
+        ValueError,
+        match="'search' parameter must be less than or equal to 128 characters",
+    ):
+        await heos.multi_search("x" * 129)
