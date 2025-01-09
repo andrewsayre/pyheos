@@ -480,6 +480,16 @@ class BrowseMixin(ConnectionMixin):
             BrowseCommands.rename_playlist(source_id, container_id, new_name)
         )
 
+    async def delete_playlist(self, source_id: int, container_id: str) -> None:
+        """
+        Create a HEOS command to delete a playlist.
+
+        References:
+            4.4.15 Delete HEOS Playlist"""
+        await self._connection.command(
+            BrowseCommands.delete_playlist(source_id, container_id)
+        )
+
     async def play_media(
         self,
         player_id: int,

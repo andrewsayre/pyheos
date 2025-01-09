@@ -4,7 +4,6 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.15 Delete HEOS Playlist
     4.4.17 Retrieve Album Metadata
     4.4.19 Set service option
     4.4.20 Universal Search (Multi-Search)
@@ -230,4 +229,16 @@ class BrowseCommands:
                 const.ATTR_CONTAINER_ID: container_id,
                 const.ATTR_NAME: new_name,
             },
+        )
+
+    @staticmethod
+    def delete_playlist(source_id: int, container_id: str) -> HeosCommand:
+        """
+        Create a HEOS command to delete a playlist.
+
+        References:
+            4.4.15 Delete HEOS Playlist"""
+        return HeosCommand(
+            command.COMMAND_BROWSE_DELETE__PLAYLIST,
+            {const.ATTR_SOURCE_ID: source_id, const.ATTR_CONTAINER_ID: container_id},
         )

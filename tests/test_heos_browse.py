@@ -178,3 +178,15 @@ async def test_rename_playlist_invalid_name_raises(
         match=error,
     ):
         await heos.rename_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566", name)
+
+
+@calls_command(
+    "browse.delete_playlist",
+    {
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
+        const.ATTR_CONTAINER_ID: 171566,
+    },
+)
+async def test_delete_playlist(heos: Heos) -> None:
+    """Test deleting a playlist."""
+    await heos.delete_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566")
