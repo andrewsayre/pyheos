@@ -467,6 +467,19 @@ class BrowseMixin(ConnectionMixin):
             )
         )
 
+    async def rename_playlist(
+        self, source_id: int, container_id: str, new_name: str
+    ) -> None:
+        """
+        Rename a HEOS playlist.
+
+        References:
+            4.4.14 Rename HEOS Playlist
+        """
+        await self._connection.command(
+            BrowseCommands.rename_playlist(source_id, container_id, new_name)
+        )
+
     async def play_media(
         self,
         player_id: int,

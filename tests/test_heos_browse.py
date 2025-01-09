@@ -144,3 +144,37 @@ async def test_search_with_range(heos: Heos) -> None:
     assert result.returned == 15
     assert result.count == 15
     assert len(result.items) == 15
+
+
+@calls_command(
+    "browse.rename_playlist",
+    {
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
+        const.ATTR_CONTAINER_ID: 171566,
+        const.ATTR_NAME: "New Name",
+    },
+)
+async def test_rename_playlist(heos: Heos) -> None:
+    """Test renaming a playlist."""
+    await heos.rename_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566", "New Name")
+
+
+@pytest.mark.parametrize(
+    ("name", "error"),
+    [
+        ("", "'new_name' parameter must not be empty"),
+        (
+            "x" * 129,
+            "'new_name' parameter must be less than or equal to 128 characters",
+        ),
+    ],
+)
+async def test_rename_playlist_invalid_name_raises(
+    heos: Heos, name: str, error: str
+) -> None:
+    """Test renaming a playlist."""
+    with pytest.raises(
+        ValueError,
+        match=error,
+    ):
+        await heos.rename_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566", name)

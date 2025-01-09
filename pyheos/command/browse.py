@@ -4,12 +4,13 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.14 Rename HEOS Playlist
     4.4.15 Delete HEOS Playlist
     4.4.17 Retrieve Album Metadata
     4.4.19 Set service option
     4.4.20 Universal Search (Multi-Search)
 
+Not implemented:
+    4.4.13 Get HEOS Playlists: Refer to Browse Sources and Browse Source Containers
 
 """
 
@@ -205,3 +206,28 @@ class BrowseCommands:
         if media_id is not None:
             params[const.ATTR_MEDIA_ID] = media_id
         return HeosCommand(command.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+
+    @staticmethod
+    def rename_playlist(
+        source_id: int, container_id: str, new_name: str
+    ) -> HeosCommand:
+        """
+        Create a HEOS command to rename a playlist.
+
+        References:
+            4.4.14 Rename HEOS Playlist
+        """
+        if new_name == "":
+            raise ValueError("'new_name' parameter must not be empty")
+        if len(new_name) > 128:
+            raise ValueError(
+                "'new_name' parameter must be less than or equal to 128 characters"
+            )
+        return HeosCommand(
+            command.COMMAND_BROWSE_RENAME_PLAYLIST,
+            {
+                const.ATTR_SOURCE_ID: source_id,
+                const.ATTR_CONTAINER_ID: container_id,
+                const.ATTR_NAME: new_name,
+            },
+        )
