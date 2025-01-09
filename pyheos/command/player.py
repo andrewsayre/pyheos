@@ -217,7 +217,7 @@ class PlayerCommands:
 
         References:
             4.2.18 Save Queue as Playlist"""
-        if len(name) >= 128:
+        if len(name) > 128:
             raise ValueError("'name' must be less than or equal to 128 characters")
         return HeosCommand(
             command.COMMAND_SAVE_QUEUE,

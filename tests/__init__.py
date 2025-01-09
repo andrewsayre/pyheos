@@ -473,6 +473,7 @@ class CommandMatcher:
             const.ATTR_PLAYER_ID: "{player_id}",
             const.ATTR_STATE: "{state}",
             const.ATTR_LEVEL: "{level}",
+            const.ATTR_OPTIONS: "{options}",
         }
         for key, token in keys.items():
             value = query.get(key)

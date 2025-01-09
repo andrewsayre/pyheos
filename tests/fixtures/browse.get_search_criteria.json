@@ -1,0 +1,1 @@
+{"heos": {"command": "browse/get_search_criteria", "result": "success", "message": "sid=10"}, "payload": [{"name": "Artist", "scid": 1, "wildcard": "no"}, {"name": "Album", "scid": 2, "wildcard": "no"}, {"name": "Track", "scid": 3, "wildcard": "no", "cid": "SEARCHED_TRACKS-", "playable": "yes"}, {"name": "Playlist", "scid": 6, "wildcard": "no"}]}

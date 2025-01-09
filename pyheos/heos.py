@@ -20,8 +20,15 @@ from pyheos.dispatch import (
     callback_wrapper,
 )
 from pyheos.error import CommandAuthenticationError, CommandFailedError
-from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
+from pyheos.media import (
+    BrowseResult,
+    MediaItem,
+    MediaMusicSource,
+    QueueItem,
+    RetreiveMetadataResult,
+)
 from pyheos.message import HeosMessage
+from pyheos.search import MultiSearchResult, SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
 
 from . import const
@@ -238,6 +245,43 @@ class BrowseMixin(ConnectionMixin):
             self._music_sources_loaded = True
         return self._music_sources
 
+    async def get_music_source_info(
+        self,
+        source_id: int | None = None,
+        music_source: MediaMusicSource | None = None,
+        *,
+        refresh: bool = False,
+    ) -> MediaMusicSource:
+        """
+        Get information about a specific music source.
+
+        References:
+            4.4.2 Get Source Info
+        """
+        if source_id is None and music_source is None:
+            raise ValueError("Either source_id or music_source must be provided")
+        if source_id is not None and music_source is not None:
+            raise ValueError("Only one of source_id or music_source should be provided")
+
+        # if only source_id provided, try getting from loaded
+        if music_source is None:
+            assert source_id is not None
+            music_source = self._music_sources.get(source_id)
+        else:
+            source_id = music_source.source_id
+
+        if music_source is None or refresh:
+            # Get the latest information
+            result = await self._connection.command(
+                BrowseCommands.get_music_source_info(source_id)
+            )
+            payload = cast(dict[str, Any], result.payload)
+            if music_source is None:
+                music_source = MediaMusicSource.from_data(payload, cast("Heos", self))
+            else:
+                music_source._update_from_data(payload)
+        return music_source
+
     async def browse(
         self,
         source_id: int,
@@ -264,7 +308,7 @@ class BrowseMixin(ConnectionMixin):
         message = await self._connection.command(
             BrowseCommands.browse(source_id, container_id, range_start, range_end)
         )
-        return BrowseResult.from_data(message, cast("Heos", self))
+        return BrowseResult._from_message(message, cast("Heos", self))
 
     async def browse_media(
         self,
@@ -297,6 +341,40 @@ class BrowseMixin(ConnectionMixin):
             return await self.browse(
                 media.source_id, media.container_id, range_start, range_end
             )
+
+    async def get_search_criteria(self, source_id: int) -> list[SearchCriteria]:
+        """
+        Create a HEOS command to get the search criteria.
+
+        References:
+            4.4.5 Get Search Criteria
+        """
+        result = await self._connection.command(
+            BrowseCommands.get_search_criteria(source_id)
+        )
+        payload = cast(list[dict[str, str]], result.payload)
+        return [SearchCriteria._from_data(data) for data in payload]
+
+    async def search(
+        self,
+        source_id: int,
+        search: str,
+        criteria_id: int,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> SearchResult:
+        """
+        Create a HEOS command to search for media.
+
+        References:
+            4.4.6 Search"""
+
+        result = await self._connection.command(
+            BrowseCommands.search(
+                source_id, search, criteria_id, range_start, range_end
+            )
+        )
+        return SearchResult._from_message(result, cast("Heos", self))
 
     async def play_input_source(
         self, player_id: int, input: str, source_player_id: int | None = None
@@ -395,6 +473,75 @@ class BrowseMixin(ConnectionMixin):
             )
         )
 
+    async def rename_playlist(
+        self, source_id: int, container_id: str, new_name: str
+    ) -> None:
+        """
+        Rename a HEOS playlist.
+
+        References:
+            4.4.14 Rename HEOS Playlist
+        """
+        await self._connection.command(
+            BrowseCommands.rename_playlist(source_id, container_id, new_name)
+        )
+
+    async def delete_playlist(self, source_id: int, container_id: str) -> None:
+        """
+        Create a HEOS command to delete a playlist.
+
+        References:
+            4.4.15 Delete HEOS Playlist"""
+        await self._connection.command(
+            BrowseCommands.delete_playlist(source_id, container_id)
+        )
+
+    async def retrieve_metadata(
+        self, source_it: int, container_id: str
+    ) -> RetreiveMetadataResult:
+        """
+        Create a HEOS command to retrieve metadata. Only supported by Rhapsody/Napster music sources.
+
+        References:
+            4.4.17 Retrieve Metadata
+        """
+        result = await self._connection.command(
+            BrowseCommands.retrieve_metadata(source_it, container_id)
+        )
+        return RetreiveMetadataResult._from_message(result)
+
+    async def set_service_option(
+        this,
+        option_id: int,
+        source_id: int | None = None,
+        container_id: str | None = None,
+        media_id: str | None = None,
+        player_id: int | None = None,
+        name: str | None = None,
+        criteria_id: int | None = None,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> None:
+        """
+        Create a HEOS command to set a service option.
+
+        References:
+            4.4.19 Set Service Option
+        """
+        await this._connection.command(
+            BrowseCommands.set_service_option(
+                option_id,
+                source_id,
+                container_id,
+                media_id,
+                player_id,
+                name,
+                criteria_id,
+                range_start,
+                range_end,
+            )
+        )
+
     async def play_media(
         self,
         player_id: int,
@@ -476,6 +623,23 @@ class BrowseMixin(ConnectionMixin):
         result = await self.browse(const.MUSIC_SOURCE_PLAYLISTS)
         return result.items
 
+    async def multi_search(
+        self,
+        search: str,
+        source_ids: list[int] | None = None,
+        criteria_ids: list[int] | None = None,
+    ) -> MultiSearchResult:
+        """
+        Create a HEOS command to perform a multi-search.
+
+        References:
+            4.4.20 Multi Search
+        """
+        result = await self._connection.command(
+            BrowseCommands.multi_search(search, source_ids, criteria_ids)
+        )
+        return MultiSearchResult._from_message(result, cast("Heos", self))
+
 
 class PlayerMixin(ConnectionMixin):
     """A mixin to provide access to the player commands."""
@@ -542,7 +706,7 @@ class PlayerMixin(ConnectionMixin):
 
             payload = cast(dict[str, Any], result.payload)
             if player is None:
-                player = HeosPlayer.from_data(payload, cast("Heos", self))
+                player = HeosPlayer._from_data(payload, cast("Heos", self))
             else:
                 player._update_from_data(payload)
             await player.refresh(refresh_base_info=False)
@@ -581,7 +745,7 @@ class PlayerMixin(ConnectionMixin):
                 existing.remove(player)
             else:
                 # New player
-                player = HeosPlayer.from_data(player_data, cast("Heos", self))
+                player = HeosPlayer._from_data(player_data, cast("Heos", self))
                 new_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
@@ -641,7 +805,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.get_now_playing_media(player_id)
         )
         instance = update or HeosNowPlayingMedia()
-        instance.update_from_message(result)
+        instance._update_from_message(result)
         return instance
 
     async def player_get_volume(self, player_id: int) -> int:
@@ -705,7 +869,7 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.13 Get Play Mode"""
         result = await self._connection.command(PlayerCommands.get_play_mode(player_id))
-        return PlayMode.from_data(result)
+        return PlayMode._from_data(result)
 
     async def player_set_play_mode(
         self, player_id: int, repeat: const.RepeatType, shuffle: bool
@@ -844,7 +1008,7 @@ class PlayerMixin(ConnectionMixin):
         return bool(payload[const.ATTR_UPDATE] == const.VALUE_UPDATE_EXIST)
 
 
-class GroupMixin(PlayerMixin):
+class GroupMixin(ConnectionMixin):
     """A mixin to provide access to the group commands."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -1243,7 +1407,9 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Process an event about a player."""
         player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
-        if player and (await player.on_event(event, self._options.all_progress_events)):
+        if player and (
+            await player._on_event(event, self._options.all_progress_events)
+        ):
             await self.dispatcher.wait_send(
                 const.SIGNAL_PLAYER_EVENT,
                 player_id,

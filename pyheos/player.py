@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
-from pyheos.media import MediaItem, QueueItem
+from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
 
 from . import const
@@ -36,12 +36,15 @@ class HeosNowPlayingMedia:
     supported_controls: Sequence[str] = field(
         default_factory=lambda: const.CONTROLS_ALL, init=False
     )
+    options: Sequence[ServiceOption] = field(
+        repr=False, hash=False, compare=False, default_factory=list
+    )
 
     def __post_init__(self, *args: Any, **kwargs: Any) -> None:
         """Pst initialize the now playing media."""
         self._update_supported_controls()
 
-    def update_from_message(self, message: HeosMessage) -> None:
+    def _update_from_message(self, message: HeosMessage) -> None:
         """Update the current instance from another instance."""
         data = cast(dict[str, Any], message.payload)
         self.type = data.get(const.ATTR_TYPE)
@@ -52,13 +55,14 @@ class HeosNowPlayingMedia:
         self.image_url = data.get(const.ATTR_IMAGE_URL)
         self.album_id = data.get(const.ATTR_ALBUM_ID)
         self.media_id = data.get(const.ATTR_MEDIA_ID)
-        self.queue_id = self.get_optional_int(data.get(const.ATTR_QUEUE_ID))
-        self.source_id = self.get_optional_int(data.get(const.ATTR_SOURCE_ID))
+        self.queue_id = self.__get_optional_int(data.get(const.ATTR_QUEUE_ID))
+        self.source_id = self.__get_optional_int(data.get(const.ATTR_SOURCE_ID))
+        self.options = ServiceOption._from_options(message.options)
         self._update_supported_controls()
         self.clear_progress()
 
     @staticmethod
-    def get_optional_int(value: Any) -> int | None:
+    def __get_optional_int(value: Any) -> int | None:
         try:
             return int(str(value))
         except (TypeError, ValueError):
@@ -76,7 +80,7 @@ class HeosNowPlayingMedia:
                 )
         self.supported_controls = new_supported_controls
 
-    def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
+    def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self.current_position is None:
             self.current_position = event.get_message_value_int(
@@ -101,10 +105,10 @@ class PlayMode:
     repeat: const.RepeatType
     shuffle: bool
 
-    @classmethod
-    def from_data(cls, data: HeosMessage) -> "PlayMode":
+    @staticmethod
+    def _from_data(data: HeosMessage) -> "PlayMode":
         """Create a new instance from the provided data."""
-        return cls(
+        return PlayMode(
             repeat=const.RepeatType(data.get_message_value(const.ATTR_REPEAT)),
             shuffle=data.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON,
         )
@@ -145,14 +149,13 @@ class HeosPlayer:
             return int(value)
         return None
 
-    @classmethod
-    def from_data(
-        cls,
+    @staticmethod
+    def _from_data(
         data: dict[str, Any],
         heos: Optional["Heos"] = None,
     ) -> "HeosPlayer":
         """Create a new instance from the provided data."""
-        return cls(
+        return HeosPlayer(
             name=data[const.ATTR_NAME],
             player_id=int(data[const.ATTR_PLAYER_ID]),
             model=data[const.ATTR_MODEL],
@@ -177,7 +180,7 @@ class HeosPlayer:
         self.line_out = int(data[const.ATTR_LINE_OUT])
         self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
 
-    async def on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
+    async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
 
         This is an internal method invoked by the Heos class and is not intended for direct use.
@@ -185,7 +188,7 @@ class HeosPlayer:
         Returns:
             True if the player event changed state, other wise False."""
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
-            return self.now_playing_media.on_event(event, all_progress_events)
+            return self.now_playing_media._on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
             self.state = const.PlayState(event.get_message_value(const.ATTR_STATE))
             if self.state == const.PlayState.PLAY:

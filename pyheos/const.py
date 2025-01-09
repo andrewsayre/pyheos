@@ -10,8 +10,8 @@ DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
 ATTR_ADD_CRITERIA_ID: Final = "aid"
-ATTR_ALBUM_ID: Final = "album_id"
 ATTR_ALBUM: Final = "album"
+ATTR_ALBUM_ID: Final = "album_id"
 ATTR_ARTIST: Final = "artist"
 ATTR_AVAILABLE: Final = "available"
 ATTR_COMMAND: Final = "command"
@@ -24,9 +24,11 @@ ATTR_DURATION: Final = "duration"
 ATTR_ENABLE: Final = "enable"
 ATTR_ERROR: Final = "error"
 ATTR_ERROR_ID: Final = "eid"
+ATTR_ERROR_NUMBER: Final = "errno"
 ATTR_GROUP_ID: Final = "gid"
 ATTR_HEOS: Final = "heos"
 ATTR_ID: Final = "id"
+ATTR_IMAGES: Final = "images"
 ATTR_IMAGE_URL: Final = "image_url"
 ATTR_INPUT: Final = "input"
 ATTR_IP_ADDRESS: Final = "ip"
@@ -38,6 +40,8 @@ ATTR_MODEL: Final = "model"
 ATTR_MUTE: Final = "mute"
 ATTR_NAME: Final = "name"
 ATTR_NETWORK: Final = "network"
+ATTR_OPTIONS: Final = "options"
+ATTR_OPTION_ID: Final = "option"
 ATTR_PASSWORD: Final = "pw"
 ATTR_PAYLOAD: Final = "payload"
 ATTR_PLAYABLE: Final = "playable"
@@ -51,16 +55,19 @@ ATTR_REPEAT: Final = "repeat"
 ATTR_RESULT: Final = "result"
 ATTR_RETURNED: Final = "returned"
 ATTR_ROLE: Final = "role"
+ATTR_SEARCH: Final = "search"
+ATTR_SEARCH_CRITERIA_ID: Final = "scid"
 ATTR_SERIAL: Final = "serial"
 ATTR_SERVICE_USER_NAME: Final = "service_username"
 ATTR_SHUFFLE: Final = "shuffle"
+ATTR_SIGNED_IN: Final = "signed_in"
+ATTR_SIGNED_OUT: Final = "signed_out"
 ATTR_SONG: Final = "song"
 ATTR_SOURCE_ID: Final = "sid"
 ATTR_SOURCE_PLAYER_ID: Final = "spid"
 ATTR_SOURCE_QUEUE_ID: Final = "sqid"
-ATTR_SIGNED_OUT: Final = "signed_out"
-ATTR_SIGNED_IN: Final = "signed_in"
 ATTR_STATE: Final = "state"
+ATTR_STATS: Final = "stats"
 ATTR_STATION: Final = "station"
 ATTR_STEP: Final = "step"
 ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
@@ -70,6 +77,9 @@ ATTR_UPDATE: Final = "update"
 ATTR_URL: Final = "url"
 ATTR_USER_NAME: Final = "un"
 ATTR_VERSION: Final = "version"
+ATTR_WIDTH: Final = "width"
+ATTR_WILDCARD: Final = "wildcard"
+
 
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
@@ -355,6 +365,22 @@ class AddCriteriaType(IntEnum):
     REPLACE_AND_PLAY = 4
 
 
+# Service options
+SERVICE_OPTION_ADD_TRACK_TO_LIBRARY: Final = 1
+SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY: Final = 2
+SERVICE_OPTION_ADD_STATION_TO_LIBRARY: Final = 3
+SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY: Final = 4
+SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY: Final = 5
+SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY: Final = 6
+SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY: Final = 7
+SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY: Final = 8
+SERVICE_OPTION_THUMBS_UP: Final = 11
+SERVICE_OPTION_THUMBS_DOWN: Final = 12
+SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA: Final = 13
+SERVICE_OPTION_ADD_TO_FAVORITES: Final = 19
+SERVICE_OPTION_REMOVE_FROM_FAVORITES: Final = 20
+
+
 # Signals
 SIGNAL_PLAYER_EVENT: Final = "player_event"
 SIGNAL_GROUP_EVENT: Final = "group_event"
@@ -363,9 +389,6 @@ SIGNAL_HEOS_EVENT: Final = "heos_event"
 EVENT_CONNECTED: Final = "connected"
 EVENT_DISCONNECTED: Final = "disconnected"
 EVENT_USER_CREDENTIALS_INVALID: Final = "user credentials invalid"
-
-BASE_URI: Final = "heos://"
-
 
 # Events
 EVENT_PLAYER_STATE_CHANGED: Final = "event/player_state_changed"

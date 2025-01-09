@@ -1,0 +1,22 @@
+{
+    "heos": {
+        "command": "browse/retrieve_metadata",
+        "result": "success",
+        "message": "sid=6&cid=123456&returned=1&count=1"
+    },
+    "payload": [
+        {
+            "album_id": "7890",
+            "images": [
+                {
+                    "image_url": "http://resources.wimpmusic.com/images/fbfe5e8b/b775/4d97/9053/8f0ac7daf4fd/640x640.jpg",
+                    "width": 640
+                },
+                {
+                    "image_url": "http://resources.wimpmusic.com/images/fbfe5e8b/b775/4d97/9053/8f0ac7daf4fd/320x320.jpg",
+                    "width": 320
+                }
+            ]
+        }
+    ]
+}

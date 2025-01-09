@@ -22,15 +22,22 @@ from .error import (
 from .group import HeosGroup
 from .heos import Heos, HeosOptions
 from .media import (
+    AlbumMetadata,
     BrowseResult,
+    ImageMetadata,
     Media,
     MediaItem,
     MediaMusicSource,
+    QueueItem,
+    RetreiveMetadataResult,
+    ServiceOption,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
 
 __all__ = [
+    "AlbumMetadata",
     "BrowseResult",
     "CallbackType",
     "CommandAuthenticationError",
@@ -47,15 +54,23 @@ __all__ = [
     "HeosError",
     "HeosGroup",
     "HeosHost",
+    "HeosNowPlayingMedia",
     "HeosOptions",
     "HeosPlayer",
-    "HeosNowPlayingMedia",
     "HeosSystem",
+    "ImageMetadata",
     "Media",
     "MediaItem",
     "MediaMusicSource",
-    "PlayerEventCallbackType",
+    "MultiSearchResult",
+    "QueueItem",
+    "ServiceOption",
     "PlayMode",
+    "PlayerEventCallbackType",
+    "RetreiveMetadataResult",
+    "SearchCriteria",
+    "SearchResult",
+    "SearchStatistic",
     "SendType",
     "TargetType",
 ]

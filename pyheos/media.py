@@ -80,6 +80,15 @@ class MediaMusicSource(Media):
             heos=heos,
         )
 
+    def _update_from_data(self, data: dict[str, Any]) -> None:
+        """Update the instance with new data."""
+        self.source_id = int(data[const.ATTR_SOURCE_ID])
+        self.name = data[const.ATTR_NAME]
+        self.type = const.MediaType(data[const.ATTR_TYPE])
+        self.image_url = data[const.ATTR_IMAGE_URL]
+        self.available = data[const.ATTR_AVAILABLE] == const.VALUE_TRUE
+        self.service_username = data.get(const.ATTR_SERVICE_USER_NAME)
+
     def clone(self) -> "MediaMusicSource":
         """Create a new instance from the current instance."""
         return MediaMusicSource(
@@ -91,6 +100,11 @@ class MediaMusicSource(Media):
             service_username=self.service_username,
             heos=self.heos,
         )
+
+    async def refresh(self) -> None:
+        """Refresh the instance with the latest data."""
+        assert self.heos, "Heos instance not set"
+        await self.heos.get_music_source_info(music_source=self, refresh=True)
 
     async def browse(self) -> "BrowseResult":
         """Browse the contents of this source.
@@ -194,6 +208,44 @@ class MediaItem(Media):
 
 
 @dataclass
+class ServiceOption:
+    """Define a service option."""
+
+    context: str
+    id: int
+    name: str
+
+    @staticmethod
+    def _from_options(
+        data: list[dict[str, list[dict[str, Any]]]] | None,
+    ) -> list["ServiceOption"]:
+        """Create a list of instances from the provided data."""
+        options: list[ServiceOption] = []
+        if data is None:
+            return options
+
+        # Unpack the options and flatten structure. Example payload:
+        # [{"play": [{"id": 19, "name": "Add to HEOS Favorites"}]}]
+        for context in data:
+            for context_key, context_options in context.items():
+                options.extend(
+                    [
+                        ServiceOption.__from_data(context_key, item)
+                        for item in context_options
+                    ]
+                )
+
+        return options
+
+    @staticmethod
+    def __from_data(context: str, data: dict[str, str]) -> "ServiceOption":
+        """Create a new instance from the provided data."""
+        return ServiceOption(
+            context=context, id=int(data[const.ATTR_ID]), name=data[const.ATTR_NAME]
+        )
+
+
+@dataclass
 class BrowseResult:
     """Define the result of a browse operation."""
 
@@ -201,18 +253,19 @@ class BrowseResult:
     returned: int
     source_id: int
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
+    options: Sequence[ServiceOption] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
-    @classmethod
-    def from_data(
-        cls, message: HeosMessage, heos: Optional["Heos"] = None
+    @staticmethod
+    def _from_message(
+        message: HeosMessage, heos: Optional["Heos"] = None
     ) -> "BrowseResult":
         """Create a new instance from the provided data."""
         source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
         container_id = message.message.get(const.ATTR_CONTAINER_ID)
 
-        return cls(
+        return BrowseResult(
             count=message.get_message_value_int(const.ATTR_COUNT),
             returned=message.get_message_value_int(const.ATTR_RETURNED),
             source_id=source_id,
@@ -223,5 +276,66 @@ class BrowseResult:
                     for item in cast(Sequence[dict], message.payload)
                 ]
             ),
+            options=ServiceOption._from_options(message.options),
             heos=heos,
+        )
+
+
+@dataclass
+class ImageMetadata:
+    """Define metadata for an image."""
+
+    image_url: str
+    width: int
+
+    @staticmethod
+    def _from_data(data: dict[str, Any]) -> "ImageMetadata":
+        """Create a new instance from the provided data."""
+        return ImageMetadata(
+            image_url=data[const.ATTR_IMAGE_URL],
+            width=int(data[const.ATTR_WIDTH]),
+        )
+
+
+@dataclass
+class AlbumMetadata:
+    """Define metadata for an album."""
+
+    album_id: str
+    images: Sequence[ImageMetadata] = field(repr=False, hash=False, compare=False)
+
+    @staticmethod
+    def _from_data(data: dict[str, Any]) -> "AlbumMetadata":
+        """Create a new instance from the provided data."""
+        return AlbumMetadata(
+            album_id=data[const.ATTR_ALBUM_ID],
+            images=[
+                ImageMetadata._from_data(cast(dict[str, Any], image))
+                for image in data[const.ATTR_IMAGES]
+            ],
+        )
+
+
+@dataclass
+class RetreiveMetadataResult:
+    "Define the result of a retrieve metadata operation."
+
+    source_id: int
+    container_id: str
+    returned: int
+    count: int
+    metadata: Sequence[AlbumMetadata] = field(repr=False, hash=False, compare=False)
+
+    @staticmethod
+    def _from_message(message: HeosMessage) -> "RetreiveMetadataResult":
+        "Create a new instance from the provided data."
+        return RetreiveMetadataResult(
+            source_id=message.get_message_value_int(const.ATTR_SOURCE_ID),
+            container_id=message.get_message_value(const.ATTR_CONTAINER_ID),
+            returned=message.get_message_value_int(const.ATTR_RETURNED),
+            count=message.get_message_value_int(const.ATTR_COUNT),
+            metadata=[
+                AlbumMetadata._from_data(item)
+                for item in cast(Sequence[dict[str, Any]], message.payload)
+            ],
         )
