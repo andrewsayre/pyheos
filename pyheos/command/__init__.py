@@ -5,6 +5,7 @@ from typing import Final
 # Browse commands
 COMMAND_BROWSE_GET_SOURCES: Final = "browse/get_music_sources"
 COMMAND_BROWSE_GET_SOURCE_INFO: Final = "browse/get_source_info"
+COMMAND_BROWSE_GET_SEARCH_CRITERIA: Final = "browse/get_search_criteria"
 COMMAND_BROWSE_BROWSE: Final = "browse/browse"
 COMMAND_BROWSE_PLAY_INPUT: Final = "browse/play_input"
 COMMAND_BROWSE_PLAY_PRESET: Final = "browse/play_preset"

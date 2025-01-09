@@ -67,3 +67,18 @@ async def test_get_music_source_info_invalid_parameters_raises(
     """Test retrieving player info with invalid parameters raises."""
     with pytest.raises(ValueError, match=error):
         await heos.get_music_source_info(source_id=source_id, music_source=music_source)
+
+
+@calls_command(
+    "browse.get_search_criteria", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL}
+)
+async def test_get_search_criteria(heos: Heos) -> None:
+    """Test retrieving search criteria."""
+    criteria = await heos.get_search_criteria(const.MUSIC_SOURCE_TIDAL)
+    assert len(criteria) == 4
+    item = criteria[2]
+    assert item.name == "Track"
+    assert item.search_criteria_id == 3
+    assert item.wildcard is False
+    assert item.container_id == "SEARCHED_TRACKS-"
+    assert item.playable is True

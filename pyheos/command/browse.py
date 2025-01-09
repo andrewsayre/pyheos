@@ -4,7 +4,6 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.5 Get Source Search Criteria
     4.4.6 Search
     4.4.14 Rename HEOS Playlist
     4.4.15 Delete HEOS Playlist
@@ -69,6 +68,19 @@ class BrowseCommands:
         """
         return HeosCommand(
             command.COMMAND_BROWSE_GET_SOURCE_INFO, {const.ATTR_SOURCE_ID: source_id}
+        )
+
+    @staticmethod
+    def get_search_criteria(source_id: int) -> HeosCommand:
+        """
+        Create a HEOS command to get the search criteria.
+
+        References:
+            4.4.5 Get Search Criteria
+        """
+        return HeosCommand(
+            command.COMMAND_BROWSE_GET_SEARCH_CRITERIA,
+            {const.ATTR_SOURCE_ID: source_id},
         )
 
     @staticmethod
