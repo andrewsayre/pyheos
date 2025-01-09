@@ -64,9 +64,10 @@ async def test_get_music_source_info_by_id_already_loaded_refresh(
     ],
 )
 async def test_get_music_source_info_invalid_parameters_raises(
-    heos: Heos, source_id: int | None, music_source: MediaMusicSource | None, error: str
+    source_id: int | None, music_source: MediaMusicSource | None, error: str
 ) -> None:
     """Test retrieving player info with invalid parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(ValueError, match=error):
         await heos.get_music_source_info(source_id=source_id, music_source=music_source)
 
@@ -693,7 +694,7 @@ async def test_set_sevice_option_invalid_add_favorite_raises(
         const.ATTR_SEARCH_CRITERIA_ID: "0,1,2,3",
     },
 )
-async def test_multi_search(heos: Heos):
+async def test_multi_search(heos: Heos) -> None:
     """Test the multi-search command."""
     result = await heos.multi_search(
         "Tangerine Rays",
@@ -711,7 +712,7 @@ async def test_multi_search(heos: Heos):
     assert len(result.errors) == 2
 
 
-async def test_multi_search_invalid_search_rasis():
+async def test_multi_search_invalid_search_rasis() -> None:
     """Test the multi-search command."""
     heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(

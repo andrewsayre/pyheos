@@ -528,9 +528,10 @@ async def test_get_player_info_by_id_already_loaded_refresh(heos: Heos) -> None:
     ],
 )
 async def test_get_player_info_invalid_parameters_raises(
-    heos: Heos, player_id: int | None, player: HeosPlayer | None, error: str
+    player_id: int | None, player: HeosPlayer | None, error: str
 ) -> None:
     """Test retrieving player info with invalid parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(ValueError, match=error):
         await heos.get_player_info(player_id=player_id, player=player)
 
@@ -1094,10 +1095,10 @@ async def test_browse_media_music_source(
 
 
 async def test_browse_media_music_source_unavailable_rasises(
-    heos: Heos,
     media_music_source_unavailable: MediaMusicSource,
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(ValueError, match="Source is not available to browse"):
         await heos.browse_media(media_music_source_unavailable)
 
@@ -1122,19 +1123,19 @@ async def test_browse_media_item(heos: Heos, media_item_album: MediaItem) -> Non
 
 
 async def test_browse_media_item_not_browsable_raises(
-    heos: Heos, media_item_song: MediaItem
+    media_item_song: MediaItem,
 ) -> None:
     """Test browse with an not browsable MediaItem raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(
         ValueError, match="Only media sources and containers can be browsed"
     ):
         await heos.browse_media(media_item_song)
 
 
-async def test_play_media_unplayable_raises(
-    heos: Heos, media_item_album: MediaItem
-) -> None:
+async def test_play_media_unplayable_raises(media_item_album: MediaItem) -> None:
     """Test play media with unplayable source raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     media_item_album.playable = False
 
     with pytest.raises(
@@ -1159,9 +1160,10 @@ async def test_play_media_song(heos: Heos, media_item_song: MediaItem) -> None:
 
 
 async def test_play_media_song_missing_container_raises(
-    heos: Heos, media_item_song: MediaItem
+    media_item_song: MediaItem,
 ) -> None:
     """Test play song succeeseds."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     media_item_song.container_id = None
 
     with pytest.raises(
@@ -1199,9 +1201,10 @@ async def test_play_media_station(heos: Heos, media_item_station: MediaItem) -> 
 
 
 async def test_play_media_station_missing_media_id_raises(
-    heos: Heos, media_item_station: MediaItem
+    media_item_station: MediaItem,
 ) -> None:
     """Test play song succeeseds."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     media_item_station.media_id = None
 
     with pytest.raises(
@@ -1424,9 +1427,10 @@ async def test_get_group_info_by_id_already_loaded_refresh(heos: Heos) -> None:
     ],
 )
 async def test_get_group_info_invalid_parameters_raises(
-    heos: Heos, group_id: int | None, group: HeosGroup | None, error: str
+    group_id: int | None, group: HeosGroup | None, error: str
 ) -> None:
     """Test retrieving group info with invalid parameters raises."""
+    heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(ValueError, match=error):
         await heos.get_group_info(group_id=group_id, group=group)
 
