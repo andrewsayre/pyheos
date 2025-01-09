@@ -22,7 +22,7 @@ from pyheos.dispatch import (
 from pyheos.error import CommandAuthenticationError, CommandFailedError
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, QueueItem
 from pyheos.message import HeosMessage
-from pyheos.search import SearchCriteria
+from pyheos.search import SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
 
 from . import const
@@ -348,6 +348,27 @@ class BrowseMixin(ConnectionMixin):
         )
         payload = cast(list[dict[str, str]], result.payload)
         return [SearchCriteria._from_data(data) for data in payload]
+
+    async def search(
+        self,
+        source_id: int,
+        search: str,
+        criteria_id: int,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> SearchResult:
+        """
+        Create a HEOS command to search for media.
+
+        References:
+            4.4.6 Search"""
+
+        result = await self._connection.command(
+            BrowseCommands.search(
+                source_id, search, criteria_id, range_start, range_end
+            )
+        )
+        return SearchResult._from_message(result, cast("Heos", self))
 
     async def play_input_source(
         self, player_id: int, input: str, source_player_id: int | None = None

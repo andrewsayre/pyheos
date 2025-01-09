@@ -78,7 +78,52 @@ async def test_get_search_criteria(heos: Heos) -> None:
     assert len(criteria) == 4
     item = criteria[2]
     assert item.name == "Track"
-    assert item.search_criteria_id == 3
+    assert item.criteria_id == 3
     assert item.wildcard is False
     assert item.container_id == "SEARCHED_TRACKS-"
     assert item.playable is True
+
+
+@calls_command(
+    "browse.search",
+    {
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL,
+        const.ATTR_SEARCH_CRITERIA_ID: 3,
+        const.ATTR_SEARCH: "Tangerine Rays",
+    },
+)
+async def test_search(heos: Heos) -> None:
+    """Test the search method."""
+
+    result = await heos.search(const.MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3)
+
+    assert result.source_id == const.MUSIC_SOURCE_TIDAL
+    assert result.criteria_id == 3
+    assert result.search == "Tangerine Rays"
+    assert result.returned == 15
+    assert result.count == 15
+    assert len(result.items) == 15
+
+
+@calls_command(
+    "browse.search",
+    {
+        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL,
+        const.ATTR_SEARCH_CRITERIA_ID: 3,
+        const.ATTR_SEARCH: "Tangerine Rays",
+        const.ATTR_RANGE: "0,14",
+    },
+)
+async def test_search_with_range(heos: Heos) -> None:
+    """Test the search method."""
+
+    result = await heos.search(
+        const.MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3, range_start=0, range_end=14
+    )
+
+    assert result.source_id == const.MUSIC_SOURCE_TIDAL
+    assert result.criteria_id == 3
+    assert result.search == "Tangerine Rays"
+    assert result.returned == 15
+    assert result.count == 15
+    assert len(result.items) == 15

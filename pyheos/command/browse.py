@@ -4,7 +4,6 @@ Define the browse command module.
 This module creates HEOS browse commands.
 
 Commands not currently implemented:
-    4.4.6 Search
     4.4.14 Rename HEOS Playlist
     4.4.15 Delete HEOS Playlist
     4.4.17 Retrieve Album Metadata
@@ -82,6 +81,29 @@ class BrowseCommands:
             command.COMMAND_BROWSE_GET_SEARCH_CRITERIA,
             {const.ATTR_SOURCE_ID: source_id},
         )
+
+    @staticmethod
+    def search(
+        source_id: int,
+        search: str,
+        criteria_id: int,
+        range_start: int | None = None,
+        range_end: int | None = None,
+    ) -> HeosCommand:
+        """
+        Create a HEOS command to search for media.
+
+        References:
+            4.4.6 Search
+        """
+        params = {
+            const.ATTR_SOURCE_ID: source_id,
+            const.ATTR_SEARCH: search,
+            const.ATTR_SEARCH_CRITERIA_ID: criteria_id,
+        }
+        if isinstance(range_start, int) and isinstance(range_end, int):
+            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
+        return HeosCommand(command.COMMAND_BROWSE_SEARCH, params)
 
     @staticmethod
     def play_station(

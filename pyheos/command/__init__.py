@@ -11,6 +11,7 @@ COMMAND_BROWSE_PLAY_INPUT: Final = "browse/play_input"
 COMMAND_BROWSE_PLAY_PRESET: Final = "browse/play_preset"
 COMMAND_BROWSE_PLAY_STREAM: Final = "browse/play_stream"
 COMMAND_BROWSE_ADD_TO_QUEUE: Final = "browse/add_to_queue"
+COMMAND_BROWSE_SEARCH: Final = "browse/search"
 
 # Player commands
 COMMAND_GET_PLAYERS: Final = "player/get_players"
