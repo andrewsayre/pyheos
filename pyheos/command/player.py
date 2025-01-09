@@ -8,7 +8,7 @@ from typing import Any
 
 from pyheos import command, const
 from pyheos.message import HeosCommand
-from pyheos.player import PlayState
+from pyheos.player import PlayState, RepeatType
 
 
 class PlayerCommands:
@@ -157,9 +157,7 @@ class PlayerCommands:
         )
 
     @staticmethod
-    def set_play_mode(
-        player_id: int, repeat: const.RepeatType, shuffle: bool
-    ) -> HeosCommand:
+    def set_play_mode(player_id: int, repeat: RepeatType, shuffle: bool) -> HeosCommand:
         """Set the current play mode.
 
         References:

@@ -6,7 +6,7 @@ import pytest
 
 from pyheos import const
 from pyheos.media import MediaItem
-from pyheos.player import HeosPlayer, PlayState
+from pyheos.player import HeosPlayer, PlayState, RepeatType
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
@@ -174,13 +174,13 @@ async def test_volume_down(player: HeosPlayer) -> None:
     "player.set_play_mode",
     {
         const.ATTR_PLAYER_ID: 1,
-        const.ATTR_REPEAT: const.RepeatType.ON_ALL,
+        const.ATTR_REPEAT: RepeatType.ON_ALL,
         const.ATTR_SHUFFLE: const.VALUE_ON,
     },
 )
 async def test_set_play_mode(player: HeosPlayer) -> None:
     """Test the set play mode command."""
-    await player.set_play_mode(const.RepeatType.ON_ALL, True)
+    await player.set_play_mode(RepeatType.ON_ALL, True)
 
 
 @calls_command("player.play_next", {const.ATTR_PLAYER_ID: 1})

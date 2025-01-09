@@ -35,7 +35,7 @@ from . import const
 from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
-from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState, RepeatType
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -870,7 +870,7 @@ class PlayerMixin(ConnectionMixin):
         return PlayMode._from_data(result)
 
     async def player_set_play_mode(
-        self, player_id: int, repeat: const.RepeatType, shuffle: bool
+        self, player_id: int, repeat: RepeatType, shuffle: bool
     ) -> None:
         """Set the play mode of the player.
 

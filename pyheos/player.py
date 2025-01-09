@@ -25,6 +25,14 @@ class PlayState(StrEnum):
     STOP = "stop"
 
 
+class RepeatType(StrEnum):
+    """Define the repeat types."""
+
+    ON_ALL = "on_all"
+    ON_ONE = "on_one"
+    OFF = "off"
+
+
 @dataclass
 class HeosNowPlayingMedia:
     """Define now playing media information."""
@@ -111,14 +119,14 @@ class HeosNowPlayingMedia:
 class PlayMode:
     """Define the play mode options for a player."""
 
-    repeat: const.RepeatType
+    repeat: RepeatType
     shuffle: bool
 
     @staticmethod
     def _from_data(data: HeosMessage) -> "PlayMode":
         """Create a new instance from the provided data."""
         return PlayMode(
-            repeat=const.RepeatType(data.get_message_value(const.ATTR_REPEAT)),
+            repeat=RepeatType(data.get_message_value(const.ATTR_REPEAT)),
             shuffle=data.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON,
         )
 
@@ -138,8 +146,8 @@ class HeosPlayer:
     state: PlayState | None = field(repr=True, hash=False, compare=False, default=None)
     volume: int = field(repr=False, hash=False, compare=False, default=0)
     is_muted: bool = field(repr=False, hash=False, compare=False, default=False)
-    repeat: const.RepeatType = field(
-        repr=False, hash=False, compare=False, default=const.RepeatType.OFF
+    repeat: RepeatType = field(
+        repr=False, hash=False, compare=False, default=RepeatType.OFF
     )
     shuffle: bool = field(repr=False, hash=False, compare=False, default=False)
     playback_error: str | None = field(
@@ -206,7 +214,7 @@ class HeosPlayer:
             self.volume = event.get_message_value_int(const.ATTR_LEVEL)
             self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self.repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
+            self.repeat = RepeatType(event.get_message_value(const.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
             self.shuffle = event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
@@ -322,7 +330,7 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         await self.heos.player_toggle_mute(self.player_id)
 
-    async def set_play_mode(self, repeat: const.RepeatType, shuffle: bool) -> None:
+    async def set_play_mode(self, repeat: RepeatType, shuffle: bool) -> None:
         """Set the play mode of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_mode(self.player_id, repeat, shuffle)

@@ -109,14 +109,6 @@ DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"
 
 
-class RepeatType(StrEnum):
-    """Define the repeat types."""
-
-    ON_ALL = "on_all"
-    ON_ONE = "on_one"
-    OFF = "off"
-
-
 class MediaType(StrEnum):
     """Define the media types."""
 
