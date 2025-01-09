@@ -8,6 +8,7 @@ import pytest
 
 from pyheos import command as commands
 from pyheos import const
+from pyheos.connection import ConnectionState
 from pyheos.credentials import Credentials
 from pyheos.dispatch import Dispatcher
 from pyheos.error import (
@@ -39,7 +40,7 @@ async def test_init() -> None:
     assert isinstance(heos.dispatcher, Dispatcher)
     assert len(heos.players) == 0
     assert len(heos.music_sources) == 0
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
 @calls_command("player.get_players")
@@ -78,7 +79,7 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
     await heos.connect()
     assert signal.is_set()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
     assert len(mock_device.connections) == 1
     connection = mock_device.connections[0]
     assert connection.is_registered_for_events
@@ -264,7 +265,7 @@ async def test_connect_multiple_succeeds() -> None:
     try:
         await heos.connect()
         await signal.wait()
-        assert heos.connection_state == const.STATE_CONNECTED
+        assert heos.connection_state == ConnectionState.CONNECTED
         signal.clear()
 
         # Try calling again
@@ -280,7 +281,7 @@ async def test_disconnect(mock_device: MockHeosDevice, heos: Heos) -> None:
     signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
     await heos.disconnect()
     assert signal.is_set()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
 async def test_commands_fail_when_disconnected(
@@ -289,7 +290,7 @@ async def test_commands_fail_when_disconnected(
     """Test calling commands fail when disconnected."""
     # Fixture automatically connects
     await heos.disconnect()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
     with pytest.raises(CommandError, match="Not connected to device") as e_info:
         await heos.load_players()
@@ -309,7 +310,7 @@ async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None
     # Assert transitions to disconnected and fires disconnect
     await mock_device.stop()
     await disconnect_signal.wait()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
 async def test_connection_error_during_command(
@@ -328,7 +329,7 @@ async def test_connection_error_during_command(
     assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
 
     await disconnect_signal.wait()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
 async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
@@ -353,19 +354,20 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     # Assert open and fires connected
     await heos.connect()
     assert connect_signal.is_set()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
     connect_signal.clear()
 
     # Assert transitions to reconnecting and fires disconnect
     await mock_device.stop()
     await disconnect_signal.wait()
-    assert heos.connection_state == const.STATE_RECONNECTING
+    assert heos.connection_state == ConnectionState.RECONNECTING  # type: ignore[comparison-overlap]
 
     # Assert reconnects once server is back up and fires connected
-    await asyncio.sleep(0.5)  # Force reconnect timeout
+    # Force reconnect timeout
+    await asyncio.sleep(0.5)  # type: ignore[unreachable]
     await mock_device.start()
     await connect_signal.wait()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
 
     await heos.disconnect()
 
@@ -392,7 +394,7 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     # Assert open and fires connected
     await heos.connect()
     assert connect_signal.is_set()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
     connect_signal.clear()
 
     # Act
@@ -404,7 +406,7 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     # Assert signals set
     await disconnect_signal.wait()
     await connect_signal.wait()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
 
     await heos.disconnect()
 
@@ -431,19 +433,19 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     # Assert open and fires connected
     await heos.connect()
     assert connect_signal.is_set()
-    assert heos.connection_state == const.STATE_CONNECTED
+    assert heos.connection_state == ConnectionState.CONNECTED
     connect_signal.clear()
 
     # Assert transitions to reconnecting and fires disconnect
     await mock_device.stop()
     await disconnect_signal.wait()
-    assert heos.connection_state == const.STATE_RECONNECTING
+    assert heos.connection_state == ConnectionState.RECONNECTING  # type: ignore[comparison-overlap]
 
-    await asyncio.sleep(0.3)
+    await asyncio.sleep(0.3)  # type: ignore[unreachable]
 
     # Assert calling disconnect sets state to disconnected
     await heos.disconnect()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
 @calls_player_commands()
@@ -1499,14 +1501,14 @@ async def test_reboot() -> None:
 
         # wait for disconnect
         await disconnect_signal.wait()
-        assert heos.connection_state == const.STATE_RECONNECTING
+        assert heos.connection_state == ConnectionState.RECONNECTING
 
         # wait for reconnect
         await connect_signal.wait()
-        assert heos.connection_state == const.STATE_CONNECTED
+        assert heos.connection_state == ConnectionState.CONNECTED  # type: ignore[comparison-overlap]
     finally:
         await heos.disconnect()
-    assert heos.connection_state == const.STATE_DISCONNECTED
+    assert heos.connection_state == ConnectionState.DISCONNECTED  # type: ignore[unreachable]
 
 
 async def test_unrecognized_event_logs(

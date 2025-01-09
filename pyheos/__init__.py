@@ -1,6 +1,7 @@
 """pyheos - a library for interacting with HEOS devices."""
 
 from . import const
+from .connection import ConnectionState
 from .credentials import Credentials
 from .dispatch import (
     CallbackType,
@@ -43,6 +44,7 @@ __all__ = [
     "CommandAuthenticationError",
     "CommandError",
     "CommandFailedError",
+    "ConnectionState",
     "ConnectType",
     "const",
     "ControllerEventCallbackType",

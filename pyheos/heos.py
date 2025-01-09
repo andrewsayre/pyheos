@@ -32,7 +32,7 @@ from pyheos.search import MultiSearchResult, SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
 
 from . import const
-from .connection import AutoReconnectingConnection
+from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
@@ -92,7 +92,7 @@ class ConnectionMixin:
         )
 
     @property
-    def connection_state(self) -> str:
+    def connection_state(self) -> ConnectionState:
         """Get the state of the connection."""
         return self._connection.state
 
@@ -1308,7 +1308,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_connected(self) -> None:
         """Handle when connected, which may occur more than once."""
-        assert self._connection.state == const.STATE_CONNECTED
+        assert self._connection.state == ConnectionState.CONNECTED
 
         await self._dispatcher.wait_send(
             const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
@@ -1343,7 +1343,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
-        assert self._connection.state == const.STATE_DISCONNECTED
+        assert self._connection.state == ConnectionState.DISCONNECTED
         # Mark loaded players unavailable
         for player in self.players.values():
             player.available = False
