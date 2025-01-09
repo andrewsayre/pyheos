@@ -620,6 +620,11 @@ async def test_player_now_playing_changed_event(
     assert now_playing.queue_id == 1
     assert now_playing.source_id == 13
     assert now_playing.supported_controls == const.CONTROLS_ALL
+    assert len(now_playing.options) == 3
+    option = now_playing.options[2]
+    assert option.id == 19
+    assert option.name == "Add to HEOS Favorites"
+    assert option.context == "play"
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -660,6 +665,11 @@ async def test_player_now_playing_changed_event(
     assert now_playing.current_position_updated is None
     assert now_playing.duration is None
     assert now_playing.supported_controls == const.CONTROLS_FORWARD_ONLY
+    assert len(now_playing.options) == 3
+    option = now_playing.options[2]
+    assert option.id == 20
+    assert option.name == "Remove from HEOS Favorites"
+    assert option.context == "play"
 
 
 @calls_player_commands()

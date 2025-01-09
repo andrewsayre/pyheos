@@ -440,6 +440,7 @@ async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
     assert player.now_playing_media.image_url is None
     assert player.now_playing_media.album_id is None
     assert player.now_playing_media.media_id is None
+    assert player.now_playing_media.options == []
 
 
 @calls_commands(

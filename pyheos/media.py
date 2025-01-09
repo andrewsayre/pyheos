@@ -230,7 +230,7 @@ class ServiceOption:
             for context_key, context_options in context.items():
                 options.extend(
                     [
-                        ServiceOption._from_data(context_key, item)
+                        ServiceOption.__from_data(context_key, item)
                         for item in context_options
                     ]
                 )
@@ -238,7 +238,7 @@ class ServiceOption:
         return options
 
     @staticmethod
-    def _from_data(context: str, data: dict[str, str]) -> "ServiceOption":
+    def __from_data(context: str, data: dict[str, str]) -> "ServiceOption":
         """Create a new instance from the provided data."""
         return ServiceOption(
             context=context, id=int(data[const.ATTR_ID]), name=data[const.ATTR_NAME]

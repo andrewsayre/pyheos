@@ -756,7 +756,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.get_now_playing_media(player_id)
         )
         instance = update or HeosNowPlayingMedia()
-        instance.update_from_message(result)
+        instance._update_from_message(result)
         return instance
 
     async def player_get_volume(self, player_id: int) -> int:

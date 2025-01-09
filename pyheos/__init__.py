@@ -29,6 +29,7 @@ from .media import (
     MediaItem,
     MediaMusicSource,
     RetreiveMetadataResult,
+    ServiceOption,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 from .search import SearchCriteria, SearchResult
@@ -60,6 +61,7 @@ __all__ = [
     "Media",
     "MediaItem",
     "MediaMusicSource",
+    "ServiceOption",
     "PlayMode",
     "PlayerEventCallbackType",
     "RetreiveMetadataResult",
