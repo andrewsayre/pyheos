@@ -28,11 +28,12 @@ from .media import (
     Media,
     MediaItem,
     MediaMusicSource,
+    QueueItem,
     RetreiveMetadataResult,
     ServiceOption,
 )
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
-from .search import SearchCriteria, SearchResult
+from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
 
 __all__ = [
@@ -61,12 +62,15 @@ __all__ = [
     "Media",
     "MediaItem",
     "MediaMusicSource",
+    "MultiSearchResult",
+    "QueueItem",
     "ServiceOption",
     "PlayMode",
     "PlayerEventCallbackType",
     "RetreiveMetadataResult",
     "SearchCriteria",
     "SearchResult",
+    "SearchStatistic",
     "SendType",
     "TargetType",
 ]

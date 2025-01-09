@@ -17,7 +17,7 @@ DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
 }
 
 
-def format_error_message(error: Exception) -> str:
+def _format_error_message(error: Exception) -> str:
     """Format the error message based on a base error."""
     error_message: str = str(error)
     if not error_message:
