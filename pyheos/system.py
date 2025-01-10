@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from pyheos import const
-from pyheos.player import NetworkType
+from pyheos.types import NetworkType
 
 
 @dataclass(frozen=True)

@@ -20,8 +20,8 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
-from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
-from pyheos.types import AddCriteriaType
+from pyheos.player import HeosPlayer
+from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
 from tests.common import MediaItems
 
 from . import (

@@ -6,8 +6,8 @@ import pytest
 
 from pyheos import const
 from pyheos.media import MediaItem
-from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
-from pyheos.types import AddCriteriaType
+from pyheos.player import HeosPlayer
+from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 

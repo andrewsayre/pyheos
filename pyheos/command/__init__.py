@@ -4,7 +4,9 @@ import logging
 from enum import StrEnum
 from typing import Any, Final, TypeVar
 
-from pyheos.const import REPORT_ISSUE_TEXT
+REPORT_ISSUE_TEXT: Final = (
+    "Please report this issue at https://github.com/andrewsayre/pyheos/issues"
+)
 
 # Browse commands
 COMMAND_BROWSE_ADD_TO_QUEUE: Final = "browse/add_to_queue"
@@ -70,9 +72,7 @@ COMMAND_REBOOT: Final = "system/reboot"
 COMMAND_SIGN_IN: Final = "system/sign_in"
 COMMAND_SIGN_OUT: Final = "system/sign_out"
 
-
 _LOGGER: Final = logging.getLogger(__name__)
-
 
 TStrEnum = TypeVar("TStrEnum", bound=StrEnum)
 

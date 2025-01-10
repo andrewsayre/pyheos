@@ -36,8 +36,8 @@ from . import const
 from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
-from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState, RepeatType
-from .types import AddCriteriaType
+from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .types import AddCriteriaType, PlayState, RepeatType
 
 _LOGGER: Final = logging.getLogger(__name__)
 

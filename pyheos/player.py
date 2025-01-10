@@ -4,14 +4,13 @@ import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
-from pyheos.types import AddCriteriaType
+from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
 
 from . import const
 
@@ -55,30 +54,6 @@ SOURCE_CONTROLS: Final = {
     },
     const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: const.CONTROL_PLAY_STOP},
 }
-
-
-class NetworkType(StrEnum):
-    """Define the network type."""
-
-    WIRED = "wired"
-    WIFI = "wifi"
-    UNKNOWN = "unknown"
-
-
-class PlayState(StrEnum):
-    """Define the play states."""
-
-    PLAY = "play"
-    PAUSE = "pause"
-    STOP = "stop"
-
-
-class RepeatType(StrEnum):
-    """Define the repeat types."""
-
-    ON_ALL = "on_all"
-    ON_ONE = "on_one"
-    OFF = "off"
 
 
 @dataclass

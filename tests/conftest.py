@@ -9,7 +9,8 @@ import pytest_asyncio
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
-from pyheos.player import HeosPlayer, NetworkType
+from pyheos.player import HeosPlayer
+from pyheos.types import NetworkType
 from tests.common import MediaItems, MediaMusicSources
 
 from . import MockHeos, MockHeosDevice

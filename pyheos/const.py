@@ -8,9 +8,6 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
-REPORT_ISSUE_TEXT: Final = (
-    "Please report this issue at https://github.com/andrewsayre/pyheos/issues"
-)
 
 ATTR_ADD_CRITERIA_ID: Final = "aid"
 ATTR_ALBUM: Final = "album"

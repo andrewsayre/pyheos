@@ -8,7 +8,8 @@ from typing import Any
 
 from pyheos import command, const
 from pyheos.message import HeosCommand
-from pyheos.player import PlayState, RepeatType
+from pyheos.player import PlayState
+from pyheos.types import RepeatType
 
 
 class PlayerCommands:
