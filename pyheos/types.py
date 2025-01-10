@@ -12,6 +12,14 @@ class AddCriteriaType(IntEnum):
     REPLACE_AND_PLAY = 4
 
 
+class ConnectionState(StrEnum):
+    """Define the possible connection states."""
+
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    RECONNECTING = "reconnecting"
+
+
 class NetworkType(StrEnum):
     """Define the network type."""
 

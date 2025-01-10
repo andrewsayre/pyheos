@@ -1,7 +1,6 @@
 """pyheos - a library for interacting with HEOS devices."""
 
 from . import const
-from .connection import ConnectionState
 from .credentials import Credentials
 from .dispatch import (
     CallbackType,
@@ -46,6 +45,7 @@ from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStati
 from .system import HeosHost, HeosSystem
 from .types import (
     AddCriteriaType,
+    ConnectionState,
     NetworkType,
     PlayState,
     RepeatType,

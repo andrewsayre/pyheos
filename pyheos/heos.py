@@ -34,11 +34,18 @@ from pyheos.system import HeosHost, HeosSystem
 
 from . import command as c
 from . import const
-from .connection import AutoReconnectingConnection, ConnectionState
+from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
-from .types import AddCriteriaType, PlayState, RepeatType, SignalHeosEvent, SignalType
+from .types import (
+    AddCriteriaType,
+    ConnectionState,
+    PlayState,
+    RepeatType,
+    SignalHeosEvent,
+    SignalType,
+)
 
 _LOGGER: Final = logging.getLogger(__name__)
 

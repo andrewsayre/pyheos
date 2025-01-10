@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 
 from pyheos import command as c
-from pyheos.connection import ConnectionState
 from pyheos.const import (
     EVENT_GROUP_VOLUME_CHANGED,
     EVENT_GROUPS_CHANGED,
@@ -43,6 +42,7 @@ from pyheos.media import MediaItem, MediaMusicSource, MediaType
 from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
+    ConnectionState,
     NetworkType,
     PlayState,
     RepeatType,

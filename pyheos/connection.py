@@ -4,12 +4,12 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
-from enum import StrEnum
 from typing import TYPE_CHECKING, Final
 
 from pyheos.command import COMMAND_REBOOT
 from pyheos.command.system import SystemCommands
 from pyheos.message import HeosCommand, HeosMessage
+from pyheos.types import ConnectionState
 
 from .error import CommandError, CommandFailedError, HeosError, _format_error_message
 
@@ -18,14 +18,6 @@ SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
 _LOGGER: Final = logging.getLogger(__name__)
-
-
-class ConnectionState(StrEnum):
-    """Define the possible connection states."""
-
-    CONNECTED = "connected"
-    DISCONNECTED = "disconnected"
-    RECONNECTING = "reconnecting"
 
 
 class ConnectionBase:
