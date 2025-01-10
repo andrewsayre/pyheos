@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
-from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
+from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
 from pyheos.types import (
     AddCriteriaType,
     ControlType,
+    MediaType,
     NetworkType,
     PlayState,
     RepeatType,

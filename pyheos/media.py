@@ -2,31 +2,14 @@
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import command as c
 from pyheos.message import HeosMessage
-from pyheos.types import AddCriteriaType
+from pyheos.types import AddCriteriaType, MediaType
 
 if TYPE_CHECKING:
     from . import Heos
-
-
-class MediaType(StrEnum):
-    """Define the media types."""
-
-    ALBUM = "album"
-    ARTIST = "artist"
-    CONTAINER = "container"
-    DLNA_SERVER = "dlna_server"
-    GENRE = "genre"
-    HEOS_SERVER = "heos_server"
-    HEOS_SERVICE = "heos_service"
-    MUSIC_SERVICE = "music_service"
-    PLAYLIST = "playlist"
-    SONG = "song"
-    STATION = "station"
 
 
 @dataclass

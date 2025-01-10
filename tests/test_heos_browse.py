@@ -26,7 +26,8 @@ from pyheos.const import (
     SERVICE_OPTION_THUMBS_UP,
 )
 from pyheos.heos import Heos, HeosOptions
-from pyheos.media import MediaMusicSource, MediaType
+from pyheos.media import MediaMusicSource
+from pyheos.types import MediaType
 from tests import calls_command, value
 from tests.common import MediaMusicSources
 

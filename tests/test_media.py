@@ -8,9 +8,9 @@ import pytest
 from pyheos import command as c
 from pyheos.const import MUSIC_SOURCE_FAVORITES
 from pyheos.heos import Heos
-from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, MediaType
+from pyheos.media import BrowseResult, MediaItem, MediaMusicSource
 from pyheos.message import HeosMessage
-from pyheos.types import AddCriteriaType
+from pyheos.types import AddCriteriaType, MediaType
 from tests import calls_command
 from tests.common import MediaItems, MediaMusicSources
 

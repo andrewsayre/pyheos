@@ -38,6 +38,22 @@ class ControlType(StrEnum):
     PLAY_PREVIOUS = "play_previous"
 
 
+class MediaType(StrEnum):
+    """Define the media types."""
+
+    ALBUM = "album"
+    ARTIST = "artist"
+    CONTAINER = "container"
+    DLNA_SERVER = "dlna_server"
+    GENRE = "genre"
+    HEOS_SERVER = "heos_server"
+    HEOS_SERVICE = "heos_service"
+    MUSIC_SERVICE = "music_service"
+    PLAYLIST = "playlist"
+    SONG = "song"
+    STATION = "station"
+
+
 class PlayState(StrEnum):
     """Define the play states."""
 

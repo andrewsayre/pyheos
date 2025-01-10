@@ -38,11 +38,12 @@ from pyheos.error import (
 )
 from pyheos.group import HeosGroup
 from pyheos.heos import DATA_MAPPED_IDS, DATA_NEW, Heos, HeosOptions
-from pyheos.media import MediaItem, MediaMusicSource, MediaType
+from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,
+    MediaType,
     NetworkType,
     PlayState,
     RepeatType,

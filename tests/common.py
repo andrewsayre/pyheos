@@ -1,7 +1,8 @@
 """Define the common for the tests."""
 
 from pyheos import const
-from pyheos.media import MediaItem, MediaMusicSource, MediaType
+from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.types import MediaType
 
 
 # Media Items

@@ -46,6 +46,7 @@ from .system import HeosHost, HeosSystem
 from .types import (
     AddCriteriaType,
     ConnectionState,
+    MediaType,
     NetworkType,
     PlayState,
     RepeatType,
@@ -86,6 +87,7 @@ __all__ = [
     "MediaItem",
     "MediaMusicSource",
     "MultiSearchResult",
+    "MediaType",
     "NetworkType",
     "PlayMode",
     "PlayState",

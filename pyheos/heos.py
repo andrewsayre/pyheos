@@ -24,7 +24,6 @@ from pyheos.media import (
     BrowseResult,
     MediaItem,
     MediaMusicSource,
-    MediaType,
     QueueItem,
     RetreiveMetadataResult,
 )
@@ -41,6 +40,7 @@ from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 from .types import (
     AddCriteriaType,
     ConnectionState,
+    MediaType,
     PlayState,
     RepeatType,
     SignalHeosEvent,
