@@ -13,11 +13,13 @@ from pyheos.message import HeosMessage
 from pyheos.types import (
     AddCriteriaType,
     ControlType,
+    LineOutLevelType,
     MediaType,
     NetworkType,
     PlayState,
     RepeatType,
     SignalType,
+    VolumeControlType,
 )
 
 from . import command as c
@@ -183,8 +185,11 @@ class HeosPlayer:
     serial: str | None = field(repr=False, hash=False, compare=False)
     version: str = field(repr=True, hash=False, compare=False)
     ip_address: str = field(repr=True, hash=False, compare=False)
-    network: str = field(repr=False, hash=False, compare=False)
-    line_out: int = field(repr=False, hash=False, compare=False)
+    network: NetworkType = field(repr=False, hash=False, compare=False)
+    line_out: LineOutLevelType = field(repr=False, hash=False, compare=False)
+    control: VolumeControlType = field(
+        repr=False, hash=False, compare=False, default=VolumeControlType.UNKNOWN
+    )
     state: PlayState | None = field(repr=True, hash=False, compare=False, default=None)
     volume: int = field(repr=False, hash=False, compare=False, default=0)
     is_muted: bool = field(repr=False, hash=False, compare=False, default=False)
@@ -221,7 +226,12 @@ class HeosPlayer:
             version=data[c.ATTR_VERSION],
             ip_address=data[c.ATTR_IP_ADDRESS],
             network=parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
-            line_out=int(data[c.ATTR_LINE_OUT]),
+            line_out=parse_enum(
+                c.ATTR_LINE_OUT, data, LineOutLevelType, LineOutLevelType.UNKNOWN
+            ),
+            control=parse_enum(
+                c.ATTR_CONTROL, data, VolumeControlType, VolumeControlType.UNKNOWN
+            ),
             group_id=HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID)),
             heos=heos,
         )
@@ -237,7 +247,12 @@ class HeosPlayer:
         self.network = parse_enum(
             c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
         )
-        self.line_out = int(data[c.ATTR_LINE_OUT])
+        self.line_out = parse_enum(
+            c.ATTR_LINE_OUT, data, LineOutLevelType, LineOutLevelType.UNKNOWN
+        )
+        self.control = parse_enum(
+            c.ATTR_CONTROL, data, VolumeControlType, VolumeControlType.UNKNOWN
+        )
         self.group_id = HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID))
 
     async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:

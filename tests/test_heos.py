@@ -43,12 +43,14 @@ from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,
+    LineOutLevelType,
     MediaType,
     NetworkType,
     PlayState,
     RepeatType,
     SignalHeosEvent,
     SignalType,
+    VolumeControlType,
 )
 from tests.common import MediaItems
 
@@ -493,7 +495,8 @@ async def test_get_players(heos: Heos) -> None:
     assert player.player_id == 1
     assert player.name == "Back Patio"
     assert player.ip_address == "127.0.0.1"
-    assert player.line_out == 1
+    assert player.line_out == LineOutLevelType.FIXED
+    assert player.control == VolumeControlType.IR
     assert player.model == "HEOS Drive"
     assert player.network == NetworkType.WIRED
     assert player.state == PlayState.STOP
