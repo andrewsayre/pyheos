@@ -9,6 +9,10 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
+REPORT_ISSUE_TEXT: Final = (
+    "Please report this issue at https://github.com/andrewsayre/pyheos/issues"
+)
+
 ATTR_ADD_CRITERIA_ID: Final = "aid"
 ATTR_ALBUM: Final = "album"
 ATTR_ALBUM_ID: Final = "album_id"
@@ -100,10 +104,6 @@ ERROR_SYSTEM_ERROR: Final = 12
 SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
 SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 
-
-NETWORK_TYPE_WIRED: Final = "wired"
-NETWORK_TYPE_WIFI: Final = "wifi"
-NETWORK_TYPE_UNKNOWN: Final = "unknown"
 
 DATA_NEW: Final = "new"
 DATA_MAPPED_IDS: Final = "mapped_ids"

@@ -1,6 +1,10 @@
 """Define the HEOS command module."""
 
-from typing import Final
+import logging
+from enum import StrEnum
+from typing import Any, Final, TypeVar
+
+from pyheos.const import REPORT_ISSUE_TEXT
 
 # Browse commands
 COMMAND_BROWSE_ADD_TO_QUEUE: Final = "browse/add_to_queue"
@@ -65,3 +69,30 @@ COMMAND_REGISTER_FOR_CHANGE_EVENTS: Final = "system/register_for_change_events"
 COMMAND_REBOOT: Final = "system/reboot"
 COMMAND_SIGN_IN: Final = "system/sign_in"
 COMMAND_SIGN_OUT: Final = "system/sign_out"
+
+
+_LOGGER: Final = logging.getLogger(__name__)
+
+
+TStrEnum = TypeVar("TStrEnum", bound=StrEnum)
+
+
+def parse_enum(
+    key: str, data: dict[str, Any], enum_type: type[TStrEnum], default: TStrEnum
+) -> TStrEnum:
+    """Parse an enum value from the provided data. This is a safe operation that will return the default value if the key is missing or the value is not recognized."""
+    value = data.get(key)
+    if value is None:
+        return default
+    try:
+        return enum_type(value)
+    except ValueError:
+        _LOGGER.warning(
+            "Unrecognized '%s' value: '%s', using default value: '%s'. Full data: %s. %s.",
+            key,
+            value,
+            default,
+            data,
+            REPORT_ISSUE_TEXT,
+        )
+        return default

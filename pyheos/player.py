@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
+from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
@@ -15,6 +16,7 @@ from . import const
 
 if TYPE_CHECKING:
     from .heos import Heos
+
 
 SOURCE_CONTROLS: Final = {
     const.MUSIC_SOURCE_CONNECT: {MediaType.STATION: const.CONTROLS_ALL},
@@ -52,6 +54,14 @@ SOURCE_CONTROLS: Final = {
     },
     const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: const.CONTROL_PLAY_STOP},
 }
+
+
+class NetworkType(StrEnum):
+    """Define the network type."""
+
+    WIRED = "wired"
+    WIFI = "wifi"
+    UNKNOWN = "unknown"
 
 
 class PlayState(StrEnum):
@@ -207,6 +217,7 @@ class HeosPlayer:
         heos: Optional["Heos"] = None,
     ) -> "HeosPlayer":
         """Create a new instance from the provided data."""
+
         return HeosPlayer(
             name=data[const.ATTR_NAME],
             player_id=int(data[const.ATTR_PLAYER_ID]),
@@ -214,7 +225,9 @@ class HeosPlayer:
             serial=data.get(const.ATTR_SERIAL),
             version=data[const.ATTR_VERSION],
             ip_address=data[const.ATTR_IP_ADDRESS],
-            network=data[const.ATTR_NETWORK],
+            network=parse_enum(
+                const.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
+            ),
             line_out=int(data[const.ATTR_LINE_OUT]),
             group_id=HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID)),
             heos=heos,
@@ -228,7 +241,9 @@ class HeosPlayer:
         self.serial = data.get(const.ATTR_SERIAL)
         self.version = data[const.ATTR_VERSION]
         self.ip_address = data[const.ATTR_IP_ADDRESS]
-        self.network = data[const.ATTR_NETWORK]
+        self.network = parse_enum(
+            const.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
+        )
         self.line_out = int(data[const.ATTR_LINE_OUT])
         self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
 

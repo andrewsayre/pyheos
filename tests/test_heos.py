@@ -20,7 +20,7 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
-from pyheos.player import HeosPlayer, PlayState, RepeatType
+from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
 from tests.common import MediaItems
 
 from . import (
@@ -57,14 +57,14 @@ async def test_validate_connection(mock_device: MockHeosDevice) -> None:
     assert system_info.hosts[0].ip_address == "127.0.0.1"
     assert system_info.hosts[0].model == "HEOS Drive"
     assert system_info.hosts[0].name == "Back Patio"
-    assert system_info.hosts[0].network == const.NETWORK_TYPE_WIRED
+    assert system_info.hosts[0].network == NetworkType.WIRED
     assert system_info.hosts[0].serial == "B1A2C3K"
     assert system_info.hosts[0].version == "1.493.180"
 
     assert system_info.hosts[1].ip_address == "127.0.0.2"
     assert system_info.hosts[1].model == "HEOS Drive"
     assert system_info.hosts[1].name == "Front Porch"
-    assert system_info.hosts[1].network == const.NETWORK_TYPE_WIFI
+    assert system_info.hosts[1].network == NetworkType.WIFI
     assert system_info.hosts[1].serial is None
     assert system_info.hosts[1].version == "1.493.180"
 
@@ -460,7 +460,7 @@ async def test_get_players(heos: Heos) -> None:
     assert player.ip_address == "127.0.0.1"
     assert player.line_out == 1
     assert player.model == "HEOS Drive"
-    assert player.network == const.NETWORK_TYPE_WIRED
+    assert player.network == NetworkType.WIRED
     assert player.state == PlayState.STOP
     assert player.version == "1.493.180"
     assert player.volume == 36

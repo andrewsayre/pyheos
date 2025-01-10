@@ -6,20 +6,28 @@ import pytest
 
 from pyheos import const
 from pyheos.media import MediaItem
-from pyheos.player import HeosPlayer, PlayState, RepeatType
+from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
 
-def test_from_data() -> None:
-    """Test the __str__ function."""
+@pytest.mark.parametrize(
+    ("network", "expected_network"),
+    [
+        (None, NetworkType.UNKNOWN),
+        ("wired", NetworkType.WIRED),
+        ("invalid", NetworkType.UNKNOWN),  # Invalid network type
+    ],
+)
+def test_from_data(network: str | None, expected_network: NetworkType) -> None:
+    """Test the from_data funciton."""
     data = {
         const.ATTR_NAME: "Back Patio",
         const.ATTR_PLAYER_ID: 1,
         const.ATTR_MODEL: "HEOS Drive",
         const.ATTR_VERSION: "1.493.180",
         const.ATTR_IP_ADDRESS: "192.168.0.1",
-        const.ATTR_NETWORK: const.NETWORK_TYPE_WIRED,
+        const.ATTR_NETWORK: network,
         const.ATTR_LINE_OUT: 1,
         const.ATTR_SERIAL: "1234567890",
     }
@@ -30,7 +38,7 @@ def test_from_data() -> None:
     assert player.model == "HEOS Drive"
     assert player.version == "1.493.180"
     assert player.ip_address == "192.168.0.1"
-    assert player.network == const.NETWORK_TYPE_WIRED
+    assert player.network == expected_network
     assert player.line_out == 1
     assert player.serial == "1234567890"
 
@@ -43,7 +51,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
         const.ATTR_MODEL: "HEOS Drives",
         const.ATTR_VERSION: "2.0.0",
         const.ATTR_IP_ADDRESS: "192.168.0.2",
-        const.ATTR_NETWORK: const.NETWORK_TYPE_WIFI,
+        const.ATTR_NETWORK: "wifi",
         const.ATTR_LINE_OUT: "0",
         const.ATTR_SERIAL: "0987654321",
     }
@@ -54,7 +62,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
     assert player.model == "HEOS Drives"
     assert player.version == "2.0.0"
     assert player.ip_address == "192.168.0.2"
-    assert player.network == const.NETWORK_TYPE_WIFI
+    assert player.network == NetworkType.WIFI
     assert player.line_out == 0
     assert player.serial == "0987654321"
 

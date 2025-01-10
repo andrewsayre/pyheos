@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from pyheos import const
+from pyheos.player import NetworkType
 
 
 @dataclass(frozen=True)
@@ -59,9 +60,7 @@ class HeosSystem:
     @cached_property
     def preferred_hosts(self) -> list[HeosHost]:
         """Return the preferred hosts."""
-        return list(
-            [host for host in self.hosts if host.network == const.NETWORK_TYPE_WIRED]
-        )
+        return list([host for host in self.hosts if host.network == NetworkType.WIRED])
 
     @cached_property
     def connected_to_preferred_host(self) -> bool:
