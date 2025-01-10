@@ -11,6 +11,7 @@ from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
+from pyheos.types import AddCriteriaType
 
 from . import const
 
@@ -460,7 +461,7 @@ class HeosPlayer:
         source_id: int,
         container_id: str,
         media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Add the specified source to the queue."""
         assert self.heos, "Heos instance not set"
@@ -471,7 +472,7 @@ class HeosPlayer:
     async def play_media(
         self,
         media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Play the specified media.
 

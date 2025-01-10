@@ -21,6 +21,7 @@ from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
 from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
+from pyheos.types import AddCriteriaType
 from tests.common import MediaItems
 
 from . import (
@@ -1143,7 +1144,7 @@ async def test_play_media_unplayable_raises(media_item_album: MediaItem) -> None
     with pytest.raises(
         ValueError, match=re.escape(f"Media '{media_item_album}' is not playable")
     ):
-        await heos.play_media(1, media_item_album, const.AddCriteriaType.PLAY_NOW)
+        await heos.play_media(1, media_item_album, AddCriteriaType.PLAY_NOW)
 
 
 @calls_command(
@@ -1153,7 +1154,7 @@ async def test_play_media_unplayable_raises(media_item_album: MediaItem) -> None
         const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
         const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
         const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
 )
 async def test_play_media_song(heos: Heos, media_item_song: MediaItem) -> None:

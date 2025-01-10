@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import const
 from pyheos.message import HeosMessage
+from pyheos.types import AddCriteriaType
 
 if TYPE_CHECKING:
     from . import Heos
@@ -213,7 +214,7 @@ class MediaItem(Media):
     async def play_media(
         self,
         player_id: int,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Play this media item on the specified player.
 

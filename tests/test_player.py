@@ -7,6 +7,7 @@ import pytest
 from pyheos import const
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer, NetworkType, PlayState, RepeatType
+from pyheos.types import AddCriteriaType
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
@@ -20,7 +21,7 @@ from tests.common import MediaItems
     ],
 )
 def test_from_data(network: str | None, expected_network: NetworkType) -> None:
-    """Test the from_data funciton."""
+    """Test the from_data function."""
     data = {
         const.ATTR_NAME: "Back Patio",
         const.ATTR_PLAYER_ID: 1,
@@ -379,7 +380,7 @@ async def test_play_media_unplayable_source(
     with pytest.raises(
         ValueError, match=re.escape(f"Media '{media_item_album}' is not playable")
     ):
-        await player.play_media(media_item_album, const.AddCriteriaType.PLAY_NOW)
+        await player.play_media(media_item_album, AddCriteriaType.PLAY_NOW)
 
 
 @calls_command(
@@ -388,7 +389,7 @@ async def test_play_media_unplayable_source(
         const.ATTR_PLAYER_ID: 1,
         const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
         const.ATTR_CONTAINER_ID: "123",
-        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
@@ -396,7 +397,7 @@ async def test_play_media_container(
     player: HeosPlayer, media_item_playlist: MediaItem
 ) -> None:
     """Test adding a container to the queue."""
-    await player.play_media(media_item_playlist, const.AddCriteriaType.PLAY_NOW)
+    await player.play_media(media_item_playlist, AddCriteriaType.PLAY_NOW)
 
 
 @calls_command(
@@ -406,13 +407,13 @@ async def test_play_media_container(
         const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
         const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
         const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
 async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) -> None:
     """Test adding a track to the queue."""
-    await player.play_media(media_item_song, const.AddCriteriaType.PLAY_NOW)
+    await player.play_media(media_item_song, AddCriteriaType.PLAY_NOW)
 
 
 @calls_command(
@@ -422,14 +423,14 @@ async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) 
         const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_DEEZER,
         const.ATTR_CONTAINER_ID: "123",
         const.ATTR_MEDIA_ID: "456",
-        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.PLAY_NOW,
+        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
 async def test_add_to_queue(player: HeosPlayer) -> None:
     """Test adding a track to the queue."""
     await player.add_to_queue(
-        const.MUSIC_SOURCE_DEEZER, "123", "456", const.AddCriteriaType.PLAY_NOW
+        const.MUSIC_SOURCE_DEEZER, "123", "456", AddCriteriaType.PLAY_NOW
     )
 
 

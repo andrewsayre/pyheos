@@ -9,6 +9,7 @@ from pyheos import command, const
 from pyheos.heos import Heos
 from pyheos.media import BrowseResult, MediaItem, MediaMusicSource, MediaType
 from pyheos.message import HeosMessage
+from pyheos.types import AddCriteriaType
 from tests import calls_command
 from tests.common import MediaItems, MediaMusicSources
 
@@ -237,10 +238,10 @@ async def test_refresh(media_music_source: MediaMusicSource) -> None:
         const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
         const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
         const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: const.AddCriteriaType.REPLACE_AND_PLAY,
+        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.REPLACE_AND_PLAY,
     },
     add_command_under_process=True,
 )
 async def test_media_item_play(media_item_song: MediaItem) -> None:
     """Test playing a media music source."""
-    await media_item_song.play_media(1, const.AddCriteriaType.REPLACE_AND_PLAY)
+    await media_item_song.play_media(1, AddCriteriaType.REPLACE_AND_PLAY)

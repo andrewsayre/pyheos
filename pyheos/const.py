@@ -1,6 +1,5 @@
 """Define consts for the pyheos package."""
 
-from enum import IntEnum
 from typing import Final
 
 DEFAULT_TIMEOUT: Final = 10.0
@@ -281,15 +280,6 @@ VALID_INPUTS: Final = (
     INPUT_TV,
     INPUT_USB_AC,
 )
-
-
-class AddCriteriaType(IntEnum):
-    """Define the add to queue options."""
-
-    PLAY_NOW = 1
-    PLAY_NEXT = 2
-    ADD_TO_END = 3
-    REPLACE_AND_PLAY = 4
 
 
 # Service options

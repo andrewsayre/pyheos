@@ -33,11 +33,20 @@ from .media import (
     RetreiveMetadataResult,
     ServiceOption,
 )
-from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState, RepeatType
+from .player import (
+    HeosNowPlayingMedia,
+    HeosPlayer,
+    NetworkType,
+    PlayMode,
+    PlayState,
+    RepeatType,
+)
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
+from .types import AddCriteriaType
 
 __all__ = [
+    "AddCriteriaType",
     "AlbumMetadata",
     "BrowseResult",
     "CallbackType",
@@ -65,6 +74,7 @@ __all__ = [
     "MediaItem",
     "MediaMusicSource",
     "MultiSearchResult",
+    "NetworkType",
     "QueueItem",
     "ServiceOption",
     "PlayMode",

@@ -13,6 +13,7 @@ from typing import Any
 
 from pyheos import command, const
 from pyheos.message import HeosCommand
+from pyheos.types import AddCriteriaType
 
 
 class BrowseCommands:
@@ -183,7 +184,7 @@ class BrowseCommands:
         source_id: int,
         container_id: str,
         media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> HeosCommand:
         """
         Create a HEOS command to add the specified media to the queue.

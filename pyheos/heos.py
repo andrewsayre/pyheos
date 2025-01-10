@@ -37,6 +37,7 @@ from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode, PlayState, RepeatType
+from .types import AddCriteriaType
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -448,7 +449,7 @@ class BrowseMixin(ConnectionMixin):
         source_id: int,
         container_id: str,
         media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """
         Add the specified media item to the queue of the specified player.
@@ -547,7 +548,7 @@ class BrowseMixin(ConnectionMixin):
         self,
         player_id: int,
         media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """
         Play the specified media item on the specified player.
