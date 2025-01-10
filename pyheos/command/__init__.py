@@ -1,7 +1,7 @@
 """Define the HEOS command module."""
 
 import logging
-from enum import StrEnum
+from enum import ReprEnum
 from typing import Any, Final, TypeVar
 
 REPORT_ISSUE_TEXT: Final = (
@@ -16,6 +16,7 @@ ATTR_AVAILABLE: Final = "available"
 ATTR_COMMAND: Final = "command"
 ATTR_CONTAINER: Final = "container"
 ATTR_CONTAINER_ID: Final = "cid"
+ATTR_CONTROL: Final = "control"
 ATTR_COUNT: Final = "count"
 ATTR_CURRENT_POSITION: Final = "cur_pos"
 ATTR_DESTINATION_QUEUE_ID: Final = "dqid"
@@ -156,12 +157,18 @@ COMMAND_SIGN_OUT: Final = "system/sign_out"
 
 _LOGGER: Final = logging.getLogger(__name__)
 
-TStrEnum = TypeVar("TStrEnum", bound=StrEnum)
+TEnum = TypeVar("TEnum", bound=ReprEnum)
+
+
+def optional_int(value: str | None) -> int | None:
+    if value is not None:
+        return int(value)
+    return None
 
 
 def parse_enum(
-    key: str, data: dict[str, Any], enum_type: type[TStrEnum], default: TStrEnum
-) -> TStrEnum:
+    key: str, data: dict[str, Any], enum_type: type[TEnum], default: TEnum
+) -> TEnum:
     """Parse an enum value from the provided data. This is a safe operation that will return the default value if the key is missing or the value is not recognized."""
     value = data.get(key)
     if value is None:

@@ -10,7 +10,7 @@ from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import HeosPlayer
-from pyheos.types import NetworkType
+from pyheos.types import LineOutLevelType, NetworkType
 from tests.common import MediaItems, MediaMusicSources
 
 from . import MockHeos, MockHeosDevice
@@ -142,7 +142,7 @@ async def player_fixture(heos: MockHeos) -> HeosPlayer:
         version="1.493.180",
         ip_address="127.0.0.1",
         network=NetworkType.WIRED,
-        line_out=1,
+        line_out=LineOutLevelType.FIXED,
         heos=heos,
     )
 
@@ -158,7 +158,7 @@ async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
         version="1.493.180",
         ip_address="127.0.0.2",
         network=NetworkType.WIFI,
-        line_out=1,
+        line_out=LineOutLevelType.FIXED,
         heos=heos,
     )
 

@@ -19,7 +19,7 @@ class HeosHost:
     serial: str | None
     version: str
     ip_address: str
-    network: str
+    network: NetworkType
 
     @classmethod
     def from_data(cls, data: dict[str, str]) -> "HeosHost":
@@ -37,7 +37,7 @@ class HeosHost:
             data.get(c.ATTR_SERIAL),
             data[c.ATTR_VERSION],
             data[c.ATTR_IP_ADDRESS],
-            data[c.ATTR_NETWORK],
+            c.parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
         )
 
 

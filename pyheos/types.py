@@ -20,6 +20,24 @@ class ConnectionState(StrEnum):
     RECONNECTING = "reconnecting"
 
 
+class LineOutLevelType(IntEnum):
+    """Define the line out level types."""
+
+    UNKNOWN = 0
+    VARIABLE = 1
+    FIXED = 2
+
+
+class VolumeControlType(IntEnum):
+    "Define control types."
+
+    UNKNOWN = 0
+    NONE = 1
+    IR = 2
+    TRIGGER = 3
+    NETWORK = 4
+
+
 class NetworkType(StrEnum):
     """Define the network type."""
 

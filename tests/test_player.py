@@ -8,7 +8,13 @@ from pyheos import command as c
 from pyheos.const import INPUT_AUX_IN_1, MUSIC_SOURCE_DEEZER, MUSIC_SOURCE_PLAYLISTS
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
-from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
+from pyheos.types import (
+    AddCriteriaType,
+    LineOutLevelType,
+    NetworkType,
+    PlayState,
+    RepeatType,
+)
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
@@ -41,7 +47,7 @@ def test_from_data(network: str | None, expected_network: NetworkType) -> None:
     assert player.version == "1.493.180"
     assert player.ip_address == "192.168.0.1"
     assert player.network == expected_network
-    assert player.line_out == 1
+    assert player.line_out == LineOutLevelType.VARIABLE
     assert player.serial == "1234567890"
 
 
@@ -65,7 +71,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
     assert player.version == "2.0.0"
     assert player.ip_address == "192.168.0.2"
     assert player.network == NetworkType.WIFI
-    assert player.line_out == 0
+    assert player.line_out == LineOutLevelType.UNKNOWN
     assert player.serial == "0987654321"
 
 
