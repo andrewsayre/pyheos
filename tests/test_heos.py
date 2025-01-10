@@ -18,7 +18,7 @@ from pyheos.error import (
     HeosError,
 )
 from pyheos.group import HeosGroup
-from pyheos.heos import Heos, HeosOptions
+from pyheos.heos import DATA_MAPPED_IDS, DATA_NEW, Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
 from pyheos.player import HeosPlayer
 from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
@@ -872,7 +872,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_PLAYERS_CHANGED
-        assert data == {const.DATA_NEW: [3], const.DATA_MAPPED_IDS: {}}
+        assert data == {DATA_NEW: [3], DATA_MAPPED_IDS: {}}
         signal.set()
 
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)

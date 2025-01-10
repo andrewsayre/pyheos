@@ -36,14 +36,11 @@ from .media import (
 from .player import (
     HeosNowPlayingMedia,
     HeosPlayer,
-    NetworkType,
     PlayMode,
-    PlayState,
-    RepeatType,
 )
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
-from .types import AddCriteriaType
+from .types import AddCriteriaType, NetworkType, PlayState, RepeatType
 
 __all__ = [
     "AddCriteriaType",

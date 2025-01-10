@@ -42,6 +42,10 @@ from .types import AddCriteriaType, PlayState, RepeatType
 _LOGGER: Final = logging.getLogger(__name__)
 
 
+DATA_NEW: Final = "new"
+DATA_MAPPED_IDS: Final = "mapped_ids"
+
+
 @dataclass(frozen=True)
 class HeosOptions:
     """
@@ -766,8 +770,8 @@ class PlayerMixin(ConnectionMixin):
         self._players = players
         self._players_loaded = True
         return {
-            const.DATA_NEW: new_player_ids,
-            const.DATA_MAPPED_IDS: mapped_player_ids,
+            DATA_NEW: new_player_ids,
+            DATA_MAPPED_IDS: mapped_player_ids,
         }
 
     async def player_get_play_state(self, player_id: int) -> PlayState:
