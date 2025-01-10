@@ -160,6 +160,12 @@ _LOGGER: Final = logging.getLogger(__name__)
 TEnum = TypeVar("TEnum", bound=ReprEnum)
 
 
+def optional_int(value: str | None) -> int | None:
+    if value is not None:
+        return int(value)
+    return None
+
+
 def parse_enum(
     key: str, data: dict[str, Any], enum_type: type[TEnum], default: TEnum
 ) -> TEnum:

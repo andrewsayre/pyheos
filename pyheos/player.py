@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
-from pyheos.command import parse_enum
+from pyheos.command import optional_int, parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
@@ -98,7 +98,7 @@ class HeosNowPlayingMedia:
     current_position: int | None = None
     current_position_updated: datetime | None = None
     duration: int | None = None
-    supported_controls: Sequence[str] = field(
+    supported_controls: Sequence[ControlType] = field(
         default_factory=lambda: CONTROLS_ALL, init=False
     )
     options: Sequence[ServiceOption] = field(
@@ -120,18 +120,11 @@ class HeosNowPlayingMedia:
         self.image_url = data.get(c.ATTR_IMAGE_URL)
         self.album_id = data.get(c.ATTR_ALBUM_ID)
         self.media_id = data.get(c.ATTR_MEDIA_ID)
-        self.queue_id = self.__get_optional_int(data.get(c.ATTR_QUEUE_ID))
-        self.source_id = self.__get_optional_int(data.get(c.ATTR_SOURCE_ID))
+        self.queue_id = optional_int(data.get(c.ATTR_QUEUE_ID))
+        self.source_id = optional_int(data.get(c.ATTR_SOURCE_ID))
         self.options = ServiceOption._from_options(message.options)
         self._update_supported_controls()
         self.clear_progress()
-
-    @staticmethod
-    def __get_optional_int(value: Any) -> int | None:
-        try:
-            return int(str(value))
-        except (TypeError, ValueError):
-            return None
 
     def _update_supported_controls(self) -> None:
         """Updates the supported controls based on the source and type."""
@@ -206,12 +199,6 @@ class HeosPlayer:
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
     @staticmethod
-    def __get_optional_int(value: str | None) -> int | None:
-        if value is not None:
-            return int(value)
-        return None
-
-    @staticmethod
     def _from_data(
         data: dict[str, Any],
         heos: Optional["Heos"] = None,
@@ -232,7 +219,7 @@ class HeosPlayer:
             control=parse_enum(
                 c.ATTR_CONTROL, data, VolumeControlType, VolumeControlType.UNKNOWN
             ),
-            group_id=HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID)),
+            group_id=optional_int(data.get(c.ATTR_GROUP_ID)),
             heos=heos,
         )
 
@@ -253,7 +240,7 @@ class HeosPlayer:
         self.control = parse_enum(
             c.ATTR_CONTROL, data, VolumeControlType, VolumeControlType.UNKNOWN
         )
-        self.group_id = HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID))
+        self.group_id = optional_int(data.get(c.ATTR_GROUP_ID))
 
     async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
