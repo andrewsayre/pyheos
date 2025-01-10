@@ -19,7 +19,7 @@ from pyheos.types import (
     SignalType,
 )
 
-from . import const
+from . import command, const
 
 if TYPE_CHECKING:
     from .heos import Heos
@@ -108,16 +108,16 @@ class HeosNowPlayingMedia:
     def _update_from_message(self, message: HeosMessage) -> None:
         """Update the current instance from another instance."""
         data = cast(dict[str, Any], message.payload)
-        self.type = data.get(const.ATTR_TYPE)
-        self.song = data.get(const.ATTR_SONG)
-        self.station = data.get(const.ATTR_STATION)
-        self.album = data.get(const.ATTR_ALBUM)
-        self.artist = data.get(const.ATTR_ARTIST)
-        self.image_url = data.get(const.ATTR_IMAGE_URL)
-        self.album_id = data.get(const.ATTR_ALBUM_ID)
-        self.media_id = data.get(const.ATTR_MEDIA_ID)
-        self.queue_id = self.__get_optional_int(data.get(const.ATTR_QUEUE_ID))
-        self.source_id = self.__get_optional_int(data.get(const.ATTR_SOURCE_ID))
+        self.type = data.get(command.ATTR_TYPE)
+        self.song = data.get(command.ATTR_SONG)
+        self.station = data.get(command.ATTR_STATION)
+        self.album = data.get(command.ATTR_ALBUM)
+        self.artist = data.get(command.ATTR_ARTIST)
+        self.image_url = data.get(command.ATTR_IMAGE_URL)
+        self.album_id = data.get(command.ATTR_ALBUM_ID)
+        self.media_id = data.get(command.ATTR_MEDIA_ID)
+        self.queue_id = self.__get_optional_int(data.get(command.ATTR_QUEUE_ID))
+        self.source_id = self.__get_optional_int(data.get(command.ATTR_SOURCE_ID))
         self.options = ServiceOption._from_options(message.options)
         self._update_supported_controls()
         self.clear_progress()
@@ -143,10 +143,10 @@ class HeosNowPlayingMedia:
         """Update the position/duration from an event."""
         if all_progress_events or self.current_position is None:
             self.current_position = event.get_message_value_int(
-                const.ATTR_CURRENT_POSITION
+                command.ATTR_CURRENT_POSITION
             )
             self.current_position_updated = datetime.now()
-            self.duration = event.get_message_value_int(const.ATTR_DURATION)
+            self.duration = event.get_message_value_int(command.ATTR_DURATION)
             return True
         return False
 
@@ -168,8 +168,8 @@ class PlayMode:
     def _from_data(data: HeosMessage) -> "PlayMode":
         """Create a new instance from the provided data."""
         return PlayMode(
-            repeat=RepeatType(data.get_message_value(const.ATTR_REPEAT)),
-            shuffle=data.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON,
+            repeat=RepeatType(data.get_message_value(command.ATTR_REPEAT)),
+            shuffle=data.get_message_value(command.ATTR_SHUFFLE) == command.VALUE_ON,
         )
 
 
@@ -214,33 +214,33 @@ class HeosPlayer:
         """Create a new instance from the provided data."""
 
         return HeosPlayer(
-            name=data[const.ATTR_NAME],
-            player_id=int(data[const.ATTR_PLAYER_ID]),
-            model=data[const.ATTR_MODEL],
-            serial=data.get(const.ATTR_SERIAL),
-            version=data[const.ATTR_VERSION],
-            ip_address=data[const.ATTR_IP_ADDRESS],
+            name=data[command.ATTR_NAME],
+            player_id=int(data[command.ATTR_PLAYER_ID]),
+            model=data[command.ATTR_MODEL],
+            serial=data.get(command.ATTR_SERIAL),
+            version=data[command.ATTR_VERSION],
+            ip_address=data[command.ATTR_IP_ADDRESS],
             network=parse_enum(
-                const.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
+                command.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
             ),
-            line_out=int(data[const.ATTR_LINE_OUT]),
-            group_id=HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID)),
+            line_out=int(data[command.ATTR_LINE_OUT]),
+            group_id=HeosPlayer.__get_optional_int(data.get(command.ATTR_GROUP_ID)),
             heos=heos,
         )
 
     def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the attributes from the supplied data."""
-        self.name = data[const.ATTR_NAME]
-        self.player_id = int(data[const.ATTR_PLAYER_ID])
-        self.model = data[const.ATTR_MODEL]
-        self.serial = data.get(const.ATTR_SERIAL)
-        self.version = data[const.ATTR_VERSION]
-        self.ip_address = data[const.ATTR_IP_ADDRESS]
+        self.name = data[command.ATTR_NAME]
+        self.player_id = int(data[command.ATTR_PLAYER_ID])
+        self.model = data[command.ATTR_MODEL]
+        self.serial = data.get(command.ATTR_SERIAL)
+        self.version = data[command.ATTR_VERSION]
+        self.ip_address = data[command.ATTR_IP_ADDRESS]
         self.network = parse_enum(
-            const.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
+            command.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
         )
-        self.line_out = int(data[const.ATTR_LINE_OUT])
-        self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
+        self.line_out = int(data[command.ATTR_LINE_OUT])
+        self.group_id = HeosPlayer.__get_optional_int(data.get(command.ATTR_GROUP_ID))
 
     async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
@@ -252,20 +252,24 @@ class HeosPlayer:
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self.now_playing_media._on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self.state = PlayState(event.get_message_value(const.ATTR_STATE))
+            self.state = PlayState(event.get_message_value(command.ATTR_STATE))
             if self.state == PlayState.PLAY:
                 self.now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self.volume = event.get_message_value_int(const.ATTR_LEVEL)
-            self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
+            self.volume = event.get_message_value_int(command.ATTR_LEVEL)
+            self.is_muted = (
+                event.get_message_value(command.ATTR_MUTE) == command.VALUE_ON
+            )
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self.repeat = RepeatType(event.get_message_value(const.ATTR_REPEAT))
+            self.repeat = RepeatType(event.get_message_value(command.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self.shuffle = event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
+            self.shuffle = (
+                event.get_message_value(command.ATTR_SHUFFLE) == command.VALUE_ON
+            )
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self.playback_error = event.get_message_value(const.ATTR_ERROR)
+            self.playback_error = event.get_message_value(command.ATTR_ERROR)
         return True
 
     def add_on_player_event(self, callback: EventCallbackType) -> DisconnectType:

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from functools import cached_property
 
-from pyheos import const
+from pyheos import command
 from pyheos.types import NetworkType
 
 
@@ -32,12 +32,12 @@ class HeosHost:
             HeosHost: The created HeosHost object.
         """
         return HeosHost(
-            data[const.ATTR_NAME],
-            data[const.ATTR_MODEL],
-            data.get(const.ATTR_SERIAL),
-            data[const.ATTR_VERSION],
-            data[const.ATTR_IP_ADDRESS],
-            data[const.ATTR_NETWORK],
+            data[command.ATTR_NAME],
+            data[command.ATTR_MODEL],
+            data.get(command.ATTR_SERIAL),
+            data[command.ATTR_VERSION],
+            data[command.ATTR_IP_ADDRESS],
+            data[command.ATTR_NETWORK],
         )
 
 

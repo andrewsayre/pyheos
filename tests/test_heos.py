@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from pyheos import command as commands
+from pyheos import command as command_const
 from pyheos import const
 from pyheos.connection import ConnectionState
 from pyheos.credentials import Credentials
@@ -107,7 +107,10 @@ async def test_connect_not_logged_in(mock_device: MockHeosDevice) -> None:
 
 @calls_command(
     "system.sign_in",
-    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+    {
+        command_const.ATTR_USER_NAME: "example@example.com",
+        command_const.ATTR_PASSWORD: "example",
+    },
 )
 async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> None:
     """Test heos signs-in when credentials provided."""
@@ -123,7 +126,10 @@ async def test_connect_with_credentials_logs_in(mock_device: MockHeosDevice) -> 
 
 @calls_command(
     "system.sign_in_failure",
-    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+    {
+        command_const.ATTR_USER_NAME: "example@example.com",
+        command_const.ATTR_PASSWORD: "example",
+    },
 )
 async def test_connect_with_bad_credentials_dispatches_event(
     mock_device: MockHeosDevice,
@@ -148,7 +154,7 @@ async def test_connect_with_bad_credentials_dispatches_event(
 @calls_commands(
     CallCommand(
         "browse.browse_fail_user_not_logged_in",
-        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
         add_command_under_process=True,
     ),
     CallCommand("system.sign_out"),
@@ -173,7 +179,7 @@ async def test_stale_credentials_cleared_afer_auth_error(heos: Heos) -> None:
 @calls_commands(
     CallCommand(
         "browse.browse_fail_user_not_logged_in",
-        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
         add_command_under_process=True,
     ),
     CallCommand("system.sign_out"),
@@ -198,7 +204,7 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
 @calls_commands(
     CallCommand(
         "browse.browse_fail_user_not_logged_in",
-        {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
+        {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
         add_command_under_process=True,
     ),
     CallCommand("system.sign_out"),
@@ -234,7 +240,7 @@ async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat_interval=0.1)
     await asyncio.sleep(0.3)
 
-    mock_device.assert_command_called(commands.COMMAND_HEART_BEAT)
+    mock_device.assert_command_called(command_const.COMMAND_HEART_BEAT)
 
     await heos.disconnect()
 
@@ -302,7 +308,7 @@ async def test_commands_fail_when_disconnected(
 
     with pytest.raises(CommandError, match="Not connected to device") as e_info:
         await heos.load_players()
-    assert e_info.value.command == commands.COMMAND_GET_PLAYERS
+    assert e_info.value.command == command_const.COMMAND_GET_PLAYERS
     assert (
         "Command failed 'heos://player/get_players': Not connected to device"
         in caplog.text
@@ -482,12 +488,14 @@ async def test_get_players(heos: Heos) -> None:
 
 
 @calls_commands(
-    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_player_info", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_state", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand(
+        "player.get_now_playing_media", {command_const.ATTR_PLAYER_ID: -263109739}
+    ),
+    CallCommand("player.get_volume", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {command_const.ATTR_PLAYER_ID: -263109739}),
 )
 async def test_get_player_info_by_id(heos: Heos) -> None:
     """Test retrieving player info by player id."""
@@ -508,12 +516,14 @@ async def test_get_player_info_by_id_already_loaded(heos: Heos) -> None:
 
 @calls_player_commands(
     (1, 2),
-    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_player_info", {command_const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_state", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand(
+        "player.get_now_playing_media", {command_const.ATTR_PLAYER_ID: -263109739}
+    ),
+    CallCommand("player.get_volume", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {command_const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {command_const.ATTR_PLAYER_ID: -263109739}),
 )
 async def test_get_player_info_by_id_already_loaded_refresh(heos: Heos) -> None:
     """Test retrieving player info by player id for already loaded player updates."""
@@ -649,7 +659,7 @@ async def test_player_now_playing_changed_event(
 
     # Write event through mock device
     command = mock_device.register(
-        commands.COMMAND_GET_NOW_PLAYING_MEDIA,
+        command_const.COMMAND_GET_NOW_PLAYING_MEDIA,
         None,
         "player.get_now_playing_media_changed",
         replace=True,
@@ -710,7 +720,7 @@ async def test_player_volume_changed_event(
         {
             "player_id": player.player_id,
             "level": 50.0,
-            "mute": const.VALUE_ON,
+            "mute": command_const.VALUE_ON,
         },
     )
 
@@ -886,7 +896,10 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        commands.COMMAND_GET_PLAYERS, None, "player.get_players_changed", replace=True
+        command_const.COMMAND_GET_PLAYERS,
+        None,
+        "player.get_players_changed",
+        replace=True,
     )
     await mock_device.write_event("event.players_changed")
 
@@ -922,7 +935,7 @@ async def test_players_changed_event_new_ids(
 
     # Write event through mock device
     command = mock_device.register(
-        commands.COMMAND_GET_PLAYERS,
+        command_const.COMMAND_GET_PLAYERS,
         None,
         "player.get_players_firmware_update",
         replace=True,
@@ -954,8 +967,8 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
     # Write event through mock device
     command = mock_device.register(
-        commands.COMMAND_BROWSE_GET_SOURCES,
-        {const.ATTR_REFRESH: const.VALUE_ON},
+        command_const.COMMAND_BROWSE_GET_SOURCES,
+        {command_const.ATTR_REFRESH: command_const.VALUE_ON},
         "browse.get_music_sources_changed",
         replace=True,
     )
@@ -982,7 +995,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
 
     # Write event through mock device
     command = mock_device.register(
-        commands.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
+        command_const.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
     )
     await mock_device.write_event("event.groups_changed")
 
@@ -1089,7 +1102,8 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
 
 
 @calls_command(
-    "browse.browse_favorites", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
+    "browse.browse_favorites",
+    {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
 )
 async def test_browse_media_music_source(
     heos: Heos,
@@ -1115,9 +1129,9 @@ async def test_browse_media_music_source_unavailable_rasises(
 @calls_command(
     "browse.browse_album",
     {
-        const.ATTR_SOURCE_ID: MediaItems.ALBUM.source_id,
-        const.ATTR_CONTAINER_ID: MediaItems.ALBUM.container_id,
-        const.ATTR_RANGE: "0,13",
+        command_const.ATTR_SOURCE_ID: MediaItems.ALBUM.source_id,
+        command_const.ATTR_CONTAINER_ID: MediaItems.ALBUM.container_id,
+        command_const.ATTR_RANGE: "0,13",
     },
 )
 async def test_browse_media_item(heos: Heos, media_item_album: MediaItem) -> None:
@@ -1156,11 +1170,11 @@ async def test_play_media_unplayable_raises(media_item_album: MediaItem) -> None
 @calls_command(
     "browse.add_to_queue_track",
     {
-        const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
-        const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
-        const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
+        command_const.ATTR_PLAYER_ID: "1",
+        command_const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
+        command_const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
+        command_const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
+        command_const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
 )
 async def test_play_media_song(heos: Heos, media_item_song: MediaItem) -> None:
@@ -1185,9 +1199,9 @@ async def test_play_media_song_missing_container_raises(
 @calls_command(
     "browse.play_input",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_INPUT: MediaItems.INPUT.media_id,
-        const.ATTR_SOURCE_PLAYER_ID: MediaItems.INPUT.source_id,
+        command_const.ATTR_PLAYER_ID: 1,
+        command_const.ATTR_INPUT: MediaItems.INPUT.media_id,
+        command_const.ATTR_SOURCE_PLAYER_ID: MediaItems.INPUT.source_id,
     },
 )
 async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None:
@@ -1198,10 +1212,10 @@ async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None
 @calls_command(
     "browse.play_stream_station",
     {
-        const.ATTR_PLAYER_ID: "1",
-        const.ATTR_SOURCE_ID: MediaItems.STATION.source_id,
-        const.ATTR_CONTAINER_ID: MediaItems.STATION.container_id,
-        const.ATTR_MEDIA_ID: MediaItems.STATION.media_id,
+        command_const.ATTR_PLAYER_ID: "1",
+        command_const.ATTR_SOURCE_ID: MediaItems.STATION.source_id,
+        command_const.ATTR_CONTAINER_ID: MediaItems.STATION.container_id,
+        command_const.ATTR_MEDIA_ID: MediaItems.STATION.media_id,
     },
 )
 async def test_play_media_station(heos: Heos, media_item_station: MediaItem) -> None:
@@ -1241,10 +1255,13 @@ async def test_get_music_sources(heos: Heos) -> None:
 
 @calls_commands(
     CallCommand(
-        "browse.browse_aux_input", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_AUX_INPUT}
+        "browse.browse_aux_input",
+        {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_AUX_INPUT},
     ),
-    CallCommand("browse.browse_theater_receiver", {const.ATTR_SOURCE_ID: 546978854}),
-    CallCommand("browse.browse_heos_drive", {const.ATTR_SOURCE_ID: -263109739}),
+    CallCommand(
+        "browse.browse_theater_receiver", {command_const.ATTR_SOURCE_ID: 546978854}
+    ),
+    CallCommand("browse.browse_heos_drive", {command_const.ATTR_SOURCE_ID: -263109739}),
 )
 async def test_get_input_sources(heos: Heos) -> None:
     """Test the get input sources method."""
@@ -1259,7 +1276,8 @@ async def test_get_input_sources(heos: Heos) -> None:
 
 
 @calls_command(
-    "browse.browse_favorites", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
+    "browse.browse_favorites",
+    {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES},
 )
 async def test_get_favorites(heos: Heos) -> None:
     """Test the get favorites method."""
@@ -1278,7 +1296,8 @@ async def test_get_favorites(heos: Heos) -> None:
 
 
 @calls_command(
-    "browse.browse_playlists", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS}
+    "browse.browse_playlists",
+    {command_const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS},
 )
 async def test_get_playlists(heos: Heos) -> None:
     """Test the get playlists method."""
@@ -1295,7 +1314,10 @@ async def test_get_playlists(heos: Heos) -> None:
 
 @calls_command(
     "system.sign_in",
-    {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+    {
+        command_const.ATTR_USER_NAME: "example@example.com",
+        command_const.ATTR_PASSWORD: "example",
+    },
 )
 async def test_sign_in_does_not_update_credentials(heos: Heos) -> None:
     """Test sign-in does not update existing credentials."""
@@ -1310,7 +1332,10 @@ async def test_sign_in_does_not_update_credentials(heos: Heos) -> None:
     CallCommand("system.sign_out"),
     CallCommand(
         "system.sign_in_failure",
-        {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+        {
+            command_const.ATTR_USER_NAME: "example@example.com",
+            command_const.ATTR_PASSWORD: "example",
+        },
     ),
 )
 async def test_sign_in_and_out(heos: Heos, caplog: pytest.LogCaptureFixture) -> None:
@@ -1334,7 +1359,10 @@ async def test_sign_in_and_out(heos: Heos, caplog: pytest.LogCaptureFixture) -> 
     CallCommand("system.sign_out"),
     CallCommand(
         "system.sign_in",
-        {const.ATTR_USER_NAME: "example@example.com", const.ATTR_PASSWORD: "example"},
+        {
+            command_const.ATTR_USER_NAME: "example@example.com",
+            command_const.ATTR_PASSWORD: "example",
+        },
     ),
 )
 async def test_sign_in_updates_credential(
@@ -1379,9 +1407,9 @@ async def test_get_groups(heos: Heos) -> None:
 
 
 @calls_commands(
-    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: -263109739}),
-    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
-    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_group_info", {command_const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_volume", {command_const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {command_const.ATTR_GROUP_ID: -263109739}),
 )
 async def test_get_group_info_by_id(heos: Heos) -> None:
     """Test retrieving group info by group id."""
@@ -1405,9 +1433,9 @@ async def test_get_group_info_by_id_already_loaded(heos: Heos) -> None:
 
 
 @calls_group_commands(
-    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: 1}),
-    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
-    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_group_info", {command_const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_volume", {command_const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {command_const.ATTR_GROUP_ID: -263109739}),
 )
 async def test_get_group_info_by_id_already_loaded_refresh(heos: Heos) -> None:
     """Test retrieving group info by group id for already loaded group updates."""
@@ -1444,25 +1472,25 @@ async def test_get_group_info_invalid_parameters_raises(
         await heos.get_group_info(group_id=group_id, group=group)
 
 
-@calls_command("group.set_group_create", {const.ATTR_PLAYER_ID: "1,2,3"})
+@calls_command("group.set_group_create", {command_const.ATTR_PLAYER_ID: "1,2,3"})
 async def test_create_group(heos: Heos) -> None:
     """Test creating a group."""
     await heos.create_group(1, [2, 3])
 
 
-@calls_command("group.set_group_remove", {const.ATTR_PLAYER_ID: 1})
+@calls_command("group.set_group_remove", {command_const.ATTR_PLAYER_ID: 1})
 async def test_remove_group(heos: Heos) -> None:
     """Test removing a group."""
     await heos.remove_group(1)
 
 
-@calls_command("group.set_group_update", {const.ATTR_PLAYER_ID: "1,2"})
+@calls_command("group.set_group_update", {command_const.ATTR_PLAYER_ID: "1,2"})
 async def test_update_group(heos: Heos) -> None:
     """Test removing a group."""
     await heos.update_group(1, [2])
 
 
-@calls_command("player.get_now_playing_media", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.get_now_playing_media", {command_const.ATTR_PLAYER_ID: 1})
 async def test_get_now_playing_media(heos: Heos) -> None:
     """Test removing a group."""
     media = await heos.get_now_playing_media(1)
@@ -1485,7 +1513,7 @@ async def test_get_now_playing_media(heos: Heos) -> None:
 
 @calls_command("system.heart_beat")
 async def test_heart_beat(heos: Heos) -> None:
-    """Test the heart beat command."""
+    """Test the heart beat command_const."""
     await heos.heart_beat()
 
 

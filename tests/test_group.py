@@ -2,6 +2,7 @@
 
 import pytest
 
+from pyheos import command as command_const
 from pyheos import const
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
@@ -12,11 +13,17 @@ from tests import CallCommand, calls_command, calls_commands, value
 def test_group_from_data_no_leader_raises() -> None:
     """Test creating a group from data with no leader."""
     data = {
-        const.ATTR_NAME: "Test Group",
-        const.ATTR_GROUP_ID: "1",
-        const.ATTR_PLAYERS: [
-            {const.ATTR_PLAYER_ID: "1", const.ATTR_ROLE: const.VALUE_MEMBER},
-            {const.ATTR_PLAYER_ID: "2", const.ATTR_ROLE: const.VALUE_MEMBER},
+        command_const.ATTR_NAME: "Test Group",
+        command_const.ATTR_GROUP_ID: "1",
+        command_const.ATTR_PLAYERS: [
+            {
+                command_const.ATTR_PLAYER_ID: "1",
+                command_const.ATTR_ROLE: command_const.VALUE_MEMBER,
+            },
+            {
+                command_const.ATTR_PLAYER_ID: "2",
+                command_const.ATTR_ROLE: command_const.VALUE_MEMBER,
+            },
         ],
     }
     with pytest.raises(ValueError, match="No leader found in group data"):
@@ -38,9 +45,9 @@ async def test_on_event_no_match_returns_false(
     event = HeosMessage(
         command,
         message={
-            const.ATTR_GROUP_ID: group_id,
-            const.ATTR_LEVEL: "10",
-            const.ATTR_MUTE: const.VALUE_ON,
+            command_const.ATTR_GROUP_ID: group_id,
+            command_const.ATTR_LEVEL: "10",
+            command_const.ATTR_MUTE: command_const.VALUE_ON,
         },
     )
     assert result == await group._on_event(event)
@@ -52,7 +59,10 @@ async def test_on_event_no_match_returns_false(
         assert not group.is_muted
 
 
-@calls_command("group.set_volume", {const.ATTR_LEVEL: "25", const.ATTR_GROUP_ID: "1"})
+@calls_command(
+    "group.set_volume",
+    {command_const.ATTR_LEVEL: "25", command_const.ATTR_GROUP_ID: "1"},
+)
 async def test_set_volume(group: HeosGroup) -> None:
     """Test the set_volume command."""
     await group.set_volume(25)
@@ -65,7 +75,10 @@ async def test_set_volume_invalid_raises(group: HeosGroup, volume: int) -> None:
         await group.set_volume(volume)
 
 
-@calls_command("group.volume_down", {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"})
+@calls_command(
+    "group.volume_down",
+    {command_const.ATTR_STEP: "6", command_const.ATTR_GROUP_ID: "1"},
+)
 async def test_volume_down(group: HeosGroup) -> None:
     """Test the volume_down command."""
     await group.volume_down(6)
@@ -80,7 +93,9 @@ async def test_volume_down_invalid_raises(
         await group.volume_down(step)
 
 
-@calls_command("group.volume_up", {const.ATTR_STEP: "6", const.ATTR_GROUP_ID: "1"})
+@calls_command(
+    "group.volume_up", {command_const.ATTR_STEP: "6", command_const.ATTR_GROUP_ID: "1"}
+)
 async def test_volume_up(group: HeosGroup) -> None:
     """Test the volume_up command."""
     await group.volume_up(6)
@@ -94,7 +109,11 @@ async def test_volume_up_invalid_raises(group: HeosGroup, step: int) -> None:
 
 
 @calls_command(
-    "group.set_mute", {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_ON}
+    "group.set_mute",
+    {
+        command_const.ATTR_GROUP_ID: "1",
+        command_const.ATTR_STATE: command_const.VALUE_ON,
+    },
 )
 async def test_mute(group: HeosGroup) -> None:
     """Test mute commands."""
@@ -105,8 +124,8 @@ async def test_mute(group: HeosGroup) -> None:
 @calls_command(
     "group.set_mute",
     {
-        const.ATTR_GROUP_ID: "1",
-        const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
+        command_const.ATTR_GROUP_ID: "1",
+        command_const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
     },
 )
 async def test_set_mute(group: HeosGroup, mute: bool) -> None:
@@ -115,23 +134,27 @@ async def test_set_mute(group: HeosGroup, mute: bool) -> None:
 
 
 @calls_command(
-    "group.set_mute", {const.ATTR_GROUP_ID: "1", const.ATTR_STATE: const.VALUE_OFF}
+    "group.set_mute",
+    {
+        command_const.ATTR_GROUP_ID: "1",
+        command_const.ATTR_STATE: command_const.VALUE_OFF,
+    },
 )
 async def test_unmute(group: HeosGroup) -> None:
     """Test mute commands."""
     await group.unmute()
 
 
-@calls_command("group.toggle_mute", {const.ATTR_GROUP_ID: "1"})
+@calls_command("group.toggle_mute", {command_const.ATTR_GROUP_ID: "1"})
 async def test_toggle_mute(group: HeosGroup) -> None:
     """Test toggle mute command."""
     await group.toggle_mute()
 
 
 @calls_commands(
-    CallCommand("group.get_group_info", {const.ATTR_GROUP_ID: 1}),
-    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: -263109739}),
-    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_group_info", {command_const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_volume", {command_const.ATTR_GROUP_ID: -263109739}),
+    CallCommand("group.get_mute", {command_const.ATTR_GROUP_ID: -263109739}),
 )
 async def test_refresh(group: HeosGroup) -> None:
     """Test refresh, including base, updates the correct information."""
@@ -146,8 +169,8 @@ async def test_refresh(group: HeosGroup) -> None:
 
 
 @calls_commands(
-    CallCommand("group.get_volume", {const.ATTR_GROUP_ID: 1}),
-    CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_volume", {command_const.ATTR_GROUP_ID: 1}),
+    CallCommand("group.get_mute", {command_const.ATTR_GROUP_ID: 1}),
 )
 async def test_refresh_no_base_update(group: HeosGroup) -> None:
     """Test refresh updates the correct information."""

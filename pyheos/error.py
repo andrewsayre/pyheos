@@ -3,6 +3,7 @@
 import asyncio
 from typing import Final
 
+from pyheos import command as command_const
 from pyheos import const
 from pyheos.message import HeosMessage
 
@@ -81,12 +82,12 @@ class CommandFailedError(CommandError):
     @classmethod
     def _from_message(cls, message: HeosMessage) -> "CommandFailedError":
         """Create a new instance of the error from a message."""
-        error_text = message.get_message_value(const.ATTR_TEXT)
+        error_text = message.get_message_value(command_const.ATTR_TEXT)
         system_error_number = None
-        error_id = message.get_message_value_int(const.ATTR_ERROR_ID)
+        error_id = message.get_message_value_int(command_const.ATTR_ERROR_ID)
         if error_id == const.ERROR_SYSTEM_ERROR:
             system_error_number = message.get_message_value_int(
-                const.ATTR_SYSTEM_ERROR_NUMBER
+                command_const.ATTR_SYSTEM_ERROR_NUMBER
             )
             error_text += f" {system_error_number}"
 

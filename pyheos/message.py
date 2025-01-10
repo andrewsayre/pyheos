@@ -6,11 +6,11 @@ from functools import cached_property
 from typing import Any, Final
 from urllib.parse import parse_qsl
 
-from pyheos import const
+from pyheos import command
 
 BASE_URI: Final = "heos://"
 QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
-MASKED_PARAMS: Final = {const.ATTR_PASSWORD}
+MASKED_PARAMS: Final = {command.ATTR_PASSWORD}
 MASK: Final = "********"
 
 
@@ -53,7 +53,7 @@ class HeosCommand:
             value = MASK if mask and key in MASKED_PARAMS else items[key]
             item = f"{key}={HeosCommand._quote(value)}"
             # Ensure 'url' goes last per CLI spec and is not quoted
-            if key == const.ATTR_URL:
+            if key == command.ATTR_URL:
                 pairs.append(f"{key}={value}")
             else:
                 pairs.insert(0, item)
@@ -82,17 +82,18 @@ class HeosMessage:
     def _from_raw_message(raw_message: str) -> "HeosMessage":
         """Create a HeosMessage from a raw message."""
         container = json.loads(raw_message)
-        heos = container[const.ATTR_HEOS]
+        heos = container[command.ATTR_HEOS]
         instance = HeosMessage(
-            command=str(heos[const.ATTR_COMMAND]),
+            command=str(heos[command.ATTR_COMMAND]),
             result=bool(
-                heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
+                heos.get(command.ATTR_RESULT, command.VALUE_SUCCESS)
+                == command.VALUE_SUCCESS
             ),
             message=dict(
-                parse_qsl(heos.get(const.ATTR_MESSAGE, ""), keep_blank_values=True)
+                parse_qsl(heos.get(command.ATTR_MESSAGE, ""), keep_blank_values=True)
             ),
-            payload=container.get(const.ATTR_PAYLOAD),
-            options=container.get(const.ATTR_OPTIONS),
+            payload=container.get(command.ATTR_PAYLOAD),
+            options=container.get(command.ATTR_OPTIONS),
         )
         instance._raw_message = raw_message
         return instance

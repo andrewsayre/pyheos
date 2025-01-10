@@ -9,7 +9,8 @@ from dataclasses import dataclass, field
 from typing import Any, cast
 from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
 
-from pyheos import Heos, const
+from pyheos import Heos
+from pyheos import command as const
 from pyheos.command import (
     COMMAND_ACCOUNT_CHECK,
     COMMAND_REBOOT,

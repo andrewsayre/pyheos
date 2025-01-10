@@ -17,22 +17,22 @@ from tests.common import MediaItems, MediaMusicSources
 async def test_media_music_source_from_data() -> None:
     """Test creating a media music source from data."""
     data = {
-        const.ATTR_NAME: "Pandora",
-        const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
-        const.ATTR_TYPE: MediaType.MUSIC_SERVICE,
-        const.ATTR_SOURCE_ID: 1,
-        const.ATTR_AVAILABLE: const.VALUE_TRUE,
-        const.ATTR_SERVICE_USER_NAME: "test@test.com",
+        command.ATTR_NAME: "Pandora",
+        command.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
+        command.ATTR_TYPE: MediaType.MUSIC_SERVICE,
+        command.ATTR_SOURCE_ID: 1,
+        command.ATTR_AVAILABLE: command.VALUE_TRUE,
+        command.ATTR_SERVICE_USER_NAME: "test@test.com",
     }
 
     source = MediaMusicSource.from_data(data)
 
-    assert source.name == data[const.ATTR_NAME]
-    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.name == data[command.ATTR_NAME]
+    assert source.image_url == data[command.ATTR_IMAGE_URL]
     assert source.type == MediaType.MUSIC_SERVICE
-    assert source.source_id == data[const.ATTR_SOURCE_ID]
+    assert source.source_id == data[command.ATTR_SOURCE_ID]
     assert source.available
-    assert source.service_username == data[const.ATTR_SERVICE_USER_NAME]
+    assert source.service_username == data[command.ATTR_SERVICE_USER_NAME]
     with pytest.raises(
         AssertionError,
         match="Heos instance not set",
@@ -41,7 +41,7 @@ async def test_media_music_source_from_data() -> None:
 
 
 @calls_command(
-    "browse.browse_favorites", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
+    "browse.browse_favorites", {command.ATTR_SOURCE_ID: const.MUSIC_SOURCE_FAVORITES}
 )
 async def test_media_music_source_browse(
     media_music_source: MediaMusicSource,
@@ -67,15 +67,19 @@ async def test_browse_result_from_data() -> None:
     message = HeosMessage(
         command.COMMAND_BROWSE_BROWSE,
         True,
-        {const.ATTR_SOURCE_ID: "1025", const.ATTR_RETURNED: "1", const.ATTR_COUNT: "1"},
+        {
+            command.ATTR_SOURCE_ID: "1025",
+            command.ATTR_RETURNED: "1",
+            command.ATTR_COUNT: "1",
+        },
         [
             {
-                const.ATTR_CONTAINER: const.VALUE_YES,
-                const.ATTR_TYPE: str(MediaType.PLAYLIST),
-                const.ATTR_CONTAINER_ID: "171566",
-                const.ATTR_PLAYABLE: const.VALUE_YES,
-                const.ATTR_NAME: "Rockin Songs",
-                const.ATTR_IMAGE_URL: "",
+                command.ATTR_CONTAINER: command.VALUE_YES,
+                command.ATTR_TYPE: str(MediaType.PLAYLIST),
+                command.ATTR_CONTAINER_ID: "171566",
+                command.ATTR_PLAYABLE: command.VALUE_YES,
+                command.ATTR_NAME: "Rockin Songs",
+                command.ATTR_IMAGE_URL: "",
             }
         ],
     )
@@ -96,30 +100,30 @@ async def test_media_item_from_data() -> None:
     source_id = 1
     container_id = "My Music"
     data = {
-        const.ATTR_NAME: "Imaginary Parties",
-        const.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
-        const.ATTR_TYPE: str(MediaType.SONG),
-        const.ATTR_CONTAINER: const.VALUE_NO,
-        const.ATTR_MEDIA_ID: "78374741",
-        const.ATTR_ARTIST: "Superfruit",
-        const.ATTR_ALBUM: "Future Friends",
-        const.ATTR_ALBUM_ID: "78374740",
-        const.ATTR_PLAYABLE: const.VALUE_YES,
+        command.ATTR_NAME: "Imaginary Parties",
+        command.ATTR_IMAGE_URL: "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
+        command.ATTR_TYPE: str(MediaType.SONG),
+        command.ATTR_CONTAINER: command.VALUE_NO,
+        command.ATTR_MEDIA_ID: "78374741",
+        command.ATTR_ARTIST: "Superfruit",
+        command.ATTR_ALBUM: "Future Friends",
+        command.ATTR_ALBUM_ID: "78374740",
+        command.ATTR_PLAYABLE: command.VALUE_YES,
     }
 
     source = MediaItem.from_data(data, source_id, container_id)
 
-    assert source.name == data[const.ATTR_NAME]
-    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.name == data[command.ATTR_NAME]
+    assert source.image_url == data[command.ATTR_IMAGE_URL]
     assert source.type == MediaType.SONG
     assert source.container_id == container_id
     assert source.source_id == source_id
     assert source.playable is True
     assert source.browsable is False
-    assert source.album == data[const.ATTR_ALBUM]
-    assert source.artist == data[const.ATTR_ARTIST]
-    assert source.album_id == data[const.ATTR_ALBUM_ID]
-    assert source.media_id == data[const.ATTR_MEDIA_ID]
+    assert source.album == data[command.ATTR_ALBUM]
+    assert source.artist == data[command.ATTR_ARTIST]
+    assert source.album_id == data[command.ATTR_ALBUM_ID]
+    assert source.media_id == data[command.ATTR_MEDIA_ID]
     with pytest.raises(
         AssertionError,
         match="Heos instance not set",
@@ -135,11 +139,11 @@ async def test_media_item_from_data() -> None:
 async def test_media_item_from_data_source_id_not_present_raises() -> None:
     """Test creating a MediaItem from data."""
     data = {
-        const.ATTR_NAME: "Video",
-        const.ATTR_IMAGE_URL: "",
-        const.ATTR_TYPE: str(MediaType.CONTAINER),
-        const.ATTR_CONTAINER: const.VALUE_YES,
-        const.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
+        command.ATTR_NAME: "Video",
+        command.ATTR_IMAGE_URL: "",
+        command.ATTR_TYPE: str(MediaType.CONTAINER),
+        command.ATTR_CONTAINER: command.VALUE_YES,
+        command.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
     }
 
     with pytest.raises(
@@ -152,18 +156,18 @@ async def test_media_item_from_data_source_id_not_present_raises() -> None:
 async def test_media_item_from_data_source() -> None:
     """Test creating a MediaItem from data."""
     data = {
-        const.ATTR_NAME: "Plex Media Server",
-        const.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_servers.png",
-        const.ATTR_TYPE: str(MediaType.HEOS_SERVER),
-        const.ATTR_SOURCE_ID: 123456789,
+        command.ATTR_NAME: "Plex Media Server",
+        command.ATTR_IMAGE_URL: "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_servers.png",
+        command.ATTR_TYPE: str(MediaType.HEOS_SERVER),
+        command.ATTR_SOURCE_ID: 123456789,
     }
 
     source = MediaItem.from_data(data)
 
-    assert source.name == data[const.ATTR_NAME]
-    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.name == data[command.ATTR_NAME]
+    assert source.image_url == data[command.ATTR_IMAGE_URL]
     assert source.type == MediaType.HEOS_SERVER
-    assert source.source_id == data[const.ATTR_SOURCE_ID]
+    assert source.source_id == data[command.ATTR_SOURCE_ID]
     assert source.container_id is None
     assert source.playable is False
     assert source.browsable is True
@@ -177,19 +181,19 @@ async def test_media_item_from_data_container() -> None:
     """Test creating a MediaItem from data."""
     source_id = 123456789
     data = {
-        const.ATTR_NAME: "Video",
-        const.ATTR_IMAGE_URL: "",
-        const.ATTR_TYPE: str(MediaType.CONTAINER),
-        const.ATTR_CONTAINER: const.VALUE_YES,
-        const.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
+        command.ATTR_NAME: "Video",
+        command.ATTR_IMAGE_URL: "",
+        command.ATTR_TYPE: str(MediaType.CONTAINER),
+        command.ATTR_CONTAINER: command.VALUE_YES,
+        command.ATTR_CONTAINER_ID: "94467912-bd40-4d2f-ad25-7b8423f7b05a",
     }
 
     source = MediaItem.from_data(data, source_id)
 
-    assert source.name == data[const.ATTR_NAME]
-    assert source.image_url == data[const.ATTR_IMAGE_URL]
+    assert source.name == data[command.ATTR_NAME]
+    assert source.image_url == data[command.ATTR_IMAGE_URL]
     assert source.type == MediaType.CONTAINER
-    assert source.container_id == data[const.ATTR_CONTAINER_ID]
+    assert source.container_id == data[command.ATTR_CONTAINER_ID]
     assert source.source_id == source_id
     assert source.playable is False
     assert source.browsable is True
@@ -200,7 +204,7 @@ async def test_media_item_from_data_container() -> None:
 
 
 @calls_command(
-    "browse.browse_heos_drive", {const.ATTR_SOURCE_ID: MediaItems.DEVICE.source_id}
+    "browse.browse_heos_drive", {command.ATTR_SOURCE_ID: MediaItems.DEVICE.source_id}
 )
 async def test_media_item_browse(media_item_device: MediaItem) -> None:
     """Test browsing a media music source."""
@@ -215,7 +219,7 @@ async def test_media_item_browse(media_item_device: MediaItem) -> None:
 
 @calls_command(
     "browse.get_source_info",
-    {const.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
+    {command.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
 )
 async def test_refresh(media_music_source: MediaMusicSource) -> None:
     """Test refresh updates the data."""
@@ -234,11 +238,11 @@ async def test_refresh(media_music_source: MediaMusicSource) -> None:
 @calls_command(
     "browse.add_to_queue_track",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
-        const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
-        const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.REPLACE_AND_PLAY,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
+        command.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
+        command.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
+        command.ATTR_ADD_CRITERIA_ID: AddCriteriaType.REPLACE_AND_PLAY,
     },
     add_command_under_process=True,
 )

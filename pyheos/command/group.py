@@ -6,7 +6,7 @@ This module creates HEOS group commands.
 
 from collections.abc import Sequence
 
-from pyheos import command, const
+from pyheos import command
 from pyheos.message import HeosCommand
 
 
@@ -28,7 +28,7 @@ class GroupCommands:
         References:
             4.3.2 Get Group Info"""
         return HeosCommand(
-            command.COMMAND_GET_GROUP_INFO, {const.ATTR_GROUP_ID: group_id}
+            command.COMMAND_GET_GROUP_INFO, {command.ATTR_GROUP_ID: group_id}
         )
 
     @staticmethod
@@ -39,7 +39,7 @@ class GroupCommands:
             4.3.3 Set Group"""
         return HeosCommand(
             command.COMMAND_SET_GROUP,
-            {const.ATTR_PLAYER_ID: ",".join(map(str, player_ids))},
+            {command.ATTR_PLAYER_ID: ",".join(map(str, player_ids))},
         )
 
     @staticmethod
@@ -51,7 +51,7 @@ class GroupCommands:
             4.3.4 Get Group Volume
         """
         return HeosCommand(
-            command.COMMAND_GET_GROUP_VOLUME, {const.ATTR_GROUP_ID: group_id}
+            command.COMMAND_GET_GROUP_VOLUME, {command.ATTR_GROUP_ID: group_id}
         )
 
     @staticmethod
@@ -64,7 +64,7 @@ class GroupCommands:
             raise ValueError("'level' must be in the range 0-100")
         return HeosCommand(
             command.COMMAND_SET_GROUP_VOLUME,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_LEVEL: level},
+            {command.ATTR_GROUP_ID: group_id, command.ATTR_LEVEL: level},
         )
 
     @staticmethod
@@ -77,7 +77,7 @@ class GroupCommands:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
             command.COMMAND_GROUP_VOLUME_UP,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_STEP: step},
+            {command.ATTR_GROUP_ID: group_id, command.ATTR_STEP: step},
         )
 
     @staticmethod
@@ -90,7 +90,7 @@ class GroupCommands:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
             command.COMMAND_GROUP_VOLUME_DOWN,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_STEP: step},
+            {command.ATTR_GROUP_ID: group_id, command.ATTR_STEP: step},
         )
 
     @staticmethod
@@ -100,7 +100,7 @@ class GroupCommands:
         References:
             4.3.8 Get Group Mute"""
         return HeosCommand(
-            command.COMMAND_GET_GROUP_MUTE, {const.ATTR_GROUP_ID: group_id}
+            command.COMMAND_GET_GROUP_MUTE, {command.ATTR_GROUP_ID: group_id}
         )
 
     @staticmethod
@@ -112,8 +112,8 @@ class GroupCommands:
         return HeosCommand(
             command.COMMAND_SET_GROUP_MUTE,
             {
-                const.ATTR_GROUP_ID: group_id,
-                const.ATTR_STATE: const.VALUE_ON if state else const.VALUE_OFF,
+                command.ATTR_GROUP_ID: group_id,
+                command.ATTR_STATE: command.VALUE_ON if state else command.VALUE_OFF,
             },
         )
 
@@ -124,5 +124,5 @@ class GroupCommands:
         References:
             4.3.10 Toggle Group Mute"""
         return HeosCommand(
-            command.COMMAND_GROUP_TOGGLE_MUTE, {const.ATTR_GROUP_ID: group_id}
+            command.COMMAND_GROUP_TOGGLE_MUTE, {command.ATTR_GROUP_ID: group_id}
         )

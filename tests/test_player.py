@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from pyheos import const
+from pyheos import command, const
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
 from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
@@ -23,14 +23,14 @@ from tests.common import MediaItems
 def test_from_data(network: str | None, expected_network: NetworkType) -> None:
     """Test the from_data function."""
     data = {
-        const.ATTR_NAME: "Back Patio",
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_MODEL: "HEOS Drive",
-        const.ATTR_VERSION: "1.493.180",
-        const.ATTR_IP_ADDRESS: "192.168.0.1",
-        const.ATTR_NETWORK: network,
-        const.ATTR_LINE_OUT: 1,
-        const.ATTR_SERIAL: "1234567890",
+        command.ATTR_NAME: "Back Patio",
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_MODEL: "HEOS Drive",
+        command.ATTR_VERSION: "1.493.180",
+        command.ATTR_IP_ADDRESS: "192.168.0.1",
+        command.ATTR_NETWORK: network,
+        command.ATTR_LINE_OUT: 1,
+        command.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer._from_data(data, None)
 
@@ -47,14 +47,14 @@ def test_from_data(network: str | None, expected_network: NetworkType) -> None:
 async def test_update_from_data(player: HeosPlayer) -> None:
     """Test the __str__ function."""
     data = {
-        const.ATTR_NAME: "Patio",
-        const.ATTR_PLAYER_ID: 2,
-        const.ATTR_MODEL: "HEOS Drives",
-        const.ATTR_VERSION: "2.0.0",
-        const.ATTR_IP_ADDRESS: "192.168.0.2",
-        const.ATTR_NETWORK: "wifi",
-        const.ATTR_LINE_OUT: "0",
-        const.ATTR_SERIAL: "0987654321",
+        command.ATTR_NAME: "Patio",
+        command.ATTR_PLAYER_ID: 2,
+        command.ATTR_MODEL: "HEOS Drives",
+        command.ATTR_VERSION: "2.0.0",
+        command.ATTR_IP_ADDRESS: "192.168.0.2",
+        command.ATTR_NETWORK: "wifi",
+        command.ATTR_LINE_OUT: "0",
+        command.ATTR_SERIAL: "0987654321",
     }
     player._update_from_data(data)
 
@@ -71,7 +71,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
 @pytest.mark.parametrize("state", (PlayState.PAUSE, PlayState.PLAY, PlayState.STOP))
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: value(arg_name="state")},
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: value(arg_name="state")},
 )
 async def test_set_state(player: HeosPlayer, state: PlayState) -> None:
     """Test the play, pause, and stop commands."""
@@ -80,7 +80,7 @@ async def test_set_state(player: HeosPlayer, state: PlayState) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.PLAY},
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: PlayState.PLAY},
 )
 async def test_set_play(player: HeosPlayer) -> None:
     """Test the pause commands."""
@@ -89,7 +89,7 @@ async def test_set_play(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.PAUSE},
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: PlayState.PAUSE},
 )
 async def test_set_pause(player: HeosPlayer) -> None:
     """Test the play commands."""
@@ -98,7 +98,7 @@ async def test_set_pause(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.set_play_state",
-    {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: PlayState.STOP},
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: PlayState.STOP},
 )
 async def test_set_stop(player: HeosPlayer) -> None:
     """Test the stop commands."""
@@ -112,7 +112,9 @@ async def test_set_volume_invalid_raises(player: HeosPlayer, level: int) -> None
         await player.set_volume(level)
 
 
-@calls_command("player.set_volume", {const.ATTR_PLAYER_ID: 1, const.ATTR_LEVEL: 100})
+@calls_command(
+    "player.set_volume", {command.ATTR_PLAYER_ID: 1, command.ATTR_LEVEL: 100}
+)
 async def test_set_volume(player: HeosPlayer) -> None:
     """Test the set_volume command."""
     await player.set_volume(100)
@@ -122,8 +124,8 @@ async def test_set_volume(player: HeosPlayer) -> None:
 @calls_command(
     "player.set_mute",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_STATE: value(arg_name="mute", formatter="on_off"),
     },
 )
 async def test_set_mute(player: HeosPlayer, mute: bool) -> None:
@@ -132,7 +134,7 @@ async def test_set_mute(player: HeosPlayer, mute: bool) -> None:
 
 
 @calls_command(
-    "player.set_mute", {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.VALUE_ON}
+    "player.set_mute", {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: command.VALUE_ON}
 )
 async def test_mute(player: HeosPlayer) -> None:
     """Test the mute command."""
@@ -140,14 +142,15 @@ async def test_mute(player: HeosPlayer) -> None:
 
 
 @calls_command(
-    "player.set_mute", {const.ATTR_PLAYER_ID: 1, const.ATTR_STATE: const.VALUE_OFF}
+    "player.set_mute",
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_STATE: command.VALUE_OFF},
 )
 async def test_unmute(player: HeosPlayer) -> None:
     """Test the unmute command."""
     await player.unmute()
 
 
-@calls_command("player.toggle_mute", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.toggle_mute", {command.ATTR_PLAYER_ID: 1})
 async def test_toggle_mute(player: HeosPlayer) -> None:
     """Test the toggle_mute command."""
     await player.toggle_mute()
@@ -160,7 +163,7 @@ async def test_volume_up_invalid_step_raises(player: HeosPlayer, step: int) -> N
         await player.volume_up(step)
 
 
-@calls_command("player.volume_up", {const.ATTR_PLAYER_ID: 1, const.ATTR_STEP: 6})
+@calls_command("player.volume_up", {command.ATTR_PLAYER_ID: 1, command.ATTR_STEP: 6})
 async def test_volume_up(player: HeosPlayer) -> None:
     """Test the volume_up command."""
     await player.volume_up(6)
@@ -173,7 +176,7 @@ async def test_volume_down_invalid_step_raises(player: HeosPlayer, step: int) ->
         await player.volume_down(step)
 
 
-@calls_command("player.volume_down", {const.ATTR_PLAYER_ID: 1, const.ATTR_STEP: 6})
+@calls_command("player.volume_down", {command.ATTR_PLAYER_ID: 1, command.ATTR_STEP: 6})
 async def test_volume_down(player: HeosPlayer) -> None:
     """Test the volume_down command."""
     await player.volume_down(6)
@@ -182,9 +185,9 @@ async def test_volume_down(player: HeosPlayer) -> None:
 @calls_command(
     "player.set_play_mode",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_REPEAT: RepeatType.ON_ALL,
-        const.ATTR_SHUFFLE: const.VALUE_ON,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_REPEAT: RepeatType.ON_ALL,
+        command.ATTR_SHUFFLE: command.VALUE_ON,
     },
 )
 async def test_set_play_mode(player: HeosPlayer) -> None:
@@ -192,13 +195,13 @@ async def test_set_play_mode(player: HeosPlayer) -> None:
     await player.set_play_mode(RepeatType.ON_ALL, True)
 
 
-@calls_command("player.play_next", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.play_next", {command.ATTR_PLAYER_ID: 1})
 async def test_play_next(player: HeosPlayer) -> None:
     """Test the play next command."""
     await player.play_next()
 
 
-@calls_command("player.play_previous", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.play_previous", {command.ATTR_PLAYER_ID: 1})
 async def test_play_previous(player: HeosPlayer) -> None:
     """Test the play previous command."""
     await player.play_previous()
@@ -206,7 +209,7 @@ async def test_play_previous(player: HeosPlayer) -> None:
 
 @calls_command(
     "player.clear_queue",
-    {const.ATTR_PLAYER_ID: 1},
+    {command.ATTR_PLAYER_ID: 1},
     add_command_under_process=True,
 )
 async def test_clear_queue(player: HeosPlayer) -> None:
@@ -214,7 +217,7 @@ async def test_clear_queue(player: HeosPlayer) -> None:
     await player.clear_queue()
 
 
-@calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.get_queue", {command.ATTR_PLAYER_ID: 1})
 async def test_get_queue(player: HeosPlayer) -> None:
     """Test the get queue command."""
     result = await player.get_queue()
@@ -233,21 +236,26 @@ async def test_get_queue(player: HeosPlayer) -> None:
     assert item.album_id == "199555605"
 
 
-@calls_command("player.play_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: 1})
+@calls_command(
+    "player.play_queue", {command.ATTR_PLAYER_ID: 1, command.ATTR_QUEUE_ID: 1}
+)
 async def test_play_queue(player: HeosPlayer) -> None:
     """Test the play_queue command."""
     await player.play_queue(1)
 
 
 @calls_command(
-    "player.remove_from_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_QUEUE_ID: "1,2,3"}
+    "player.remove_from_queue",
+    {command.ATTR_PLAYER_ID: 1, command.ATTR_QUEUE_ID: "1,2,3"},
 )
 async def test_remove_from_queue(player: HeosPlayer) -> None:
     """Test the play_queue command."""
     await player.remove_from_queue([1, 2, 3])
 
 
-@calls_command("player.save_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_NAME: "Test"})
+@calls_command(
+    "player.save_queue", {command.ATTR_PLAYER_ID: 1, command.ATTR_NAME: "Test"}
+)
 async def test_save_queue(player: HeosPlayer) -> None:
     """Test the save_queue command."""
     await player.save_queue("Test")
@@ -264,9 +272,9 @@ async def test_save_queue_too_long_raises(player: HeosPlayer) -> None:
 @calls_command(
     "player.move_queue_item",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_SOURCE_QUEUE_ID: "2,3,4",
-        const.ATTR_DESTINATION_QUEUE_ID: 1,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_SOURCE_QUEUE_ID: "2,3,4",
+        command.ATTR_DESTINATION_QUEUE_ID: 1,
     },
 )
 async def test_move_queue_item(player: HeosPlayer) -> None:
@@ -274,7 +282,9 @@ async def test_move_queue_item(player: HeosPlayer) -> None:
     await player.move_queue_item([2, 3, 4], 1)
 
 
-@calls_command("player.get_queue", {const.ATTR_PLAYER_ID: 1, const.ATTR_RANGE: "0,10"})
+@calls_command(
+    "player.get_queue", {command.ATTR_PLAYER_ID: 1, command.ATTR_RANGE: "0,10"}
+)
 async def test_get_queue_with_range(player: HeosPlayer) -> None:
     """Test the check_update command."""
     result = await player.get_queue(0, 10)
@@ -296,9 +306,9 @@ async def test_get_queue_with_range(player: HeosPlayer) -> None:
 @calls_command(
     "browse.play_input",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_INPUT: const.INPUT_AUX_IN_1,
-        const.ATTR_SOURCE_PLAYER_ID: 2,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_INPUT: const.INPUT_AUX_IN_1,
+        command.ATTR_SOURCE_PLAYER_ID: 2,
     },
 )
 async def test_play_input_source(player: HeosPlayer) -> None:
@@ -306,7 +316,9 @@ async def test_play_input_source(player: HeosPlayer) -> None:
     await player.play_input_source(const.INPUT_AUX_IN_1, 2)
 
 
-@calls_command("browse.play_preset", {const.ATTR_PLAYER_ID: 1, const.ATTR_PRESET: 1})
+@calls_command(
+    "browse.play_preset", {command.ATTR_PLAYER_ID: 1, command.ATTR_PRESET: 1}
+)
 async def test_play_preset_station(player: HeosPlayer) -> None:
     """Test the play favorite."""
     await player.play_preset_station(1)
@@ -321,8 +333,8 @@ async def test_play_preset_station_invalid_index(player: HeosPlayer) -> None:
 @calls_command(
     "browse.play_stream",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_URL: "https://my.website.com/podcast.mp3?patron-auth=qwerty",
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_URL: "https://my.website.com/podcast.mp3?patron-auth=qwerty",
     },
 )
 async def test_play_url(player: HeosPlayer) -> None:
@@ -339,7 +351,9 @@ async def test_play_quick_select_invalid_raises(
         await player.play_quick_select(quick_select)
 
 
-@calls_command("player.play_quickselect", {const.ATTR_PLAYER_ID: 1, const.ATTR_ID: 2})
+@calls_command(
+    "player.play_quickselect", {command.ATTR_PLAYER_ID: 1, command.ATTR_ID: 2}
+)
 async def test_play_quick_select(player: HeosPlayer) -> None:
     """Test the play quick select."""
     await player.play_quick_select(2)
@@ -352,13 +366,15 @@ async def test_set_quick_select_invalid_raises(player: HeosPlayer, index: int) -
         await player.set_quick_select(index)
 
 
-@calls_command("player.set_quickselect", {const.ATTR_PLAYER_ID: 1, const.ATTR_ID: 2})
+@calls_command(
+    "player.set_quickselect", {command.ATTR_PLAYER_ID: 1, command.ATTR_ID: 2}
+)
 async def test_set_quick_select(player: HeosPlayer) -> None:
     """Test the play favorite."""
     await player.set_quick_select(2)
 
 
-@calls_command("player.get_quickselects", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.get_quickselects", {command.ATTR_PLAYER_ID: 1})
 async def test_get_quick_selects(player: HeosPlayer) -> None:
     """Test the play favorite."""
     selects = await player.get_quick_selects()
@@ -386,10 +402,10 @@ async def test_play_media_unplayable_source(
 @calls_command(
     "browse.add_to_queue_container",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
-        const.ATTR_CONTAINER_ID: "123",
-        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
+        command.ATTR_CONTAINER_ID: "123",
+        command.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
@@ -403,11 +419,11 @@ async def test_play_media_container(
 @calls_command(
     "browse.add_to_queue_track",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
-        const.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
-        const.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
-        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_SOURCE_ID: MediaItems.SONG.source_id,
+        command.ATTR_CONTAINER_ID: MediaItems.SONG.container_id,
+        command.ATTR_MEDIA_ID: MediaItems.SONG.media_id,
+        command.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
@@ -419,11 +435,11 @@ async def test_play_media_track(player: HeosPlayer, media_item_song: MediaItem) 
 @calls_command(
     "browse.add_to_queue_track",
     {
-        const.ATTR_PLAYER_ID: 1,
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_DEEZER,
-        const.ATTR_CONTAINER_ID: "123",
-        const.ATTR_MEDIA_ID: "456",
-        const.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
+        command.ATTR_PLAYER_ID: 1,
+        command.ATTR_SOURCE_ID: const.MUSIC_SOURCE_DEEZER,
+        command.ATTR_CONTAINER_ID: "123",
+        command.ATTR_MEDIA_ID: "456",
+        command.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
     },
     add_command_under_process=True,
 )
@@ -434,7 +450,7 @@ async def test_add_to_queue(player: HeosPlayer) -> None:
     )
 
 
-@calls_command("player.get_now_playing_media_blank", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.get_now_playing_media_blank", {command.ATTR_PLAYER_ID: 1})
 async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
     """Test edge case where now_playing_media returns an empty payload."""
     await player.refresh_now_playing_media()
@@ -451,12 +467,12 @@ async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
 
 
 @calls_commands(
-    CallCommand("player.get_player_info", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: -263109739}),
-    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_player_info", {command.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_state", {command.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_now_playing_media", {command.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_volume", {command.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_mute", {command.ATTR_PLAYER_ID: -263109739}),
+    CallCommand("player.get_play_mode", {command.ATTR_PLAYER_ID: -263109739}),
 )
 async def test_refresh(player: HeosPlayer) -> None:
     """Test refresh, including base, updates the correct information."""
@@ -471,11 +487,11 @@ async def test_refresh(player: HeosPlayer) -> None:
 
 
 @calls_commands(
-    CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_now_playing_media", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: 1}),
-    CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_state", {command.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_now_playing_media", {command.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_volume", {command.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_mute", {command.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_mode", {command.ATTR_PLAYER_ID: 1}),
 )
 async def test_refresh_no_base_update(player: HeosPlayer) -> None:
     """Test refresh updates the correct information."""
@@ -485,7 +501,7 @@ async def test_refresh_no_base_update(player: HeosPlayer) -> None:
     assert player.player_id == 1
 
 
-@calls_command("player.check_update", {const.ATTR_PLAYER_ID: 1})
+@calls_command("player.check_update", {command.ATTR_PLAYER_ID: 1})
 async def test_check_update(player: HeosPlayer) -> None:
     """Test the check_update command."""
     result = await player.check_update()

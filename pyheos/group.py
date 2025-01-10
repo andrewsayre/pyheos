@@ -9,7 +9,7 @@ from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.message import HeosMessage
 from pyheos.types import SignalType
 
-from . import const
+from . import command, const
 
 if TYPE_CHECKING:
     from pyheos.heos import Heos
@@ -36,10 +36,10 @@ class HeosGroup:
         """Create a new instance from the provided data."""
         player_id: int | None = None
         player_ids: list[int] = []
-        player_id, player_ids = cls.__get_ids(data[const.ATTR_PLAYERS])
+        player_id, player_ids = cls.__get_ids(data[command.ATTR_PLAYERS])
         return cls(
-            name=data[const.ATTR_NAME],
-            group_id=int(data[const.ATTR_GROUP_ID]),
+            name=data[command.ATTR_NAME],
+            group_id=int(data[command.ATTR_GROUP_ID]),
             lead_player_id=player_id,
             member_player_ids=player_ids,
             heos=heos,
@@ -52,8 +52,8 @@ class HeosGroup:
         member_player_ids: list[int] = []
         for member_player in players:
             # Find the loaded player
-            member_player_id = int(member_player[const.ATTR_PLAYER_ID])
-            if member_player[const.ATTR_ROLE] == const.VALUE_LEADER:
+            member_player_id = int(member_player[command.ATTR_PLAYER_ID])
+            if member_player[command.ATTR_ROLE] == command.VALUE_LEADER:
                 lead_player_id = member_player_id
             else:
                 member_player_ids.append(member_player_id)
@@ -63,21 +63,21 @@ class HeosGroup:
 
     def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the group with the provided data."""
-        self.name = data[const.ATTR_NAME]
-        self.group_id = int(data[const.ATTR_GROUP_ID])
+        self.name = data[command.ATTR_NAME]
+        self.group_id = int(data[command.ATTR_GROUP_ID])
         self.lead_player_id, self.member_player_ids = self.__get_ids(
-            data[const.ATTR_PLAYERS]
+            data[command.ATTR_PLAYERS]
         )
 
     async def _on_event(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
         if not (
             event.command == const.EVENT_GROUP_VOLUME_CHANGED
-            and event.get_message_value_int(const.ATTR_GROUP_ID) == self.group_id
+            and event.get_message_value_int(command.ATTR_GROUP_ID) == self.group_id
         ):
             return False
-        self.volume = event.get_message_value_int(const.ATTR_LEVEL)
-        self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
+        self.volume = event.get_message_value_int(command.ATTR_LEVEL)
+        self.is_muted = event.get_message_value(command.ATTR_MUTE) == command.VALUE_ON
         return True
 
     def add_on_group_event(self, callback: EventCallbackType) -> DisconnectType:
