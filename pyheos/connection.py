@@ -11,13 +11,31 @@ from pyheos.command.system import SystemCommands
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
-from .error import CommandError, CommandFailedError, HeosError, _format_error_message
+from .error import CommandError, CommandFailedError, HeosError
 
 CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
 _LOGGER: Final = logging.getLogger(__name__)
+
+DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
+    asyncio.TimeoutError: "Command timed out",
+    ConnectionError: "Connection error",
+    BrokenPipeError: "Broken pipe",
+    ConnectionAbortedError: "Connection aborted",
+    ConnectionRefusedError: "Connection refused",
+    ConnectionResetError: "Connection reset",
+    OSError: "OS I/O error",
+}
+
+
+def __format_error_message(error: Exception) -> str:
+    """Format the error message based on a base error."""
+    error_message: str = str(error)
+    if not error_message:
+        error_message = DEFAULT_ERROR_MESSAGES.get(type(error), type(error).__name__)
+    return error_message
 
 
 class ConnectionBase:
@@ -177,7 +195,7 @@ class ConnectionBase:
             except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
                 self._register_task(self._disconnect_from_error(error))
-                message = _format_error_message(error)
+                message = __format_error_message(error)
                 _LOGGER.debug(f"Command failed '{command.uri_masked}': {message}")
                 raise CommandError(command.command, message) from error
             else:
@@ -197,7 +215,7 @@ class ConnectionBase:
                 # Occurs when the command times out
                 _LOGGER.debug(f"Command timed out '{command.uri_masked}'")
                 raise CommandError(
-                    command.command, _format_error_message(error)
+                    command.command, __format_error_message(error)
                 ) from error
             finally:
                 self._pending_command_event.clear()
@@ -236,7 +254,7 @@ class ConnectionBase:
                 asyncio.open_connection(self._host, CLI_PORT), self._timeout
             )
         except (OSError, ConnectionError, asyncio.TimeoutError) as err:
-            raise HeosError(_format_error_message(err)) from err
+            raise HeosError(__format_error_message(err)) from err
 
         # Start read handler
         self._register_task(self._read_handler(reader))

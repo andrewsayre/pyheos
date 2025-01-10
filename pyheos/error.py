@@ -1,8 +1,5 @@
 """Define the error module for HEOS."""
 
-import asyncio
-from typing import Final
-
 from pyheos.command import ATTR_ERROR_ID, ATTR_SYSTEM_ERROR_NUMBER, ATTR_TEXT
 from pyheos.const import (
     ERROR_INVALID_CREDNETIALS,
@@ -13,24 +10,6 @@ from pyheos.const import (
     SYSTEM_ERROR_USER_NOT_LOGGED_IN,
 )
 from pyheos.message import HeosMessage
-
-DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
-    asyncio.TimeoutError: "Command timed out",
-    ConnectionError: "Connection error",
-    BrokenPipeError: "Broken pipe",
-    ConnectionAbortedError: "Connection aborted",
-    ConnectionRefusedError: "Connection refused",
-    ConnectionResetError: "Connection reset",
-    OSError: "OS I/O error",
-}
-
-
-def _format_error_message(error: Exception) -> str:
-    """Format the error message based on a base error."""
-    error_message: str = str(error)
-    if not error_message:
-        error_message = DEFAULT_ERROR_MESSAGES.get(type(error), type(error).__name__)
-    return error_message
 
 
 class HeosError(Exception):
