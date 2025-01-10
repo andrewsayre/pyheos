@@ -6,7 +6,7 @@ This module creates HEOS group commands.
 
 from collections.abc import Sequence
 
-from pyheos import command, const
+from pyheos import command as c
 from pyheos.message import HeosCommand
 
 
@@ -15,11 +15,11 @@ class GroupCommands:
 
     @staticmethod
     def get_groups() -> HeosCommand:
-        """Create a get groups command.
+        """Create a get groups c.
 
         References:
             4.3.1 Get Groups"""
-        return HeosCommand(command.COMMAND_GET_GROUPS)
+        return HeosCommand(c.COMMAND_GET_GROUPS)
 
     @staticmethod
     def get_group_info(group_id: int) -> HeosCommand:
@@ -27,9 +27,7 @@ class GroupCommands:
 
         References:
             4.3.2 Get Group Info"""
-        return HeosCommand(
-            command.COMMAND_GET_GROUP_INFO, {const.ATTR_GROUP_ID: group_id}
-        )
+        return HeosCommand(c.COMMAND_GET_GROUP_INFO, {c.ATTR_GROUP_ID: group_id})
 
     @staticmethod
     def set_group(player_ids: Sequence[int]) -> HeosCommand:
@@ -38,8 +36,8 @@ class GroupCommands:
         References:
             4.3.3 Set Group"""
         return HeosCommand(
-            command.COMMAND_SET_GROUP,
-            {const.ATTR_PLAYER_ID: ",".join(map(str, player_ids))},
+            c.COMMAND_SET_GROUP,
+            {c.ATTR_PLAYER_ID: ",".join(map(str, player_ids))},
         )
 
     @staticmethod
@@ -50,9 +48,7 @@ class GroupCommands:
         References:
             4.3.4 Get Group Volume
         """
-        return HeosCommand(
-            command.COMMAND_GET_GROUP_VOLUME, {const.ATTR_GROUP_ID: group_id}
-        )
+        return HeosCommand(c.COMMAND_GET_GROUP_VOLUME, {c.ATTR_GROUP_ID: group_id})
 
     @staticmethod
     def set_group_volume(group_id: int, level: int) -> HeosCommand:
@@ -63,8 +59,8 @@ class GroupCommands:
         if level < 0 or level > 100:
             raise ValueError("'level' must be in the range 0-100")
         return HeosCommand(
-            command.COMMAND_SET_GROUP_VOLUME,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_LEVEL: level},
+            c.COMMAND_SET_GROUP_VOLUME,
+            {c.ATTR_GROUP_ID: group_id, c.ATTR_LEVEL: level},
         )
 
     @staticmethod
@@ -76,8 +72,8 @@ class GroupCommands:
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
-            command.COMMAND_GROUP_VOLUME_UP,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_STEP: step},
+            c.COMMAND_GROUP_VOLUME_UP,
+            {c.ATTR_GROUP_ID: group_id, c.ATTR_STEP: step},
         )
 
     @staticmethod
@@ -89,8 +85,8 @@ class GroupCommands:
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
-            command.COMMAND_GROUP_VOLUME_DOWN,
-            {const.ATTR_GROUP_ID: group_id, const.ATTR_STEP: step},
+            c.COMMAND_GROUP_VOLUME_DOWN,
+            {c.ATTR_GROUP_ID: group_id, c.ATTR_STEP: step},
         )
 
     @staticmethod
@@ -99,9 +95,7 @@ class GroupCommands:
 
         References:
             4.3.8 Get Group Mute"""
-        return HeosCommand(
-            command.COMMAND_GET_GROUP_MUTE, {const.ATTR_GROUP_ID: group_id}
-        )
+        return HeosCommand(c.COMMAND_GET_GROUP_MUTE, {c.ATTR_GROUP_ID: group_id})
 
     @staticmethod
     def group_set_mute(group_id: int, state: bool) -> HeosCommand:
@@ -110,10 +104,10 @@ class GroupCommands:
         References:
             4.3.9 Set Group Mute"""
         return HeosCommand(
-            command.COMMAND_SET_GROUP_MUTE,
+            c.COMMAND_SET_GROUP_MUTE,
             {
-                const.ATTR_GROUP_ID: group_id,
-                const.ATTR_STATE: const.VALUE_ON if state else const.VALUE_OFF,
+                c.ATTR_GROUP_ID: group_id,
+                c.ATTR_STATE: c.VALUE_ON if state else c.VALUE_OFF,
             },
         )
 
@@ -123,6 +117,4 @@ class GroupCommands:
 
         References:
             4.3.10 Toggle Group Mute"""
-        return HeosCommand(
-            command.COMMAND_GROUP_TOGGLE_MUTE, {const.ATTR_GROUP_ID: group_id}
-        )
+        return HeosCommand(c.COMMAND_GROUP_TOGGLE_MUTE, {c.ATTR_GROUP_ID: group_id})

@@ -5,7 +5,7 @@ import functools
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, Final
+from typing import Any, Final, TypeVar
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -14,10 +14,15 @@ DisconnectType = Callable[[], None]
 ConnectType = Callable[[str, TargetType], DisconnectType]
 SendType = Callable[..., Sequence[asyncio.Future]]
 
-EventCallbackType = Callable[[str], Any]
+TEvent = TypeVar("TEvent", bound=str)
+TPlayerId = TypeVar("TPlayerId", bound=int)
+TGroupId = TypeVar("TGroupId", bound=int)
+
 CallbackType = Callable[[], Any]
-ControllerEventCallbackType = Callable[[str, Any], Any]
-PlayerEventCallbackType = Callable[[int, str], Any]
+EventCallbackType = Callable[[TEvent], Any]
+ControllerEventCallbackType = Callable[[TEvent, Any], Any]
+PlayerEventCallbackType = Callable[[TPlayerId, TEvent], Any]
+GroupEventCallbackType = Callable[[TGroupId, TEvent], Any]
 
 
 def _is_coroutine_function(func: TargetType) -> bool:

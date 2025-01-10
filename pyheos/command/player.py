@@ -6,8 +6,11 @@ This module creates HEOS player commands.
 
 from typing import Any
 
-from pyheos import command, const
+from pyheos import command as c
+from pyheos.const import DEFAULT_STEP
 from pyheos.message import HeosCommand
+from pyheos.player import PlayState
+from pyheos.types import RepeatType
 
 
 class PlayerCommands:
@@ -21,7 +24,7 @@ class PlayerCommands:
         References:
             4.2.1 Get Players
         """
-        return HeosCommand(command.COMMAND_GET_PLAYERS)
+        return HeosCommand(c.COMMAND_GET_PLAYERS)
 
     @staticmethod
     def get_player_info(player_id: int) -> HeosCommand:
@@ -29,9 +32,7 @@ class PlayerCommands:
 
         References:
             4.2.2 Get Player Info"""
-        return HeosCommand(
-            command.COMMAND_GET_PLAYER_INFO, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_GET_PLAYER_INFO, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def get_play_state(player_id: int) -> HeosCommand:
@@ -39,19 +40,17 @@ class PlayerCommands:
 
         References:
             4.2.3 Get Play State"""
-        return HeosCommand(
-            command.COMMAND_GET_PLAY_STATE, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_GET_PLAY_STATE, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
-    def set_play_state(player_id: int, state: const.PlayState) -> HeosCommand:
+    def set_play_state(player_id: int, state: PlayState) -> HeosCommand:
         """Set the state of the player.
 
         References:
             4.2.4 Set Play State"""
         return HeosCommand(
-            command.COMMAND_SET_PLAY_STATE,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_STATE: state},
+            c.COMMAND_SET_PLAY_STATE,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_STATE: state},
         )
 
     @staticmethod
@@ -61,7 +60,7 @@ class PlayerCommands:
         References:
             4.2.5 Get Now Playing Media"""
         return HeosCommand(
-            command.COMMAND_GET_NOW_PLAYING_MEDIA, {const.ATTR_PLAYER_ID: player_id}
+            c.COMMAND_GET_NOW_PLAYING_MEDIA, {c.ATTR_PLAYER_ID: player_id}
         )
 
     @staticmethod
@@ -70,9 +69,7 @@ class PlayerCommands:
 
         References:
             4.2.6 Get Volume"""
-        return HeosCommand(
-            command.COMMAND_GET_VOLUME, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_GET_VOLUME, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def set_volume(player_id: int, level: int) -> HeosCommand:
@@ -83,12 +80,12 @@ class PlayerCommands:
         if level < 0 or level > 100:
             raise ValueError("'level' must be in the range 0-100")
         return HeosCommand(
-            command.COMMAND_SET_VOLUME,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_LEVEL: level},
+            c.COMMAND_SET_VOLUME,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_LEVEL: level},
         )
 
     @staticmethod
-    def volume_up(player_id: int, step: int = const.DEFAULT_STEP) -> HeosCommand:
+    def volume_up(player_id: int, step: int = DEFAULT_STEP) -> HeosCommand:
         """Increase the volume level.
 
         References:
@@ -96,12 +93,12 @@ class PlayerCommands:
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
-            command.COMMAND_VOLUME_UP,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_STEP: step},
+            c.COMMAND_VOLUME_UP,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_STEP: step},
         )
 
     @staticmethod
-    def volume_down(player_id: int, step: int = const.DEFAULT_STEP) -> HeosCommand:
+    def volume_down(player_id: int, step: int = DEFAULT_STEP) -> HeosCommand:
         """Increase the volume level.
 
         References:
@@ -109,8 +106,8 @@ class PlayerCommands:
         if step < 1 or step > 10:
             raise ValueError("'step' must be in the range 1-10")
         return HeosCommand(
-            command.COMMAND_VOLUME_DOWN,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_STEP: step},
+            c.COMMAND_VOLUME_DOWN,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_STEP: step},
         )
 
     @staticmethod
@@ -119,7 +116,7 @@ class PlayerCommands:
 
         References:
             4.2.10 Get Mute"""
-        return HeosCommand(command.COMMAND_GET_MUTE, {const.ATTR_PLAYER_ID: player_id})
+        return HeosCommand(c.COMMAND_GET_MUTE, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def set_mute(player_id: int, state: bool) -> HeosCommand:
@@ -128,10 +125,10 @@ class PlayerCommands:
         References:
             4.2.11 Set Mute"""
         return HeosCommand(
-            command.COMMAND_SET_MUTE,
+            c.COMMAND_SET_MUTE,
             {
-                const.ATTR_PLAYER_ID: player_id,
-                const.ATTR_STATE: const.VALUE_ON if state else const.VALUE_OFF,
+                c.ATTR_PLAYER_ID: player_id,
+                c.ATTR_STATE: c.VALUE_ON if state else c.VALUE_OFF,
             },
         )
 
@@ -141,9 +138,7 @@ class PlayerCommands:
 
         References:
             4.2.12 Toggle Mute"""
-        return HeosCommand(
-            command.COMMAND_TOGGLE_MUTE, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_TOGGLE_MUTE, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def get_play_mode(player_id: int) -> HeosCommand:
@@ -151,24 +146,20 @@ class PlayerCommands:
 
         References:
             4.2.13 Get Play Mode"""
-        return HeosCommand(
-            command.COMMAND_GET_PLAY_MODE, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_GET_PLAY_MODE, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
-    def set_play_mode(
-        player_id: int, repeat: const.RepeatType, shuffle: bool
-    ) -> HeosCommand:
+    def set_play_mode(player_id: int, repeat: RepeatType, shuffle: bool) -> HeosCommand:
         """Set the current play mode.
 
         References:
             4.2.14 Set Play Mode"""
         return HeosCommand(
-            command.COMMAND_SET_PLAY_MODE,
+            c.COMMAND_SET_PLAY_MODE,
             {
-                const.ATTR_PLAYER_ID: player_id,
-                const.ATTR_REPEAT: repeat,
-                const.ATTR_SHUFFLE: const.VALUE_ON if shuffle else const.VALUE_OFF,
+                c.ATTR_PLAYER_ID: player_id,
+                c.ATTR_REPEAT: repeat,
+                c.ATTR_SHUFFLE: c.VALUE_ON if shuffle else c.VALUE_OFF,
             },
         )
 
@@ -181,10 +172,10 @@ class PlayerCommands:
         References:
             4.2.15 Get Queue
         """
-        params: dict[str, Any] = {const.ATTR_PLAYER_ID: player_id}
+        params: dict[str, Any] = {c.ATTR_PLAYER_ID: player_id}
         if isinstance(range_start, int) and isinstance(range_end, int):
-            params[const.ATTR_RANGE] = f"{range_start},{range_end}"
-        return HeosCommand(command.COMMAND_GET_QUEUE, params)
+            params[c.ATTR_RANGE] = f"{range_start},{range_end}"
+        return HeosCommand(c.COMMAND_GET_QUEUE, params)
 
     @staticmethod
     def play_queue(player_id: int, queue_id: int) -> HeosCommand:
@@ -193,8 +184,8 @@ class PlayerCommands:
         References:
             4.2.16 Play Queue Item"""
         return HeosCommand(
-            command.COMMAND_PLAY_QUEUE,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_QUEUE_ID: queue_id},
+            c.COMMAND_PLAY_QUEUE,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_QUEUE_ID: queue_id},
         )
 
     @staticmethod
@@ -204,10 +195,10 @@ class PlayerCommands:
         References:
             4.2.17 Remove Item(s) from Queue"""
         return HeosCommand(
-            command.COMMAND_REMOVE_FROM_QUEUE,
+            c.COMMAND_REMOVE_FROM_QUEUE,
             {
-                const.ATTR_PLAYER_ID: player_id,
-                const.ATTR_QUEUE_ID: ",".join(map(str, queue_ids)),
+                c.ATTR_PLAYER_ID: player_id,
+                c.ATTR_QUEUE_ID: ",".join(map(str, queue_ids)),
             },
         )
 
@@ -220,8 +211,8 @@ class PlayerCommands:
         if len(name) > 128:
             raise ValueError("'name' must be less than or equal to 128 characters")
         return HeosCommand(
-            command.COMMAND_SAVE_QUEUE,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_NAME: name},
+            c.COMMAND_SAVE_QUEUE,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_NAME: name},
         )
 
     @staticmethod
@@ -230,9 +221,7 @@ class PlayerCommands:
 
         References:
             4.2.19 Clear Queue"""
-        return HeosCommand(
-            command.COMMAND_CLEAR_QUEUE, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_CLEAR_QUEUE, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def move_queue_item(
@@ -243,11 +232,11 @@ class PlayerCommands:
         References:
             4.2.20 Move Queue"""
         return HeosCommand(
-            command.COMMAND_MOVE_QUEUE_ITEM,
+            c.COMMAND_MOVE_QUEUE_ITEM,
             {
-                const.ATTR_PLAYER_ID: player_id,
-                const.ATTR_SOURCE_QUEUE_ID: ",".join(map(str, source_queue_ids)),
-                const.ATTR_DESTINATION_QUEUE_ID: destination_queue_id,
+                c.ATTR_PLAYER_ID: player_id,
+                c.ATTR_SOURCE_QUEUE_ID: ",".join(map(str, source_queue_ids)),
+                c.ATTR_DESTINATION_QUEUE_ID: destination_queue_id,
             },
         )
 
@@ -257,7 +246,7 @@ class PlayerCommands:
 
         References:
             4.2.21 Play Next"""
-        return HeosCommand(command.COMMAND_PLAY_NEXT, {const.ATTR_PLAYER_ID: player_id})
+        return HeosCommand(c.COMMAND_PLAY_NEXT, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def play_previous(player_id: int) -> HeosCommand:
@@ -265,9 +254,7 @@ class PlayerCommands:
 
         References:
             4.2.22 Play Previous"""
-        return HeosCommand(
-            command.COMMAND_PLAY_PREVIOUS, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_PLAY_PREVIOUS, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def set_quick_select(player_id: int, quick_select_id: int) -> HeosCommand:
@@ -278,8 +265,8 @@ class PlayerCommands:
         if quick_select_id < 1 or quick_select_id > 6:
             raise ValueError("'quick_select_id' must be in the range 1-6")
         return HeosCommand(
-            command.COMMAND_SET_QUICK_SELECT,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id},
+            c.COMMAND_SET_QUICK_SELECT,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_ID: quick_select_id},
         )
 
     @staticmethod
@@ -291,8 +278,8 @@ class PlayerCommands:
         if quick_select_id < 1 or quick_select_id > 6:
             raise ValueError("'quick_select_id' must be in the range 1-6")
         return HeosCommand(
-            command.COMMAND_PLAY_QUICK_SELECT,
-            {const.ATTR_PLAYER_ID: player_id, const.ATTR_ID: quick_select_id},
+            c.COMMAND_PLAY_QUICK_SELECT,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_ID: quick_select_id},
         )
 
     @staticmethod
@@ -301,9 +288,7 @@ class PlayerCommands:
 
         References:
             4.2.25 Get QuickSelects"""
-        return HeosCommand(
-            command.COMMAND_GET_QUICK_SELECTS, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_GET_QUICK_SELECTS, {c.ATTR_PLAYER_ID: player_id})
 
     @staticmethod
     def check_update(player_id: int) -> HeosCommand:
@@ -311,6 +296,4 @@ class PlayerCommands:
 
         References:
             4.2.26 Check for Firmware Update"""
-        return HeosCommand(
-            command.COMMAND_CHECK_UPDATE, {const.ATTR_PLAYER_ID: player_id}
-        )
+        return HeosCommand(c.COMMAND_CHECK_UPDATE, {c.ATTR_PLAYER_ID: player_id})

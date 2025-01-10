@@ -9,20 +9,33 @@ from typing import TYPE_CHECKING, Final
 from pyheos.command import COMMAND_REBOOT
 from pyheos.command.system import SystemCommands
 from pyheos.message import HeosCommand, HeosMessage
+from pyheos.types import ConnectionState
 
-from .const import (
-    STATE_CONNECTED,
-    STATE_DISCONNECTED,
-    STATE_RECONNECTING,
-)
-from .error import CommandError, CommandFailedError, HeosError, _format_error_message
+from .error import CommandError, CommandFailedError, HeosError
 
 CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
 
-
 _LOGGER: Final = logging.getLogger(__name__)
+
+DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
+    asyncio.TimeoutError: "Command timed out",
+    ConnectionError: "Connection error",
+    BrokenPipeError: "Broken pipe",
+    ConnectionAbortedError: "Connection aborted",
+    ConnectionRefusedError: "Connection refused",
+    ConnectionResetError: "Connection reset",
+    OSError: "OS I/O error",
+}
+
+
+def _format_error_message(error: Exception) -> str:
+    """Format the error message based on a base error."""
+    error_message: str = str(error)
+    if not error_message:
+        error_message = DEFAULT_ERROR_MESSAGES.get(type(error), type(error).__name__)
+    return error_message
 
 
 class ConnectionBase:
@@ -36,7 +49,7 @@ class ConnectionBase:
         """Init a new instance of the ConnectionBase."""
         self._host: str = host
         self._timeout: float = timeout
-        self._state = STATE_DISCONNECTED
+        self._state: ConnectionState = ConnectionState.DISCONNECTED
         self._writer: asyncio.StreamWriter | None = None
         self._pending_command_event = ResponseEvent()
         self._running_tasks: set[asyncio.Task] = set()
@@ -51,7 +64,7 @@ class ConnectionBase:
         ] = []
 
     @property
-    def state(self) -> str:
+    def state(self) -> ConnectionState:
         """Get the current state of the connection."""
         return self._state
 
@@ -121,7 +134,7 @@ class ConnectionBase:
         # Reset other parameters
         self._pending_command_event.clear()
         self._last_activity = datetime.now()
-        self._state = STATE_DISCONNECTED
+        self._state = ConnectionState.DISCONNECTED
 
     async def _disconnect_from_error(self, error: Exception) -> None:
         """Disconnect and reset as an of an error."""
@@ -167,7 +180,7 @@ class ConnectionBase:
         # Encapsulate the core logic so that we can wrap it in a lock.
         async def _command_impl() -> HeosMessage:
             """Implementation of the command."""
-            if self._state is not STATE_CONNECTED:
+            if self._state is not ConnectionState.CONNECTED:
                 _LOGGER.debug(
                     f"Command failed '{command.uri_masked}': Not connected to device"
                 )
@@ -233,7 +246,7 @@ class ConnectionBase:
 
     async def connect(self) -> None:
         """Connect to the HEOS device."""
-        if self._state is STATE_CONNECTED:
+        if self._state is ConnectionState.CONNECTED:
             return
         # Open the connection to the host
         try:
@@ -246,7 +259,7 @@ class ConnectionBase:
         # Start read handler
         self._register_task(self._read_handler(reader))
         self._last_activity = datetime.now()
-        self._state = STATE_CONNECTED
+        self._state = ConnectionState.CONNECTED
         _LOGGER.debug(f"Connected to {self._host}")
         await self._on_connected()
 
@@ -291,7 +304,7 @@ class AutoReconnectingConnection(ConnectionBase):
         This effectively tests that the connection to the device is still alive. If the heart beat
         fails or times out, the existing command processing logic will reset the state of the connection.
         """
-        while self._state == STATE_CONNECTED:
+        while self._state == ConnectionState.CONNECTED:
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
                 try:
@@ -306,7 +319,7 @@ class AutoReconnectingConnection(ConnectionBase):
         """Attempt to reconnect after disconnection from error."""
         attempts = 0
         unlimited_attempts = self._reconnect_max_attempts == 0
-        self._state = STATE_RECONNECTING
+        self._state = ConnectionState.RECONNECTING
         while (attempts < self._reconnect_max_attempts) or unlimited_attempts:
             try:
                 await asyncio.sleep(self._reconnect_delay)

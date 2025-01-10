@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Optional, cast
 
-from pyheos import const
+from pyheos import command as c
 from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
@@ -29,11 +29,11 @@ class SearchCriteria:
     def _from_data(data: dict[str, str]) -> "SearchCriteria":
         """Create a new instance from the provided data."""
         return SearchCriteria(
-            name=data[const.ATTR_NAME],
-            criteria_id=int(data[const.ATTR_SEARCH_CRITERIA_ID]),
-            wildcard=data[const.ATTR_WILDCARD] == const.VALUE_YES,
-            container_id=data.get(const.ATTR_CONTAINER_ID),
-            playable=data.get(const.ATTR_PLAYABLE) == const.VALUE_YES,
+            name=data[c.ATTR_NAME],
+            criteria_id=int(data[c.ATTR_SEARCH_CRITERIA_ID]),
+            wildcard=data[c.ATTR_WILDCARD] == c.VALUE_YES,
+            container_id=data.get(c.ATTR_CONTAINER_ID),
+            playable=data.get(c.ATTR_PLAYABLE) == c.VALUE_YES,
         )
 
 
@@ -52,15 +52,15 @@ class SearchResult:
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "SearchResult":
         """Create a new instance from a message."""
-        source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
+        source_id = message.get_message_value_int(c.ATTR_SOURCE_ID)
 
         return SearchResult(
             heos=heos,
             source_id=source_id,
-            criteria_id=message.get_message_value_int(const.ATTR_SEARCH_CRITERIA_ID),
-            search=message.get_message_value(const.ATTR_SEARCH),
-            returned=message.get_message_value_int(const.ATTR_RETURNED),
-            count=message.get_message_value_int(const.ATTR_COUNT),
+            criteria_id=message.get_message_value_int(c.ATTR_SEARCH_CRITERIA_ID),
+            search=message.get_message_value(c.ATTR_SEARCH),
+            returned=message.get_message_value_int(c.ATTR_RETURNED),
+            count=message.get_message_value_int(c.ATTR_COUNT),
             items=list(
                 [
                     MediaItem.from_data(item, source_id, None, heos)
@@ -89,12 +89,10 @@ class MultiSearchResult:
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "MultiSearchResult":
         """Create a new instance from a message."""
-        source_ids = message.get_message_value(const.ATTR_SOURCE_ID).split(",")
-        criteria_ids = message.get_message_value(const.ATTR_SEARCH_CRITERIA_ID).split(
-            ","
-        )
+        source_ids = message.get_message_value(c.ATTR_SOURCE_ID).split(",")
+        criteria_ids = message.get_message_value(c.ATTR_SEARCH_CRITERIA_ID).split(",")
         statisics = SearchStatistic._from_string(
-            message.get_message_value(const.ATTR_STATS)
+            message.get_message_value(c.ATTR_STATS)
         )
         items: list[MediaItem] = []
         # In order to determine the source_id of the result, we match up the index with how many items were returned for a given source
@@ -112,13 +110,13 @@ class MultiSearchResult:
             heos=heos,
             source_ids=[int(source_id) for source_id in source_ids],
             criteria_ids=[int(criteria_id) for criteria_id in criteria_ids],
-            search=message.get_message_value(const.ATTR_SEARCH),
-            returned=message.get_message_value_int(const.ATTR_RETURNED),
-            count=message.get_message_value_int(const.ATTR_COUNT),
+            search=message.get_message_value(c.ATTR_SEARCH),
+            returned=message.get_message_value_int(c.ATTR_RETURNED),
+            count=message.get_message_value_int(c.ATTR_COUNT),
             items=items,
             statistics=statisics,
             errors=SearchStatistic._from_string(
-                message.get_message_value(const.ATTR_ERROR_NUMBER)
+                message.get_message_value(c.ATTR_ERROR_NUMBER)
             ),
         )
 

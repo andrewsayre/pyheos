@@ -6,11 +6,11 @@ from typing import Any
 import pytest
 import pytest_asyncio
 
-from pyheos import const
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import HeosPlayer
+from pyheos.types import NetworkType
 from tests.common import MediaItems, MediaMusicSources
 
 from . import MockHeos, MockHeosDevice
@@ -141,7 +141,7 @@ async def player_fixture(heos: MockHeos) -> HeosPlayer:
         serial="B1A2C3K",
         version="1.493.180",
         ip_address="127.0.0.1",
-        network=const.NETWORK_TYPE_WIRED,
+        network=NetworkType.WIRED,
         line_out=1,
         heos=heos,
     )
@@ -157,7 +157,7 @@ async def player_front_porch_fixture(heos: MockHeos) -> HeosPlayer:
         serial=None,
         version="1.493.180",
         ip_address="127.0.0.2",
-        network=const.NETWORK_TYPE_WIFI,
+        network=NetworkType.WIFI,
         line_out=1,
         heos=heos,
     )

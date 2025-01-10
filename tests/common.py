@@ -2,6 +2,7 @@
 
 from pyheos import const
 from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.types import MediaType
 
 
 # Media Items
@@ -11,7 +12,7 @@ class MediaItems:
     ALBUM = MediaItem(
         const.MUSIC_SOURCE_TIDAL,
         "After Hours",
-        const.MediaType.ALBUM,
+        MediaType.ALBUM,
         "http://resources.wimpmusic.com/images/bbe7f53c/44f0/41ba/873f/743e3091adde/160x160.jpg",
         None,
         True,
@@ -26,7 +27,7 @@ class MediaItems:
     PLAYLIST = MediaItem(
         const.MUSIC_SOURCE_PLAYLISTS,
         "My Playlist",
-        const.MediaType.PLAYLIST,
+        MediaType.PLAYLIST,
         "",
         None,
         True,
@@ -41,7 +42,7 @@ class MediaItems:
     INPUT = MediaItem(
         -263109739,
         "HEOS Drive - AUX In 1",
-        const.MediaType.STATION,
+        MediaType.STATION,
         "",
         None,
         True,
@@ -56,7 +57,7 @@ class MediaItems:
     SONG = MediaItem(
         const.MUSIC_SOURCE_TIDAL,
         "Imaginary Parties",
-        const.MediaType.SONG,
+        MediaType.SONG,
         "http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg",
         None,
         True,
@@ -71,7 +72,7 @@ class MediaItems:
     STATION = MediaItem(
         const.MUSIC_SOURCE_PANDORA,
         "Cooltime Kids (Children's) Radio",
-        const.MediaType.STATION,
+        MediaType.STATION,
         "https://content-images.p-cdn.com/images/9d/b9/b9/85/ef1146388a09ecb87153e168/_500W_500H.jpg",
         None,
         True,
@@ -86,7 +87,7 @@ class MediaItems:
     DEVICE = MediaItem(
         -263109739,
         "HEOS Drive",
-        const.MediaType.HEOS_SERVICE,
+        MediaType.HEOS_SERVICE,
         "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_aux.png",
         None,
         False,
@@ -100,7 +101,7 @@ class MediaMusicSources:
     FAVORITES = MediaMusicSource(
         const.MUSIC_SOURCE_FAVORITES,
         "Favorites",
-        const.MediaType.HEOS_SERVICE,
+        MediaType.HEOS_SERVICE,
         "https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_favorites.png",
         None,
         True,
@@ -109,7 +110,7 @@ class MediaMusicSources:
     PANDORA = MediaMusicSource(
         const.MUSIC_SOURCE_PANDORA,
         "Pandora",
-        const.MediaType.MUSIC_SERVICE,
+        MediaType.MUSIC_SERVICE,
         "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png",
         None,
         False,
@@ -118,7 +119,7 @@ class MediaMusicSources:
     TIDAL = MediaMusicSource(
         const.MUSIC_SOURCE_TIDAL,
         "Tidal",
-        const.MediaType.MUSIC_SERVICE,
+        MediaType.MUSIC_SERVICE,
         "https://production.ws.skyegloup.com:443/media/images/service/logos/tidal.png",
         None,
         True,

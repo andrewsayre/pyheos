@@ -31,13 +31,27 @@ from pyheos.message import HeosMessage
 from pyheos.search import MultiSearchResult, SearchCriteria, SearchResult
 from pyheos.system import HeosHost, HeosSystem
 
+from . import command as c
 from . import const
 from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
+from .types import (
+    AddCriteriaType,
+    ConnectionState,
+    MediaType,
+    PlayState,
+    RepeatType,
+    SignalHeosEvent,
+    SignalType,
+)
 
 _LOGGER: Final = logging.getLogger(__name__)
+
+
+DATA_NEW: Final = "new"
+DATA_MAPPED_IDS: Final = "mapped_ids"
 
 
 @dataclass(frozen=True)
@@ -92,7 +106,7 @@ class ConnectionMixin:
         )
 
     @property
-    def connection_state(self) -> str:
+    def connection_state(self) -> ConnectionState:
         """Get the state of the connection."""
         return self._connection.state
 
@@ -142,8 +156,8 @@ class SystemMixin(ConnectionMixin):
         References:
             4.1.2 HEOS Account Check"""
         result = await self._connection.command(SystemCommands.check_account())
-        if const.ATTR_SIGNED_IN in result.message:
-            self._signed_in_username = result.get_message_value(const.ATTR_USER_NAME)
+        if c.ATTR_SIGNED_IN in result.message:
+            self._signed_in_username = result.get_message_value(c.ATTR_USER_NAME)
         else:
             self._signed_in_username = None
         return self._signed_in_username
@@ -166,7 +180,7 @@ class SystemMixin(ConnectionMixin):
         result = await self._connection.command(
             SystemCommands.sign_in(username, password)
         )
-        self._signed_in_username = result.get_message_value(const.ATTR_USER_NAME)
+        self._signed_in_username = result.get_message_value(c.ATTR_USER_NAME)
         if update_credential:
             self.current_credentials = Credentials(username, password)
         return self._signed_in_username
@@ -447,7 +461,7 @@ class BrowseMixin(ConnectionMixin):
         source_id: int,
         container_id: str,
         media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """
         Add the specified media item to the queue of the specified player.
@@ -546,7 +560,7 @@ class BrowseMixin(ConnectionMixin):
         self,
         player_id: int,
         media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """
         Play the specified media item on the specified player.
@@ -561,7 +575,7 @@ class BrowseMixin(ConnectionMixin):
 
         if media.media_id in const.VALID_INPUTS:
             await self.play_input_source(player_id, media.media_id, media.source_id)
-        elif media.type == const.MediaType.STATION:
+        elif media.type == MediaType.STATION:
             if media.media_id is None:
                 raise ValueError(f"'Media '{media}' cannot have a None media_id")
             await self.play_station(
@@ -721,9 +735,9 @@ class PlayerMixin(ConnectionMixin):
         payload = cast(Sequence[dict], response.payload)
         existing = list(self._players.values())
         for player_data in payload:
-            player_id = player_data[const.ATTR_PLAYER_ID]
-            name = player_data[const.ATTR_NAME]
-            version = player_data[const.ATTR_VERSION]
+            player_id = player_data[c.ATTR_PLAYER_ID]
+            name = player_data[c.ATTR_NAME]
+            version = player_data[c.ATTR_VERSION]
             # Try finding existing player by id or match name when firmware
             # version is different because IDs change after a firmware upgrade
             player = next(
@@ -764,11 +778,11 @@ class PlayerMixin(ConnectionMixin):
         self._players = players
         self._players_loaded = True
         return {
-            const.DATA_NEW: new_player_ids,
-            const.DATA_MAPPED_IDS: mapped_player_ids,
+            DATA_NEW: new_player_ids,
+            DATA_MAPPED_IDS: mapped_player_ids,
         }
 
-    async def player_get_play_state(self, player_id: int) -> const.PlayState:
+    async def player_get_play_state(self, player_id: int) -> PlayState:
         """Get the state of the player.
 
         References:
@@ -776,11 +790,9 @@ class PlayerMixin(ConnectionMixin):
         response = await self._connection.command(
             PlayerCommands.get_play_state(player_id)
         )
-        return const.PlayState(response.get_message_value(const.ATTR_STATE))
+        return PlayState(response.get_message_value(c.ATTR_STATE))
 
-    async def player_set_play_state(
-        self, player_id: int, state: const.PlayState
-    ) -> None:
+    async def player_set_play_state(self, player_id: int, state: PlayState) -> None:
         """Set the state of the player.
 
         References:
@@ -814,7 +826,7 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.6 Get Volume"""
         result = await self._connection.command(PlayerCommands.get_volume(player_id))
-        return result.get_message_value_int(const.ATTR_LEVEL)
+        return result.get_message_value_int(c.ATTR_LEVEL)
 
     async def player_set_volume(self, player_id: int, level: int) -> None:
         """Set the volume of the player.
@@ -847,7 +859,7 @@ class PlayerMixin(ConnectionMixin):
         References:
             4.2.10 Get Mute"""
         result = await self._connection.command(PlayerCommands.get_mute(player_id))
-        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+        return result.get_message_value(c.ATTR_STATE) == c.VALUE_ON
 
     async def player_set_mute(self, player_id: int, state: bool) -> None:
         """Set the mute state of the player.
@@ -872,7 +884,7 @@ class PlayerMixin(ConnectionMixin):
         return PlayMode._from_data(result)
 
     async def player_set_play_mode(
-        self, player_id: int, repeat: const.RepeatType, shuffle: bool
+        self, player_id: int, repeat: RepeatType, shuffle: bool
     ) -> None:
         """Set the play mode of the player.
 
@@ -989,7 +1001,7 @@ class PlayerMixin(ConnectionMixin):
             PlayerCommands.get_quick_selects(player_id)
         )
         return {
-            int(data[const.ATTR_ID]): data[const.ATTR_NAME]
+            int(data[c.ATTR_ID]): data[c.ATTR_NAME]
             for data in cast(list[dict], result.payload)
         }
 
@@ -1005,7 +1017,7 @@ class PlayerMixin(ConnectionMixin):
             4.2.26 Check for Firmware Update"""
         result = await self._connection.command(PlayerCommands.check_update(player_id))
         payload = cast(dict[str, Any], result.payload)
-        return bool(payload[const.ATTR_UPDATE] == const.VALUE_UPDATE_EXIST)
+        return bool(payload[c.ATTR_UPDATE] == c.VALUE_UPDATE_EXIST)
 
 
 class GroupMixin(ConnectionMixin):
@@ -1145,7 +1157,7 @@ class GroupMixin(ConnectionMixin):
         result = await self._connection.command(
             GroupCommands.get_group_volume(group_id)
         )
-        return result.get_message_value_int(const.ATTR_LEVEL)
+        return result.get_message_value_int(c.ATTR_LEVEL)
 
     async def set_group_volume(self, group_id: int, level: int) -> None:
         """Set the volume of the group.
@@ -1178,7 +1190,7 @@ class GroupMixin(ConnectionMixin):
         References:
             4.3.8 Get Group Mute"""
         result = await self._connection.command(GroupCommands.get_group_mute(group_id))
-        return result.get_message_value(const.ATTR_STATE) == const.VALUE_ON
+        return result.get_message_value(c.ATTR_STATE) == c.VALUE_ON
 
     async def group_set_mute(self, group_id: int, state: bool) -> None:
         """Set the mute state of the group.
@@ -1262,7 +1274,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             callback: The callback to receive the controller events.
         Returns:
             A function that disconnects the callback."""
-        return self._dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, callback)
+        return self._dispatcher.connect(SignalType.CONTROLLER_EVENT, callback)
 
     def add_on_heos_event(self, callback: EventCallbackType) -> DisconnectType:
         """Connect a callback to receive HEOS events.
@@ -1271,7 +1283,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             callback: The callback to receive the HEOS events. The callback should accept a single string argument which will contain the event name.
         Returns:
             A function that disconnects the callback."""
-        return self._dispatcher.connect(const.SIGNAL_HEOS_EVENT, callback)
+        return self._dispatcher.connect(SignalType.HEOS_EVENT, callback)
 
     def add_on_connected(self, callback: CallbackType) -> DisconnectType:
         """Connect a callback to be invoked when connected.
@@ -1281,7 +1293,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_CONNECTED}),
+            callback_wrapper(callback, {0: SignalHeosEvent.CONNECTED}),
         )
 
     def add_on_disconnected(self, callback: CallbackType) -> DisconnectType:
@@ -1292,7 +1304,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_DISCONNECTED}),
+            callback_wrapper(callback, {0: SignalHeosEvent.DISCONNECTED}),
         )
 
     def add_on_user_credentials_invalid(self, callback: CallbackType) -> DisconnectType:
@@ -1303,15 +1315,15 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_USER_CREDENTIALS_INVALID}),
+            callback_wrapper(callback, {0: SignalHeosEvent.USER_CREDENTIALS_INVALID}),
         )
 
     async def _on_connected(self) -> None:
         """Handle when connected, which may occur more than once."""
-        assert self._connection.state == const.STATE_CONNECTED
+        assert self._connection.state == ConnectionState.CONNECTED
 
         await self._dispatcher.wait_send(
-            const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
+            SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED, return_exceptions=True
         )
 
         if self.current_credentials:
@@ -1327,8 +1339,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 )
                 self.current_credentials = None
                 await self._dispatcher.wait_send(
-                    const.SIGNAL_HEOS_EVENT,
-                    const.EVENT_USER_CREDENTIALS_INVALID,
+                    SignalType.HEOS_EVENT,
+                    SignalHeosEvent.USER_CREDENTIALS_INVALID,
                     return_exceptions=True,
                 )
         else:
@@ -1343,12 +1355,12 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
-        assert self._connection.state == const.STATE_DISCONNECTED
+        assert self._connection.state == ConnectionState.DISCONNECTED
         # Mark loaded players unavailable
         for player in self.players.values():
             player.available = False
         await self._dispatcher.wait_send(
-            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED, return_exceptions=True
+            SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED, return_exceptions=True
         )
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
@@ -1367,8 +1379,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             # Ensure a stale credential is cleared
             await self.sign_out()
             await self._dispatcher.wait_send(
-                const.SIGNAL_HEOS_EVENT,
-                const.EVENT_USER_CREDENTIALS_INVALID,
+                SignalType.HEOS_EVENT,
+                SignalHeosEvent.USER_CREDENTIALS_INVALID,
                 return_exceptions=True,
             )
 
@@ -1391,27 +1403,27 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
-            if const.ATTR_SIGNED_IN in event.message:
-                self._signed_in_username = event.get_message_value(const.ATTR_USER_NAME)
+            if c.ATTR_SIGNED_IN in event.message:
+                self._signed_in_username = event.get_message_value(c.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
             await self.get_groups(refresh=True)
 
         await self._dispatcher.wait_send(
-            const.SIGNAL_CONTROLLER_EVENT, event.command, result, return_exceptions=True
+            SignalType.CONTROLLER_EVENT, event.command, result, return_exceptions=True
         )
         _LOGGER.debug("Event received: %s", event)
 
     async def _on_event_player(self, event: HeosMessage) -> None:
         """Process an event about a player."""
-        player_id = event.get_message_value_int(const.ATTR_PLAYER_ID)
+        player_id = event.get_message_value_int(c.ATTR_PLAYER_ID)
         player = self.players.get(player_id)
         if player and (
             await player._on_event(event, self._options.all_progress_events)
         ):
             await self.dispatcher.wait_send(
-                const.SIGNAL_PLAYER_EVENT,
+                SignalType.PLAYER_EVENT,
                 player_id,
                 event.command,
                 return_exceptions=True,
@@ -1420,11 +1432,11 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_event_group(self, event: HeosMessage) -> None:
         """Process an event about a group."""
-        group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
+        group_id = event.get_message_value_int(c.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
-        if group and await group.on_event(event):
+        if group and await group._on_event(event):
             await self.dispatcher.wait_send(
-                const.SIGNAL_GROUP_EVENT,
+                SignalType.GROUP_EVENT,
                 group_id,
                 event.command,
                 return_exceptions=True,

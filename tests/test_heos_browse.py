@@ -4,14 +4,35 @@ from typing import Any
 
 import pytest
 
-from pyheos import const
+from pyheos import command as c
+from pyheos.const import (
+    MUSIC_SOURCE_FAVORITES,
+    MUSIC_SOURCE_NAPSTER,
+    MUSIC_SOURCE_PANDORA,
+    MUSIC_SOURCE_PLAYLISTS,
+    MUSIC_SOURCE_TIDAL,
+    SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+    SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+    SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+    SERVICE_OPTION_ADD_TO_FAVORITES,
+    SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+    SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+    SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+    SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+    SERVICE_OPTION_THUMBS_DOWN,
+    SERVICE_OPTION_THUMBS_UP,
+)
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaMusicSource
+from pyheos.types import MediaType
 from tests import calls_command, value
 from tests.common import MediaMusicSources
 
 
-@calls_command("browse.get_source_info", {const.ATTR_SOURCE_ID: 123456})
+@calls_command("browse.get_source_info", {c.ATTR_SOURCE_ID: 123456})
 async def test_get_music_source_by_id(heos: Heos) -> None:
     """Test retrieving music source by id."""
     source = await heos.get_music_source_info(123456)
@@ -21,7 +42,7 @@ async def test_get_music_source_by_id(heos: Heos) -> None:
         source.image_url
         == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
     )
-    assert source.type == const.MediaType.MUSIC_SERVICE
+    assert source.type == MediaType.MUSIC_SERVICE
     assert source.available
     assert source.service_username == "email@email.com"
 
@@ -30,14 +51,14 @@ async def test_get_music_source_by_id(heos: Heos) -> None:
 async def test_get_music_source_info_by_id_already_loaded(heos: Heos) -> None:
     """Test retrieving music source info by id for already loaded does not update."""
     sources = await heos.get_music_sources()
-    original_source = sources[const.MUSIC_SOURCE_FAVORITES]
+    original_source = sources[MUSIC_SOURCE_FAVORITES]
     retrived_source = await heos.get_music_source_info(original_source.source_id)
     assert original_source == retrived_source
 
 
 @calls_command(
     "browse.get_source_info",
-    {const.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
+    {c.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
 )
 async def test_get_music_source_info_by_id_already_loaded_refresh(
     heos: Heos, media_music_source: MediaMusicSource
@@ -72,12 +93,10 @@ async def test_get_music_source_info_invalid_parameters_raises(
         await heos.get_music_source_info(source_id=source_id, music_source=music_source)
 
 
-@calls_command(
-    "browse.get_search_criteria", {const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL}
-)
+@calls_command("browse.get_search_criteria", {c.ATTR_SOURCE_ID: MUSIC_SOURCE_TIDAL})
 async def test_get_search_criteria(heos: Heos) -> None:
     """Test retrieving search criteria."""
-    criteria = await heos.get_search_criteria(const.MUSIC_SOURCE_TIDAL)
+    criteria = await heos.get_search_criteria(MUSIC_SOURCE_TIDAL)
     assert len(criteria) == 4
     item = criteria[2]
     assert item.name == "Track"
@@ -90,17 +109,17 @@ async def test_get_search_criteria(heos: Heos) -> None:
 @calls_command(
     "browse.search",
     {
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL,
-        const.ATTR_SEARCH_CRITERIA_ID: 3,
-        const.ATTR_SEARCH: "Tangerine Rays",
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_TIDAL,
+        c.ATTR_SEARCH_CRITERIA_ID: 3,
+        c.ATTR_SEARCH: "Tangerine Rays",
     },
 )
 async def test_search(heos: Heos) -> None:
     """Test the search method."""
 
-    result = await heos.search(const.MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3)
+    result = await heos.search(MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3)
 
-    assert result.source_id == const.MUSIC_SOURCE_TIDAL
+    assert result.source_id == MUSIC_SOURCE_TIDAL
     assert result.criteria_id == 3
     assert result.search == "Tangerine Rays"
     assert result.returned == 15
@@ -122,26 +141,26 @@ async def test_search_invalid_raises(heos: Heos, search: str, error: str) -> Non
         ValueError,
         match=error,
     ):
-        await heos.search(const.MUSIC_SOURCE_TIDAL, search, 3)
+        await heos.search(MUSIC_SOURCE_TIDAL, search, 3)
 
 
 @calls_command(
     "browse.search",
     {
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_TIDAL,
-        const.ATTR_SEARCH_CRITERIA_ID: 3,
-        const.ATTR_SEARCH: "Tangerine Rays",
-        const.ATTR_RANGE: "0,14",
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_TIDAL,
+        c.ATTR_SEARCH_CRITERIA_ID: 3,
+        c.ATTR_SEARCH: "Tangerine Rays",
+        c.ATTR_RANGE: "0,14",
     },
 )
 async def test_search_with_range(heos: Heos) -> None:
     """Test the search method."""
 
     result = await heos.search(
-        const.MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3, range_start=0, range_end=14
+        MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3, range_start=0, range_end=14
     )
 
-    assert result.source_id == const.MUSIC_SOURCE_TIDAL
+    assert result.source_id == MUSIC_SOURCE_TIDAL
     assert result.criteria_id == 3
     assert result.search == "Tangerine Rays"
     assert result.returned == 15
@@ -152,14 +171,14 @@ async def test_search_with_range(heos: Heos) -> None:
 @calls_command(
     "browse.rename_playlist",
     {
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
-        const.ATTR_CONTAINER_ID: 171566,
-        const.ATTR_NAME: "New Name",
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PLAYLISTS,
+        c.ATTR_CONTAINER_ID: 171566,
+        c.ATTR_NAME: "New Name",
     },
 )
 async def test_rename_playlist(heos: Heos) -> None:
     """Test renaming a playlist."""
-    await heos.rename_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566", "New Name")
+    await heos.rename_playlist(MUSIC_SOURCE_PLAYLISTS, "171566", "New Name")
 
 
 @pytest.mark.parametrize(
@@ -180,32 +199,32 @@ async def test_rename_playlist_invalid_name_raises(
         ValueError,
         match=error,
     ):
-        await heos.rename_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566", name)
+        await heos.rename_playlist(MUSIC_SOURCE_PLAYLISTS, "171566", name)
 
 
 @calls_command(
     "browse.delete_playlist",
     {
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PLAYLISTS,
-        const.ATTR_CONTAINER_ID: 171566,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PLAYLISTS,
+        c.ATTR_CONTAINER_ID: 171566,
     },
 )
 async def test_delete_playlist(heos: Heos) -> None:
     """Test deleting a playlist."""
-    await heos.delete_playlist(const.MUSIC_SOURCE_PLAYLISTS, "171566")
+    await heos.delete_playlist(MUSIC_SOURCE_PLAYLISTS, "171566")
 
 
 @calls_command(
     "browse.retrieve_metadata",
     {
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_NAPSTER,
-        const.ATTR_CONTAINER_ID: 123456,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_NAPSTER,
+        c.ATTR_CONTAINER_ID: 123456,
     },
 )
 async def test_retrieve_metadata(heos: Heos) -> None:
     """Test deleting a playlist."""
-    result = await heos.retrieve_metadata(const.MUSIC_SOURCE_NAPSTER, "123456")
-    assert result.source_id == const.MUSIC_SOURCE_NAPSTER
+    result = await heos.retrieve_metadata(MUSIC_SOURCE_NAPSTER, "123456")
+    assert result.source_id == MUSIC_SOURCE_NAPSTER
     assert result.container_id == "123456"
     assert result.returned == 1
     assert result.count == 1
@@ -224,29 +243,29 @@ async def test_retrieve_metadata(heos: Heos) -> None:
 @calls_command(
     "browse.set_service_option_add_favorite",
     {
-        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_TO_FAVORITES,
-        const.ATTR_PLAYER_ID: 1,
+        c.ATTR_OPTION_ID: SERVICE_OPTION_ADD_TO_FAVORITES,
+        c.ATTR_PLAYER_ID: 1,
     },
 )
 async def test_set_service_option_add_favorite_play(heos: Heos) -> None:
     """Test setting a service option for adding to favorites."""
-    await heos.set_service_option(const.SERVICE_OPTION_ADD_TO_FAVORITES, player_id=1)
+    await heos.set_service_option(SERVICE_OPTION_ADD_TO_FAVORITES, player_id=1)
 
 
 @calls_command(
     "browse.set_service_option_add_favorite_browse",
     {
-        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_TO_FAVORITES,
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_MEDIA_ID: 123456,
-        const.ATTR_NAME: "Test Radio",
+        c.ATTR_OPTION_ID: SERVICE_OPTION_ADD_TO_FAVORITES,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_MEDIA_ID: 123456,
+        c.ATTR_NAME: "Test Radio",
     },
 )
 async def test_set_service_option_add_favorite_browse(heos: Heos) -> None:
     """Test setting a service option for adding to favorites."""
     await heos.set_service_option(
-        const.SERVICE_OPTION_ADD_TO_FAVORITES,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        SERVICE_OPTION_ADD_TO_FAVORITES,
+        source_id=MUSIC_SOURCE_PANDORA,
         media_id="123456",
         name="Test Radio",
     )
@@ -255,33 +274,33 @@ async def test_set_service_option_add_favorite_browse(heos: Heos) -> None:
 @calls_command(
     "browse.set_service_option_remove_favorite",
     {
-        const.ATTR_OPTION_ID: const.SERVICE_OPTION_REMOVE_FROM_FAVORITES,
-        const.ATTR_MEDIA_ID: 4277097921440801039,
+        c.ATTR_OPTION_ID: SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+        c.ATTR_MEDIA_ID: 4277097921440801039,
     },
 )
 async def test_set_service_option_remove_favorite(heos: Heos) -> None:
     """Test setting a service option for adding to favorites."""
     await heos.set_service_option(
-        const.SERVICE_OPTION_REMOVE_FROM_FAVORITES, media_id="4277097921440801039"
+        SERVICE_OPTION_REMOVE_FROM_FAVORITES, media_id="4277097921440801039"
     )
 
 
 @pytest.mark.parametrize(
-    "option", [const.SERVICE_OPTION_THUMBS_UP, const.SERVICE_OPTION_THUMBS_DOWN]
+    "option", [SERVICE_OPTION_THUMBS_UP, SERVICE_OPTION_THUMBS_DOWN]
 )
 @calls_command(
     "browse.set_service_option_thumbs_up_down",
     {
-        const.ATTR_OPTION_ID: value(arg_name="option"),
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_PLAYER_ID: 1,
+        c.ATTR_OPTION_ID: value(arg_name="option"),
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_PLAYER_ID: 1,
     },
 )
 async def test_set_service_option_thumbs_up_down(heos: Heos, option: int) -> None:
     """Test setting thumbs up/down."""
     await heos.set_service_option(
         option,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        source_id=MUSIC_SOURCE_PANDORA,
         player_id=1,
     )
 
@@ -289,25 +308,25 @@ async def test_set_service_option_thumbs_up_down(heos: Heos, option: int) -> Non
 @pytest.mark.parametrize(
     "option",
     [
-        const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
-        const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+        SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+        SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+        SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+        SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
     ],
 )
 @calls_command(
     "browse.set_service_option_track_station",
     {
-        const.ATTR_OPTION_ID: value(arg_name="option"),
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_MEDIA_ID: 1234,
+        c.ATTR_OPTION_ID: value(arg_name="option"),
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_MEDIA_ID: 1234,
     },
 )
 async def test_set_service_option_track_station(heos: Heos, option: int) -> None:
     """Test setting track and station options."""
     await heos.set_service_option(
         option,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        source_id=MUSIC_SOURCE_PANDORA,
         media_id="1234",
     )
 
@@ -315,17 +334,17 @@ async def test_set_service_option_track_station(heos: Heos, option: int) -> None
 @pytest.mark.parametrize(
     "option",
     [
-        const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+        SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+        SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+        SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
     ],
 )
 @calls_command(
     "browse.set_service_option_album_remove_playlist",
     {
-        const.ATTR_OPTION_ID: value(arg_name="option"),
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_CONTAINER_ID: 1234,
+        c.ATTR_OPTION_ID: value(arg_name="option"),
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_CONTAINER_ID: 1234,
     },
 )
 async def test_set_service_option_album_remove_playlist(
@@ -334,7 +353,7 @@ async def test_set_service_option_album_remove_playlist(
     """Test setting albumn options and remove playlist options."""
     await heos.set_service_option(
         option,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        source_id=MUSIC_SOURCE_PANDORA,
         container_id="1234",
     )
 
@@ -342,17 +361,17 @@ async def test_set_service_option_album_remove_playlist(
 @calls_command(
     "browse.set_service_option_add_playlist",
     {
-        const.ATTR_OPTION_ID: const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_CONTAINER_ID: 1234,
-        const.ATTR_NAME: "Test Playlist",
+        c.ATTR_OPTION_ID: SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_CONTAINER_ID: 1234,
+        c.ATTR_NAME: "Test Playlist",
     },
 )
 async def test_set_service_option_add_playlist(heos: Heos) -> None:
     """Test setting albumn options and remove playlist options."""
     await heos.set_service_option(
-        const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+        source_id=MUSIC_SOURCE_PANDORA,
         container_id="1234",
         name="Test Playlist",
     )
@@ -361,18 +380,18 @@ async def test_set_service_option_add_playlist(heos: Heos) -> None:
 @calls_command(
     "browse.set_service_option_new_station",
     {
-        const.ATTR_OPTION_ID: const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
-        const.ATTR_SOURCE_ID: const.MUSIC_SOURCE_PANDORA,
-        const.ATTR_SEARCH_CRITERIA_ID: 1234,
-        const.ATTR_NAME: "Test",
-        const.ATTR_RANGE: "0,14",
+        c.ATTR_OPTION_ID: SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA,
+        c.ATTR_SEARCH_CRITERIA_ID: 1234,
+        c.ATTR_NAME: "Test",
+        c.ATTR_RANGE: "0,14",
     },
 )
 async def test_set_service_option_new_station(heos: Heos) -> None:
     """Test setting creating a new station option."""
     await heos.set_service_option(
-        const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
-        source_id=const.MUSIC_SOURCE_PANDORA,
+        SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+        source_id=MUSIC_SOURCE_PANDORA,
         criteria_id=1234,
         name="Test",
         range_start=0,
@@ -389,33 +408,33 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         # SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY
         (
-            {"option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY},
+            {"option_id": SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY},
             "source_id, container_id, and name parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "option_id": SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
                 "source_id": 1234,
             },
             "source_id, container_id, and name parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "option_id": SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
                 "container_id": 1234,
             },
             "source_id, container_id, and name parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "option_id": SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
                 "name": 1234,
             },
             "source_id, container_id, and name parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+                "option_id": SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
                 "source_id": 1234,
                 "name": 1234,
                 "media_id": 1234,
@@ -425,33 +444,33 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         # SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA
         (
-            {"option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA},
+            {"option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA},
             "source_id, name, and criteria_id parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "source_id": 1234,
             },
             "source_id, name, and criteria_id parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "name": 1234,
             },
             "source_id, name, and criteria_id parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "criteria_id": 1234,
             },
             "source_id, name, and criteria_id parameters are required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "criteria_id": 1234,
                 "name": 1234,
             },
@@ -459,7 +478,7 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "criteria_id": 1234,
                 "source_id": 1234,
             },
@@ -467,7 +486,7 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "name": 1234,
                 "source_id": 1234,
             },
@@ -475,7 +494,7 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+                "option_id": SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
                 "criteria_id": 1234,
                 "name": 1234,
                 "source_id": 1234,
@@ -485,12 +504,12 @@ async def test_set_service_option_new_station(heos: Heos) -> None:
         ),
         # SERVICE_OPTION_REMOVE_FROM_FAVORITES
         (
-            {"option_id": const.SERVICE_OPTION_REMOVE_FROM_FAVORITES},
+            {"option_id": SERVICE_OPTION_REMOVE_FROM_FAVORITES},
             "media_id parameter is required",
         ),
         (
             {
-                "option_id": const.SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+                "option_id": SERVICE_OPTION_REMOVE_FROM_FAVORITES,
                 "media_id": 1234,
                 "container_id": 1234,
             },
@@ -511,10 +530,10 @@ async def test_set_sevice_option_invalid_raises(
 @pytest.mark.parametrize(
     "option",
     [
-        const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
-        const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+        SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+        SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+        SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+        SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
     ],
 )
 @pytest.mark.parametrize(
@@ -550,9 +569,9 @@ async def test_set_sevice_option_invalid_track_station_raises(
 @pytest.mark.parametrize(
     "option",
     [
-        const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
-        const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+        SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+        SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+        SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
     ],
 )
 @pytest.mark.parametrize(
@@ -588,8 +607,8 @@ async def test_set_sevice_option_invalid_album_remove_playlist_raises(
 @pytest.mark.parametrize(
     "option",
     [
-        const.SERVICE_OPTION_THUMBS_UP,
-        const.SERVICE_OPTION_THUMBS_DOWN,
+        SERVICE_OPTION_THUMBS_UP,
+        SERVICE_OPTION_THUMBS_DOWN,
     ],
 )
 @pytest.mark.parametrize(
@@ -682,20 +701,20 @@ async def test_set_sevice_option_invalid_add_favorite_raises(
     heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(ValueError, match=error):
         await heos.set_service_option(
-            option_id=const.SERVICE_OPTION_ADD_TO_FAVORITES, **kwargs
+            option_id=SERVICE_OPTION_ADD_TO_FAVORITES, **kwargs
         )
 
 
 @calls_command(
     "browse.multi_search",
     {
-        const.ATTR_SEARCH: "Tangerine Rays",
-        const.ATTR_SOURCE_ID: "1,4,8,13,10",
-        const.ATTR_SEARCH_CRITERIA_ID: "0,1,2,3",
+        c.ATTR_SEARCH: "Tangerine Rays",
+        c.ATTR_SOURCE_ID: "1,4,8,13,10",
+        c.ATTR_SEARCH_CRITERIA_ID: "0,1,2,3",
     },
 )
 async def test_multi_search(heos: Heos) -> None:
-    """Test the multi-search command."""
+    """Test the multi-search c."""
     result = await heos.multi_search(
         "Tangerine Rays",
         [1, 4, 8, 13, 10],
@@ -713,7 +732,7 @@ async def test_multi_search(heos: Heos) -> None:
 
 
 async def test_multi_search_invalid_search_rasis() -> None:
-    """Test the multi-search command."""
+    """Test the multi-search c."""
     heos = Heos(HeosOptions("127.0.0.1"))
     with pytest.raises(
         ValueError,

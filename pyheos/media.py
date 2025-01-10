@@ -4,8 +4,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from pyheos import const
+from pyheos import command as c
 from pyheos.message import HeosMessage
+from pyheos.types import AddCriteriaType, MediaType
 
 if TYPE_CHECKING:
     from . import Heos
@@ -27,13 +28,13 @@ class QueueItem:
     def from_data(cls, data: dict[str, str]) -> "QueueItem":
         """Create a new instance from the provided data."""
         return cls(
-            queue_id=int(data[const.ATTR_QUEUE_ID]),
-            song=data[const.ATTR_SONG],
-            album=data[const.ATTR_ALBUM],
-            artist=data[const.ATTR_ARTIST],
-            image_url=data[const.ATTR_IMAGE_URL],
-            media_id=data[const.ATTR_MEDIA_ID],
-            album_id=data[const.ATTR_ALBUM_ID],
+            queue_id=int(data[c.ATTR_QUEUE_ID]),
+            song=data[c.ATTR_SONG],
+            album=data[c.ATTR_ALBUM],
+            artist=data[c.ATTR_ARTIST],
+            image_url=data[c.ATTR_IMAGE_URL],
+            media_id=data[c.ATTR_MEDIA_ID],
+            album_id=data[c.ATTR_ALBUM_ID],
         )
 
 
@@ -47,7 +48,7 @@ class Media:
 
     source_id: int
     name: str
-    type: const.MediaType
+    type: MediaType
     image_url: str = field(repr=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
@@ -71,23 +72,23 @@ class MediaMusicSource(Media):
     ) -> "MediaMusicSource":
         """Create a new instance from the provided data."""
         return cls(
-            source_id=int(data[const.ATTR_SOURCE_ID]),
-            name=data[const.ATTR_NAME],
-            type=const.MediaType(data[const.ATTR_TYPE]),
-            image_url=data[const.ATTR_IMAGE_URL],
-            available=data[const.ATTR_AVAILABLE] == const.VALUE_TRUE,
-            service_username=data.get(const.ATTR_SERVICE_USER_NAME),
+            source_id=int(data[c.ATTR_SOURCE_ID]),
+            name=data[c.ATTR_NAME],
+            type=MediaType(data[c.ATTR_TYPE]),
+            image_url=data[c.ATTR_IMAGE_URL],
+            available=data[c.ATTR_AVAILABLE] == c.VALUE_TRUE,
+            service_username=data.get(c.ATTR_SERVICE_USER_NAME),
             heos=heos,
         )
 
     def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the instance with new data."""
-        self.source_id = int(data[const.ATTR_SOURCE_ID])
-        self.name = data[const.ATTR_NAME]
-        self.type = const.MediaType(data[const.ATTR_TYPE])
-        self.image_url = data[const.ATTR_IMAGE_URL]
-        self.available = data[const.ATTR_AVAILABLE] == const.VALUE_TRUE
-        self.service_username = data.get(const.ATTR_SERVICE_USER_NAME)
+        self.source_id = int(data[c.ATTR_SOURCE_ID])
+        self.name = data[c.ATTR_NAME]
+        self.type = MediaType(data[c.ATTR_TYPE])
+        self.image_url = data[c.ATTR_IMAGE_URL]
+        self.available = data[c.ATTR_AVAILABLE] == c.VALUE_TRUE
+        self.service_username = data.get(c.ATTR_SERVICE_USER_NAME)
 
     def clone(self) -> "MediaMusicSource":
         """Create a new instance from the current instance."""
@@ -138,27 +139,26 @@ class MediaItem(Media):
         """Create a new instance from the provided data."""
 
         # Ensure we have a source_id
-        if const.ATTR_SOURCE_ID not in data and not source_id:
+        if c.ATTR_SOURCE_ID not in data and not source_id:
             raise ValueError("'source_id' is required when not present in 'data'")
-        new_source_id = int(data.get(const.ATTR_SOURCE_ID, source_id))
+        new_source_id = int(data.get(c.ATTR_SOURCE_ID, source_id))
         # Items is browsable if is a media source, or if it is a container
         new_browseable = (
-            const.ATTR_SOURCE_ID in data
-            or data.get(const.ATTR_CONTAINER) == const.VALUE_YES
+            c.ATTR_SOURCE_ID in data or data.get(c.ATTR_CONTAINER) == c.VALUE_YES
         )
 
         return cls(
             source_id=new_source_id,
-            container_id=data.get(const.ATTR_CONTAINER_ID, container_id),
+            container_id=data.get(c.ATTR_CONTAINER_ID, container_id),
             browsable=new_browseable,
-            name=data[const.ATTR_NAME],
-            type=const.MediaType(data[const.ATTR_TYPE]),
-            image_url=data[const.ATTR_IMAGE_URL],
-            playable=data.get(const.ATTR_PLAYABLE) == const.VALUE_YES,
-            media_id=data.get(const.ATTR_MEDIA_ID),
-            artist=data.get(const.ATTR_ARTIST),
-            album=data.get(const.ATTR_ALBUM),
-            album_id=data.get(const.ATTR_ALBUM_ID),
+            name=data[c.ATTR_NAME],
+            type=MediaType(data[c.ATTR_TYPE]),
+            image_url=data[c.ATTR_IMAGE_URL],
+            playable=data.get(c.ATTR_PLAYABLE) == c.VALUE_YES,
+            media_id=data.get(c.ATTR_MEDIA_ID),
+            artist=data.get(c.ATTR_ARTIST),
+            album=data.get(c.ATTR_ALBUM),
+            album_id=data.get(c.ATTR_ALBUM_ID),
             heos=heos,
         )
 
@@ -196,7 +196,7 @@ class MediaItem(Media):
     async def play_media(
         self,
         player_id: int,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Play this media item on the specified player.
 
@@ -241,7 +241,7 @@ class ServiceOption:
     def __from_data(context: str, data: dict[str, str]) -> "ServiceOption":
         """Create a new instance from the provided data."""
         return ServiceOption(
-            context=context, id=int(data[const.ATTR_ID]), name=data[const.ATTR_NAME]
+            context=context, id=int(data[c.ATTR_ID]), name=data[c.ATTR_NAME]
         )
 
 
@@ -262,12 +262,12 @@ class BrowseResult:
         message: HeosMessage, heos: Optional["Heos"] = None
     ) -> "BrowseResult":
         """Create a new instance from the provided data."""
-        source_id = message.get_message_value_int(const.ATTR_SOURCE_ID)
-        container_id = message.message.get(const.ATTR_CONTAINER_ID)
+        source_id = message.get_message_value_int(c.ATTR_SOURCE_ID)
+        container_id = message.message.get(c.ATTR_CONTAINER_ID)
 
         return BrowseResult(
-            count=message.get_message_value_int(const.ATTR_COUNT),
-            returned=message.get_message_value_int(const.ATTR_RETURNED),
+            count=message.get_message_value_int(c.ATTR_COUNT),
+            returned=message.get_message_value_int(c.ATTR_RETURNED),
             source_id=source_id,
             container_id=container_id,
             items=list(
@@ -292,8 +292,8 @@ class ImageMetadata:
     def _from_data(data: dict[str, Any]) -> "ImageMetadata":
         """Create a new instance from the provided data."""
         return ImageMetadata(
-            image_url=data[const.ATTR_IMAGE_URL],
-            width=int(data[const.ATTR_WIDTH]),
+            image_url=data[c.ATTR_IMAGE_URL],
+            width=int(data[c.ATTR_WIDTH]),
         )
 
 
@@ -308,10 +308,10 @@ class AlbumMetadata:
     def _from_data(data: dict[str, Any]) -> "AlbumMetadata":
         """Create a new instance from the provided data."""
         return AlbumMetadata(
-            album_id=data[const.ATTR_ALBUM_ID],
+            album_id=data[c.ATTR_ALBUM_ID],
             images=[
                 ImageMetadata._from_data(cast(dict[str, Any], image))
-                for image in data[const.ATTR_IMAGES]
+                for image in data[c.ATTR_IMAGES]
             ],
         )
 
@@ -330,10 +330,10 @@ class RetreiveMetadataResult:
     def _from_message(message: HeosMessage) -> "RetreiveMetadataResult":
         "Create a new instance from the provided data."
         return RetreiveMetadataResult(
-            source_id=message.get_message_value_int(const.ATTR_SOURCE_ID),
-            container_id=message.get_message_value(const.ATTR_CONTAINER_ID),
-            returned=message.get_message_value_int(const.ATTR_RETURNED),
-            count=message.get_message_value_int(const.ATTR_COUNT),
+            source_id=message.get_message_value_int(c.ATTR_SOURCE_ID),
+            container_id=message.get_message_value(c.ATTR_CONTAINER_ID),
+            returned=message.get_message_value_int(c.ATTR_RETURNED),
+            count=message.get_message_value_int(c.ATTR_COUNT),
             metadata=[
                 AlbumMetadata._from_data(item)
                 for item in cast(Sequence[dict[str, Any]], message.payload)

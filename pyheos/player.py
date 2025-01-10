@@ -4,16 +4,79 @@ import asyncio
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
+from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
+from pyheos.types import (
+    AddCriteriaType,
+    ControlType,
+    MediaType,
+    NetworkType,
+    PlayState,
+    RepeatType,
+    SignalType,
+)
 
+from . import command as c
 from . import const
 
 if TYPE_CHECKING:
     from .heos import Heos
+
+CONTROLS_ALL: Final = [
+    ControlType.PLAY,
+    ControlType.PAUSE,
+    ControlType.STOP,
+    ControlType.PLAY_NEXT,
+    ControlType.PLAY_PREVIOUS,
+]
+CONTROLS_FORWARD_ONLY: Final = [
+    ControlType.PLAY,
+    ControlType.PAUSE,
+    ControlType.STOP,
+    ControlType.PLAY_NEXT,
+]
+CONTROLS_PLAY_STOP: Final = [ControlType.PLAY, ControlType.STOP]
+
+SOURCE_CONTROLS: Final = {
+    const.MUSIC_SOURCE_CONNECT: {MediaType.STATION: CONTROLS_ALL},
+    const.MUSIC_SOURCE_PANDORA: {MediaType.STATION: CONTROLS_FORWARD_ONLY},
+    const.MUSIC_SOURCE_RHAPSODY: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_TUNEIN: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_PLAY_STOP,
+    },
+    const.MUSIC_SOURCE_SPOTIFY: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_DEEZER: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_NAPSTER: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
+    },
+    const.MUSIC_SOURCE_IHEARTRADIO: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_PLAY_STOP,
+    },
+    const.MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: CONTROLS_PLAY_STOP},
+    const.MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: CONTROLS_ALL},
+    const.MUSIC_SOURCE_TIDAL: {MediaType.SONG: CONTROLS_ALL},
+    const.MUSIC_SOURCE_AMAZON: {
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_ALL,
+    },
+    const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROLS_PLAY_STOP},
+}
 
 
 @dataclass
@@ -34,7 +97,7 @@ class HeosNowPlayingMedia:
     current_position_updated: datetime | None = None
     duration: int | None = None
     supported_controls: Sequence[str] = field(
-        default_factory=lambda: const.CONTROLS_ALL, init=False
+        default_factory=lambda: CONTROLS_ALL, init=False
     )
     options: Sequence[ServiceOption] = field(
         repr=False, hash=False, compare=False, default_factory=list
@@ -47,16 +110,16 @@ class HeosNowPlayingMedia:
     def _update_from_message(self, message: HeosMessage) -> None:
         """Update the current instance from another instance."""
         data = cast(dict[str, Any], message.payload)
-        self.type = data.get(const.ATTR_TYPE)
-        self.song = data.get(const.ATTR_SONG)
-        self.station = data.get(const.ATTR_STATION)
-        self.album = data.get(const.ATTR_ALBUM)
-        self.artist = data.get(const.ATTR_ARTIST)
-        self.image_url = data.get(const.ATTR_IMAGE_URL)
-        self.album_id = data.get(const.ATTR_ALBUM_ID)
-        self.media_id = data.get(const.ATTR_MEDIA_ID)
-        self.queue_id = self.__get_optional_int(data.get(const.ATTR_QUEUE_ID))
-        self.source_id = self.__get_optional_int(data.get(const.ATTR_SOURCE_ID))
+        self.type = data.get(c.ATTR_TYPE)
+        self.song = data.get(c.ATTR_SONG)
+        self.station = data.get(c.ATTR_STATION)
+        self.album = data.get(c.ATTR_ALBUM)
+        self.artist = data.get(c.ATTR_ARTIST)
+        self.image_url = data.get(c.ATTR_IMAGE_URL)
+        self.album_id = data.get(c.ATTR_ALBUM_ID)
+        self.media_id = data.get(c.ATTR_MEDIA_ID)
+        self.queue_id = self.__get_optional_int(data.get(c.ATTR_QUEUE_ID))
+        self.source_id = self.__get_optional_int(data.get(c.ATTR_SOURCE_ID))
         self.options = ServiceOption._from_options(message.options)
         self._update_supported_controls()
         self.clear_progress()
@@ -70,24 +133,20 @@ class HeosNowPlayingMedia:
 
     def _update_supported_controls(self) -> None:
         """Updates the supported controls based on the source and type."""
-        new_supported_controls = (
-            const.CONTROLS_ALL if self.source_id is not None else []
-        )
+        new_supported_controls = CONTROLS_ALL if self.source_id is not None else []
         if self.source_id is not None and self.type is not None:
-            if controls := const.SOURCE_CONTROLS.get(self.source_id):
+            if controls := SOURCE_CONTROLS.get(self.source_id):
                 new_supported_controls = controls.get(
-                    const.MediaType(self.type), const.CONTROLS_ALL
+                    MediaType(self.type), CONTROLS_ALL
                 )
         self.supported_controls = new_supported_controls
 
     def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Update the position/duration from an event."""
         if all_progress_events or self.current_position is None:
-            self.current_position = event.get_message_value_int(
-                const.ATTR_CURRENT_POSITION
-            )
+            self.current_position = event.get_message_value_int(c.ATTR_CURRENT_POSITION)
             self.current_position_updated = datetime.now()
-            self.duration = event.get_message_value_int(const.ATTR_DURATION)
+            self.duration = event.get_message_value_int(c.ATTR_DURATION)
             return True
         return False
 
@@ -102,15 +161,15 @@ class HeosNowPlayingMedia:
 class PlayMode:
     """Define the play mode options for a player."""
 
-    repeat: const.RepeatType
+    repeat: RepeatType
     shuffle: bool
 
     @staticmethod
     def _from_data(data: HeosMessage) -> "PlayMode":
         """Create a new instance from the provided data."""
         return PlayMode(
-            repeat=const.RepeatType(data.get_message_value(const.ATTR_REPEAT)),
-            shuffle=data.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON,
+            repeat=RepeatType(data.get_message_value(c.ATTR_REPEAT)),
+            shuffle=data.get_message_value(c.ATTR_SHUFFLE) == c.VALUE_ON,
         )
 
 
@@ -126,13 +185,11 @@ class HeosPlayer:
     ip_address: str = field(repr=True, hash=False, compare=False)
     network: str = field(repr=False, hash=False, compare=False)
     line_out: int = field(repr=False, hash=False, compare=False)
-    state: const.PlayState | None = field(
-        repr=True, hash=False, compare=False, default=None
-    )
+    state: PlayState | None = field(repr=True, hash=False, compare=False, default=None)
     volume: int = field(repr=False, hash=False, compare=False, default=0)
     is_muted: bool = field(repr=False, hash=False, compare=False, default=False)
-    repeat: const.RepeatType = field(
-        repr=False, hash=False, compare=False, default=const.RepeatType.OFF
+    repeat: RepeatType = field(
+        repr=False, hash=False, compare=False, default=RepeatType.OFF
     )
     shuffle: bool = field(repr=False, hash=False, compare=False, default=False)
     playback_error: str | None = field(
@@ -155,30 +212,33 @@ class HeosPlayer:
         heos: Optional["Heos"] = None,
     ) -> "HeosPlayer":
         """Create a new instance from the provided data."""
+
         return HeosPlayer(
-            name=data[const.ATTR_NAME],
-            player_id=int(data[const.ATTR_PLAYER_ID]),
-            model=data[const.ATTR_MODEL],
-            serial=data.get(const.ATTR_SERIAL),
-            version=data[const.ATTR_VERSION],
-            ip_address=data[const.ATTR_IP_ADDRESS],
-            network=data[const.ATTR_NETWORK],
-            line_out=int(data[const.ATTR_LINE_OUT]),
-            group_id=HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID)),
+            name=data[c.ATTR_NAME],
+            player_id=int(data[c.ATTR_PLAYER_ID]),
+            model=data[c.ATTR_MODEL],
+            serial=data.get(c.ATTR_SERIAL),
+            version=data[c.ATTR_VERSION],
+            ip_address=data[c.ATTR_IP_ADDRESS],
+            network=parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
+            line_out=int(data[c.ATTR_LINE_OUT]),
+            group_id=HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID)),
             heos=heos,
         )
 
     def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the attributes from the supplied data."""
-        self.name = data[const.ATTR_NAME]
-        self.player_id = int(data[const.ATTR_PLAYER_ID])
-        self.model = data[const.ATTR_MODEL]
-        self.serial = data.get(const.ATTR_SERIAL)
-        self.version = data[const.ATTR_VERSION]
-        self.ip_address = data[const.ATTR_IP_ADDRESS]
-        self.network = data[const.ATTR_NETWORK]
-        self.line_out = int(data[const.ATTR_LINE_OUT])
-        self.group_id = HeosPlayer.__get_optional_int(data.get(const.ATTR_GROUP_ID))
+        self.name = data[c.ATTR_NAME]
+        self.player_id = int(data[c.ATTR_PLAYER_ID])
+        self.model = data[c.ATTR_MODEL]
+        self.serial = data.get(c.ATTR_SERIAL)
+        self.version = data[c.ATTR_VERSION]
+        self.ip_address = data[c.ATTR_IP_ADDRESS]
+        self.network = parse_enum(
+            c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
+        )
+        self.line_out = int(data[c.ATTR_LINE_OUT])
+        self.group_id = HeosPlayer.__get_optional_int(data.get(c.ATTR_GROUP_ID))
 
     async def _on_event(self, event: HeosMessage, all_progress_events: bool) -> bool:
         """Updates the player based on the received HEOS event.
@@ -190,24 +250,24 @@ class HeosPlayer:
         if event.command == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS:
             return self.now_playing_media._on_event(event, all_progress_events)
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
-            self.state = const.PlayState(event.get_message_value(const.ATTR_STATE))
-            if self.state == const.PlayState.PLAY:
+            self.state = PlayState(event.get_message_value(c.ATTR_STATE))
+            if self.state == PlayState.PLAY:
                 self.now_playing_media.clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:
-            self.volume = event.get_message_value_int(const.ATTR_LEVEL)
-            self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
+            self.volume = event.get_message_value_int(c.ATTR_LEVEL)
+            self.is_muted = event.get_message_value(c.ATTR_MUTE) == c.VALUE_ON
         elif event.command == const.EVENT_REPEAT_MODE_CHANGED:
-            self.repeat = const.RepeatType(event.get_message_value(const.ATTR_REPEAT))
+            self.repeat = RepeatType(event.get_message_value(c.ATTR_REPEAT))
         elif event.command == const.EVENT_SHUFFLE_MODE_CHANGED:
-            self.shuffle = event.get_message_value(const.ATTR_SHUFFLE) == const.VALUE_ON
+            self.shuffle = event.get_message_value(c.ATTR_SHUFFLE) == c.VALUE_ON
         elif event.command == const.EVENT_PLAYER_PLAYBACK_ERROR:
-            self.playback_error = event.get_message_value(const.ATTR_ERROR)
+            self.playback_error = event.get_message_value(c.ATTR_ERROR)
         return True
 
     def add_on_player_event(self, callback: EventCallbackType) -> DisconnectType:
-        """Connect a callback to be invoked when connected.
+        """Connect a callback to be invoked when an event occurs for this group.
 
         Args:
             callback: The callback to be invoked.
@@ -216,7 +276,7 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         # Use lambda to yield player_id since the value can change
         return self.heos.dispatcher.connect(
-            const.SIGNAL_PLAYER_EVENT,
+            SignalType.PLAYER_EVENT,
             callback_wrapper(callback, {0: lambda: self.player_id}),
         )
 
@@ -265,22 +325,22 @@ class HeosPlayer:
         self.repeat = play_mode.repeat
         self.shuffle = play_mode.shuffle
 
-    async def set_state(self, state: const.PlayState) -> None:
+    async def set_state(self, state: PlayState) -> None:
         """Set the state of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_state(self.player_id, state)
 
     async def play(self) -> None:
         """Set the start to play."""
-        await self.set_state(const.PlayState.PLAY)
+        await self.set_state(PlayState.PLAY)
 
     async def pause(self) -> None:
         """Set the start to pause."""
-        await self.set_state(const.PlayState.PAUSE)
+        await self.set_state(PlayState.PAUSE)
 
     async def stop(self) -> None:
         """Set the start to stop."""
-        await self.set_state(const.PlayState.STOP)
+        await self.set_state(PlayState.STOP)
 
     async def set_volume(self, level: int) -> None:
         """Set the volume level."""
@@ -315,7 +375,7 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         await self.heos.player_toggle_mute(self.player_id)
 
-    async def set_play_mode(self, repeat: const.RepeatType, shuffle: bool) -> None:
+    async def set_play_mode(self, repeat: RepeatType, shuffle: bool) -> None:
         """Set the play mode of the player."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_set_play_mode(self.player_id, repeat, shuffle)
@@ -393,7 +453,7 @@ class HeosPlayer:
         source_id: int,
         container_id: str,
         media_id: str | None = None,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Add the specified source to the queue."""
         assert self.heos, "Heos instance not set"
@@ -404,7 +464,7 @@ class HeosPlayer:
     async def play_media(
         self,
         media: MediaItem,
-        add_criteria: const.AddCriteriaType = const.AddCriteriaType.PLAY_NOW,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
     ) -> None:
         """Play the specified media.
 
