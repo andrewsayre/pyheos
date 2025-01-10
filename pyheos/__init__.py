@@ -43,7 +43,14 @@ from .player import (
 )
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
 from .system import HeosHost, HeosSystem
-from .types import AddCriteriaType, NetworkType, PlayState, RepeatType
+from .types import (
+    AddCriteriaType,
+    NetworkType,
+    PlayState,
+    RepeatType,
+    SignalHeosEvent,
+    SignalType,
+)
 
 __all__ = [
     "AddCriteriaType",
@@ -80,6 +87,8 @@ __all__ = [
     "NetworkType",
     "QueueItem",
     "ServiceOption",
+    "SignalHeosEvent",
+    "SignalType",
     "PlayMode",
     "PlayState",
     "PlayerEventCallbackType",

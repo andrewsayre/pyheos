@@ -16,6 +16,7 @@ from pyheos.types import (
     NetworkType,
     PlayState,
     RepeatType,
+    SignalType,
 )
 
 from . import const
@@ -277,7 +278,7 @@ class HeosPlayer:
         assert self.heos, "Heos instance not set"
         # Use lambda to yield player_id since the value can change
         return self.heos.dispatcher.connect(
-            const.SIGNAL_PLAYER_EVENT,
+            SignalType.PLAYER_EVENT,
             callback_wrapper(callback, {0: lambda: self.player_id}),
         )
 

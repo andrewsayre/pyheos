@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from pyheos import const
 from pyheos.heos import Heos, HeosOptions
+from pyheos.types import SignalHeosEvent, SignalType
 
 
 async def test_add_on_connected() -> None:
@@ -20,19 +20,19 @@ async def test_add_on_connected() -> None:
     disconnect = heos.add_on_connected(callback)
 
     # Simulate sending event
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     assert called
     called = False
 
     # Test other events don't raise
     #
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     assert not called
 
     # Test disconnct
 
     disconnect()
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     assert not called
 
 
@@ -49,13 +49,13 @@ async def test_add_on_connected_coroutine() -> None:
     disconnect = heos.add_on_connected(callback)
 
     # Simulate sending event
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     assert called
 
     # Test disconnct
     called = False
     disconnect()
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     assert not called
 
 
@@ -72,13 +72,13 @@ async def test_add_on_disconnected() -> None:
     disconnect = heos.add_on_disconnected(callback)
 
     # Simulate sending event
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     assert called
 
     # Test disconnct
     called = False
     disconnect()
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     assert not called
 
 
@@ -95,13 +95,13 @@ async def test_add_on_disconnected_coroutine() -> None:
     disconnect = heos.add_on_disconnected(callback)
 
     # Simulate sending event
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     assert called
 
     # Test disconnct
     called = False
     disconnect()
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     assert not called
 
 
@@ -119,7 +119,7 @@ async def test_add_on_user_credentials_invalid() -> None:
 
     # Simulate sending event
     await heos.dispatcher.wait_send(
-        const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
     assert called
 
@@ -127,7 +127,7 @@ async def test_add_on_user_credentials_invalid() -> None:
     called = False
     disconnect()
     await heos.dispatcher.wait_send(
-        const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
     assert not called
 
@@ -146,7 +146,7 @@ async def test_add_on_user_credentials_invalid_coroutine() -> None:
 
     # Simulate sending event
     await heos.dispatcher.wait_send(
-        const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
     assert called
 
@@ -154,7 +154,7 @@ async def test_add_on_user_credentials_invalid_coroutine() -> None:
     called = False
     disconnect()
     await heos.dispatcher.wait_send(
-        const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
     assert not called
 
@@ -178,18 +178,18 @@ async def test_add_on_controller_event() -> None:
 
     # Simulate sending event
     await heos.dispatcher.wait_send(
-        const.SIGNAL_CONTROLLER_EVENT, target_event, target_data
+        SignalType.CONTROLLER_EVENT, target_event, target_data
     )
     assert called
     called = False
 
     # Test other events don't raise
     #
-    await heos.dispatcher.wait_send(const.SIGNAL_GROUP_EVENT, target_event, target_data)
+    await heos.dispatcher.wait_send(SignalType.GROUP_EVENT, target_event, target_data)
     assert not called
 
     # Test disconnct
 
     disconnect()
-    await heos.dispatcher.wait_send(const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    await heos.dispatcher.wait_send(SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     assert not called

@@ -7,6 +7,8 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import Any, Final
 
+from pyheos.types import SignalHeosEvent
+
 _LOGGER: Final = logging.getLogger(__name__)
 
 TargetType = Callable[..., Any]
@@ -14,7 +16,7 @@ DisconnectType = Callable[[], None]
 ConnectType = Callable[[str, TargetType], DisconnectType]
 SendType = Callable[..., Sequence[asyncio.Future]]
 
-EventCallbackType = Callable[[str], Any]
+EventCallbackType = Callable[[SignalHeosEvent], Any]
 CallbackType = Callable[[], Any]
 ControllerEventCallbackType = Callable[[str, Any], Any]
 PlayerEventCallbackType = Callable[[int, str], Any]

@@ -38,6 +38,21 @@ class PlayState(StrEnum):
     STOP = "stop"
 
 
+class SignalType(StrEnum):
+    """Define the signal names."""
+
+    PLAYER_EVENT = "player_event"
+    GROUP_EVENT = "group_event"
+    CONTROLLER_EVENT = "controller_event"
+    HEOS_EVENT = "heos_event"
+
+
+class SignalHeosEvent(StrEnum):
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    USER_CREDENTIALS_INVALID = "usercredentials_invalid"
+
+
 class RepeatType(StrEnum):
     """Define the repeat types."""
 

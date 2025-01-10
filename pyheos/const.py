@@ -8,7 +8,6 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
-
 ATTR_ADD_CRITERIA_ID: Final = "aid"
 ATTR_ALBUM: Final = "album"
 ATTR_ALBUM_ID: Final = "album_id"
@@ -80,7 +79,6 @@ ATTR_VERSION: Final = "version"
 ATTR_WIDTH: Final = "width"
 ATTR_WILDCARD: Final = "wildcard"
 
-
 VALUE_ON: Final = "on"
 VALUE_OFF: Final = "off"
 VALUE_TRUE: Final = "true"
@@ -93,14 +91,33 @@ VALUE_MEMBER: Final = "member"
 VALUE_UPDATE_EXIST: Final = "update_exist"
 
 
+# Command error codes (keep discrete values as we do not control the list)
+ERROR_UNREGONIZED_COMMAND: Final = 1
+ERROR_INVALID_ID: Final = 2
+ERROR_WRONG_ARGUMENTS: Final = 3
+ERROR_DATA_NOT_AVAILABLE: Final = 4
+ERROR_RESOURCE_NOT_AVAILABLE: Final = 5
 ERROR_INVALID_CREDNETIALS: Final = 6
+ERROR_COMMAND_NOT_EXECUTED: Final = 7
 ERROR_USER_NOT_LOGGED_IN: Final = 8
+ERROR_PARAMETER_OUT_OF_RANGE: Final = 9
 ERROR_USER_NOT_FOUND: Final = 10
+ERROR_INTERNAL: Final = 11
 ERROR_SYSTEM_ERROR: Final = 12
+ERROR_PROCESSING_PREVIOUS_COMMAND: Final = 13
+ERROR_MEDIA_CANNOT_BE_PLAYED: Final = 14
+ERROR_OPTION_NOTP_SUPPORTED: Final = 15
+ERROR_TOO_MANY_COMMANDS_IN_QUEUE: Final = 16
+ERROR_SKIP_LIMIT_REACHED: Final = 17
 
+# Document system error codes (keep discrete values as we do not control the list)
+SYSTEM_ERROR_REMOTE_SERVICE_ERROR: Final = -9
+SYSTEM_ERROR_SERVICE_NOT_REGISTERED: Final = -1061
 SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
 SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
-
+SYSTEM_ERROR_CONTENT_AUTHENTICATION_ERROR: Final = -1201
+SYSTEM_ERROR_CONTENT_AUTHORIZATION_ERROR: Final = -1232
+SYSTEM_ERROR_ACCOUNT_PARAMETERS_INVALID: Final = -1239
 
 # Music Sources (keep discrete values as we do not control the list)
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
@@ -124,7 +141,6 @@ MUSIC_SOURCE_PLAYLISTS: Final = 1025
 MUSIC_SOURCE_HISTORY: Final = 1026
 MUSIC_SOURCE_AUX_INPUT: Final = 1027
 MUSIC_SOURCE_FAVORITES: Final = 1028
-
 
 # Inputs (keep discrete values as we do not control the list)
 INPUT_ANALOG_IN_1: Final = "inputs/analog_in_1"
@@ -254,7 +270,6 @@ VALID_INPUTS: Final = (
     INPUT_USB_AC,
 )
 
-
 # Service options (keep discrete values as we do not control the list)
 SERVICE_OPTION_ADD_TRACK_TO_LIBRARY: Final = 1
 SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY: Final = 2
@@ -269,17 +284,6 @@ SERVICE_OPTION_THUMBS_DOWN: Final = 12
 SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA: Final = 13
 SERVICE_OPTION_ADD_TO_FAVORITES: Final = 19
 SERVICE_OPTION_REMOVE_FROM_FAVORITES: Final = 20
-
-
-# Signals
-SIGNAL_PLAYER_EVENT: Final = "player_event"
-SIGNAL_GROUP_EVENT: Final = "group_event"
-SIGNAL_CONTROLLER_EVENT: Final = "controller_event"
-SIGNAL_HEOS_EVENT: Final = "heos_event"
-# Signal HEOS_EVENT events
-EVENT_CONNECTED: Final = "connected"
-EVENT_DISCONNECTED: Final = "disconnected"
-EVENT_USER_CREDENTIALS_INVALID: Final = "usercredentials_invalid"
 
 # HEOS Events (keep discrete values as we do not control the list)
 EVENT_PLAYER_STATE_CHANGED: Final = "event/player_state_changed"

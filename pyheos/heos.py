@@ -37,7 +37,7 @@ from .connection import AutoReconnectingConnection, ConnectionState
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
-from .types import AddCriteriaType, PlayState, RepeatType
+from .types import AddCriteriaType, PlayState, RepeatType, SignalHeosEvent, SignalType
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -1266,7 +1266,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             callback: The callback to receive the controller events.
         Returns:
             A function that disconnects the callback."""
-        return self._dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, callback)
+        return self._dispatcher.connect(SignalType.CONTROLLER_EVENT, callback)
 
     def add_on_heos_event(self, callback: EventCallbackType) -> DisconnectType:
         """Connect a callback to receive HEOS events.
@@ -1275,7 +1275,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             callback: The callback to receive the HEOS events. The callback should accept a single string argument which will contain the event name.
         Returns:
             A function that disconnects the callback."""
-        return self._dispatcher.connect(const.SIGNAL_HEOS_EVENT, callback)
+        return self._dispatcher.connect(SignalType.HEOS_EVENT, callback)
 
     def add_on_connected(self, callback: CallbackType) -> DisconnectType:
         """Connect a callback to be invoked when connected.
@@ -1285,7 +1285,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_CONNECTED}),
+            callback_wrapper(callback, {0: SignalHeosEvent.CONNECTED}),
         )
 
     def add_on_disconnected(self, callback: CallbackType) -> DisconnectType:
@@ -1296,7 +1296,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_DISCONNECTED}),
+            callback_wrapper(callback, {0: SignalHeosEvent.DISCONNECTED}),
         )
 
     def add_on_user_credentials_invalid(self, callback: CallbackType) -> DisconnectType:
@@ -1307,7 +1307,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         Returns:
             A function that disconnects the callback."""
         return self.add_on_heos_event(
-            callback_wrapper(callback, {0: const.EVENT_USER_CREDENTIALS_INVALID}),
+            callback_wrapper(callback, {0: SignalHeosEvent.USER_CREDENTIALS_INVALID}),
         )
 
     async def _on_connected(self) -> None:
@@ -1315,7 +1315,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         assert self._connection.state == ConnectionState.CONNECTED
 
         await self._dispatcher.wait_send(
-            const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED, return_exceptions=True
+            SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED, return_exceptions=True
         )
 
         if self.current_credentials:
@@ -1331,8 +1331,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
                 )
                 self.current_credentials = None
                 await self._dispatcher.wait_send(
-                    const.SIGNAL_HEOS_EVENT,
-                    const.EVENT_USER_CREDENTIALS_INVALID,
+                    SignalType.HEOS_EVENT,
+                    SignalHeosEvent.USER_CREDENTIALS_INVALID,
                     return_exceptions=True,
                 )
         else:
@@ -1352,7 +1352,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         for player in self.players.values():
             player.available = False
         await self._dispatcher.wait_send(
-            const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED, return_exceptions=True
+            SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED, return_exceptions=True
         )
 
     async def _on_command_error(self, error: CommandFailedError) -> None:
@@ -1371,8 +1371,8 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             # Ensure a stale credential is cleared
             await self.sign_out()
             await self._dispatcher.wait_send(
-                const.SIGNAL_HEOS_EVENT,
-                const.EVENT_USER_CREDENTIALS_INVALID,
+                SignalType.HEOS_EVENT,
+                SignalHeosEvent.USER_CREDENTIALS_INVALID,
                 return_exceptions=True,
             )
 
@@ -1403,7 +1403,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             await self.get_groups(refresh=True)
 
         await self._dispatcher.wait_send(
-            const.SIGNAL_CONTROLLER_EVENT, event.command, result, return_exceptions=True
+            SignalType.CONTROLLER_EVENT, event.command, result, return_exceptions=True
         )
         _LOGGER.debug("Event received: %s", event)
 
@@ -1415,7 +1415,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
             await player._on_event(event, self._options.all_progress_events)
         ):
             await self.dispatcher.wait_send(
-                const.SIGNAL_PLAYER_EVENT,
+                SignalType.PLAYER_EVENT,
                 player_id,
                 event.command,
                 return_exceptions=True,
@@ -1428,7 +1428,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         group = self.groups.get(group_id)
         if group and await group.on_event(event):
             await self.dispatcher.wait_send(
-                const.SIGNAL_GROUP_EVENT,
+                SignalType.GROUP_EVENT,
                 group_id,
                 event.command,
                 return_exceptions=True,

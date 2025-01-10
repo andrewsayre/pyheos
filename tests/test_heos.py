@@ -21,7 +21,14 @@ from pyheos.group import HeosGroup
 from pyheos.heos import DATA_MAPPED_IDS, DATA_NEW, Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
 from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
-from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
+from pyheos.types import (
+    AddCriteriaType,
+    NetworkType,
+    PlayState,
+    RepeatType,
+    SignalHeosEvent,
+    SignalType,
+)
 from tests.common import MediaItems
 
 from . import (
@@ -77,7 +84,7 @@ async def test_connect(mock_device: MockHeosDevice) -> None:
             "127.0.0.1", timeout=0.1, auto_reconnect_delay=0.1, heart_beat=False
         )
     )
-    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    signal = connect_handler(heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     await heos.connect()
     assert signal.is_set()
     assert heos.connection_state == ConnectionState.CONNECTED
@@ -126,7 +133,7 @@ async def test_connect_with_bad_credentials_dispatches_event(
     heos = Heos(HeosOptions("127.0.0.1", credentials=credentials, heart_beat=False))
 
     signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
 
     await heos.connect()
@@ -177,7 +184,7 @@ async def test_command_credential_error_dispatches_event(heos: Heos) -> None:
     assert heos.signed_in_username is not None
 
     signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_USER_CREDENTIALS_INVALID
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID
     )
 
     with pytest.raises(CommandAuthenticationError):
@@ -262,7 +269,7 @@ async def test_connect_timeout() -> None:
 async def test_connect_multiple_succeeds() -> None:
     """Test calling connect multiple times succeeds."""
     heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, heart_beat=False))
-    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED)
+    signal = connect_handler(heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
     try:
         await heos.connect()
         await signal.wait()
@@ -279,7 +286,7 @@ async def test_connect_multiple_succeeds() -> None:
 async def test_disconnect(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test disconnect updates state and fires signal."""
     # Fixture automatically connects
-    signal = connect_handler(heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED)
+    signal = connect_handler(heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED)
     await heos.disconnect()
     assert signal.is_set()
     assert heos.connection_state == ConnectionState.DISCONNECTED
@@ -305,7 +312,7 @@ async def test_commands_fail_when_disconnected(
 async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
     )
 
     # Assert transitions to disconnected and fires disconnect
@@ -319,7 +326,7 @@ async def test_connection_error_during_command(
 ) -> None:
     """Test connection error during command results in disconnected."""
     disconnect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
     )
 
     # Assert transitions to disconnected and fires disconnect
@@ -346,10 +353,10 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     )
 
     connect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
     )
     disconnect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
     )
 
     # Assert open and fires connected
@@ -386,10 +393,10 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     )
 
     connect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
     )
     disconnect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
     )
 
     # Assert open and fires connected
@@ -425,10 +432,10 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
     )
 
     connect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
     )
     disconnect_signal = connect_handler(
-        heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
     )
 
     # Assert open and fires connected
@@ -638,7 +645,7 @@ async def test_player_now_playing_changed_event(
         assert event == const.EVENT_PLAYER_NOW_PLAYING_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     command = mock_device.register(
@@ -695,7 +702,7 @@ async def test_player_volume_changed_event(
         assert event == const.EVENT_PLAYER_VOLUME_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event(
@@ -736,7 +743,7 @@ async def test_player_now_playing_progress_event(
         assert event == const.EVENT_PLAYER_NOW_PLAYING_PROGRESS
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event(
@@ -779,7 +786,7 @@ async def test_limited_progress_event_updates(mock_device: MockHeosDevice) -> No
         else:
             pytest.fail("Handler invoked more than once.")
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # raise it multiple times.
     await mock_device.write_event(
@@ -821,7 +828,7 @@ async def test_repeat_mode_changed_event(
         assert event == const.EVENT_REPEAT_MODE_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event("event.repeat_mode_changed")
@@ -850,7 +857,7 @@ async def test_shuffle_mode_changed_event(
         assert event == const.EVENT_SHUFFLE_MODE_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event("event.shuffle_mode_changed")
@@ -875,7 +882,7 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
         assert data == {DATA_NEW: [3], DATA_MAPPED_IDS: {}}
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     command = mock_device.register(
@@ -911,7 +918,7 @@ async def test_players_changed_event_new_ids(
         assert data == {DATA_NEW: [], DATA_MAPPED_IDS: {101: 1, 102: 2}}
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     command = mock_device.register(
@@ -943,7 +950,7 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
         assert event == const.EVENT_SOURCES_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     command = mock_device.register(
@@ -971,7 +978,7 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
         assert event == const.EVENT_GROUPS_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
 
     # Write event through mock device
     command = mock_device.register(
@@ -998,7 +1005,7 @@ async def test_player_playback_error_event(
         assert event == const.EVENT_PLAYER_PLAYBACK_ERROR
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event("event.player_playback_error")
@@ -1021,7 +1028,7 @@ async def test_player_queue_changed_event(
         assert event == const.EVENT_PLAYER_QUEUE_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_PLAYER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.PLAYER_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event("event.player_queue_changed")
@@ -1047,7 +1054,7 @@ async def test_group_volume_changed_event(
         assert event == const.EVENT_GROUP_VOLUME_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_GROUP_EVENT, handler)
+    heos.dispatcher.connect(SignalType.GROUP_EVENT, handler)
 
     # Write event through mock device
     await mock_device.write_event("event.group_volume_changed")
@@ -1066,7 +1073,7 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
         assert event == const.EVENT_USER_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
 
     # Test signed out event
     await mock_device.write_event("event.user_changed_signed_out")
@@ -1492,10 +1499,10 @@ async def test_reboot() -> None:
 
     try:
         disconnect_signal = connect_handler(
-            heos, const.SIGNAL_HEOS_EVENT, const.EVENT_DISCONNECTED
+            heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
         )
         connect_signal = connect_handler(
-            heos, const.SIGNAL_HEOS_EVENT, const.EVENT_CONNECTED
+            heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
         )
 
         await heos.reboot()
