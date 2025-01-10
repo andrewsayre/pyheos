@@ -92,6 +92,7 @@ VALUE_LEADER: Final = "leader"
 VALUE_MEMBER: Final = "member"
 VALUE_UPDATE_EXIST: Final = "update_exist"
 
+
 ERROR_INVALID_CREDNETIALS: Final = 6
 ERROR_USER_NOT_LOGGED_IN: Final = 8
 ERROR_USER_NOT_FOUND: Final = 10
@@ -101,7 +102,7 @@ SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
 SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 
 
-# Music Sources
+# Music Sources (keep discrete values as we do not control the list)
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1
 MUSIC_SOURCE_RHAPSODY: Final = 2
@@ -125,7 +126,7 @@ MUSIC_SOURCE_AUX_INPUT: Final = 1027
 MUSIC_SOURCE_FAVORITES: Final = 1028
 
 
-# Inputs
+# Inputs (keep discrete values as we do not control the list)
 INPUT_ANALOG_IN_1: Final = "inputs/analog_in_1"
 INPUT_ANALOG_IN_2: Final = "inputs/analog_in_2"
 INPUT_AUX_8K: Final = "inputs/aux_8k"
@@ -254,7 +255,7 @@ VALID_INPUTS: Final = (
 )
 
 
-# Service options
+# Service options (keep discrete values as we do not control the list)
 SERVICE_OPTION_ADD_TRACK_TO_LIBRARY: Final = 1
 SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY: Final = 2
 SERVICE_OPTION_ADD_STATION_TO_LIBRARY: Final = 3
@@ -275,11 +276,12 @@ SIGNAL_PLAYER_EVENT: Final = "player_event"
 SIGNAL_GROUP_EVENT: Final = "group_event"
 SIGNAL_CONTROLLER_EVENT: Final = "controller_event"
 SIGNAL_HEOS_EVENT: Final = "heos_event"
+# Signal HEOS_EVENT events
 EVENT_CONNECTED: Final = "connected"
 EVENT_DISCONNECTED: Final = "disconnected"
-EVENT_USER_CREDENTIALS_INVALID: Final = "user credentials invalid"
+EVENT_USER_CREDENTIALS_INVALID: Final = "usercredentials_invalid"
 
-# Events
+# HEOS Events (keep discrete values as we do not control the list)
 EVENT_PLAYER_STATE_CHANGED: Final = "event/player_state_changed"
 EVENT_PLAYER_NOW_PLAYING_CHANGED: Final = "event/player_now_playing_changed"
 EVENT_PLAYER_NOW_PLAYING_PROGRESS: Final = "event/player_now_playing_progress"
