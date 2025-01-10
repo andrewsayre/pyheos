@@ -269,7 +269,7 @@ class HeosPlayer:
         return True
 
     def add_on_player_event(self, callback: EventCallbackType) -> DisconnectType:
-        """Connect a callback to be invoked when connected.
+        """Connect a callback to be invoked when an event occurs for this group.
 
         Args:
             callback: The callback to be invoked.

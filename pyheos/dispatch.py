@@ -7,8 +7,6 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from typing import Any, Final, TypeVar
 
-from pyheos.types import SignalHeosEvent
-
 _LOGGER: Final = logging.getLogger(__name__)
 
 TargetType = Callable[..., Any]
@@ -18,10 +16,13 @@ SendType = Callable[..., Sequence[asyncio.Future]]
 
 TEvent = TypeVar("TEvent", bound=str)
 TPlayerId = TypeVar("TPlayerId", bound=int)
-EventCallbackType = Callable[[SignalHeosEvent], Any]
+TGroupId = TypeVar("TGroupId", bound=int)
+
 CallbackType = Callable[[], Any]
+EventCallbackType = Callable[[TEvent], Any]
 ControllerEventCallbackType = Callable[[TEvent, Any], Any]
 PlayerEventCallbackType = Callable[[TPlayerId, TEvent], Any]
+GroupEventCallbackType = Callable[[TGroupId, TEvent], Any]
 
 
 def _is_coroutine_function(func: TargetType) -> bool:

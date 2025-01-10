@@ -5,7 +5,9 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.message import HeosMessage
+from pyheos.types import SignalType
 
 from . import const
 
@@ -67,7 +69,7 @@ class HeosGroup:
             data[const.ATTR_PLAYERS]
         )
 
-    async def on_event(self, event: HeosMessage) -> bool:
+    async def _on_event(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
         if not (
             event.command == const.EVENT_GROUP_VOLUME_CHANGED
@@ -77,6 +79,20 @@ class HeosGroup:
         self.volume = event.get_message_value_int(const.ATTR_LEVEL)
         self.is_muted = event.get_message_value(const.ATTR_MUTE) == const.VALUE_ON
         return True
+
+    def add_on_group_event(self, callback: EventCallbackType) -> DisconnectType:
+        """Connect a callback to be invoked when an event occurs for this group.
+
+        Args:
+            callback: The callback to be invoked.
+        Returns:
+            A function that disconnects the callback."""
+        assert self.heos, "Heos instance not set"
+        # Use lambda to yield player_id since the value can change
+        return self.heos.dispatcher.connect(
+            SignalType.GROUP_EVENT,
+            callback_wrapper(callback, {0: lambda: self.group_id}),
+        )
 
     async def refresh(self, *, refresh_base_info: bool = True) -> None:
         """Pulls the current volume and mute state of the group.

@@ -43,7 +43,7 @@ async def test_on_event_no_match_returns_false(
             const.ATTR_MUTE: const.VALUE_ON,
         },
     )
-    assert result == await group.on_event(event)
+    assert result == await group._on_event(event)
     if result:
         assert group.volume == 10
         assert group.is_muted

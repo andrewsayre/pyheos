@@ -1049,12 +1049,11 @@ async def test_group_volume_changed_event(
 
     signal = asyncio.Event()
 
-    async def handler(group_id: int, event: str) -> None:
-        assert group_id == 1
+    async def handler(event: str) -> None:
         assert event == const.EVENT_GROUP_VOLUME_CHANGED
         signal.set()
 
-    heos.dispatcher.connect(SignalType.GROUP_EVENT, handler)
+    group.add_on_group_event(handler)
 
     # Write event through mock device
     await mock_device.write_event("event.group_volume_changed")

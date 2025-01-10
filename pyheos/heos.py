@@ -1426,7 +1426,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
         """Process an event about a group."""
         group_id = event.get_message_value_int(const.ATTR_GROUP_ID)
         group = self.groups.get(group_id)
-        if group and await group.on_event(event):
+        if group and await group._on_event(event):
             await self.dispatcher.wait_send(
                 SignalType.GROUP_EVENT,
                 group_id,
