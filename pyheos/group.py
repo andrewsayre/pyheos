@@ -5,11 +5,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from pyheos.const import DEFAULT_STEP, EVENT_GROUP_VOLUME_CHANGED
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.message import HeosMessage
 from pyheos.types import SignalType
 
-from . import command, const
+from . import command as c
 
 if TYPE_CHECKING:
     from pyheos.heos import Heos
@@ -36,10 +37,10 @@ class HeosGroup:
         """Create a new instance from the provided data."""
         player_id: int | None = None
         player_ids: list[int] = []
-        player_id, player_ids = cls.__get_ids(data[command.ATTR_PLAYERS])
+        player_id, player_ids = cls.__get_ids(data[c.ATTR_PLAYERS])
         return cls(
-            name=data[command.ATTR_NAME],
-            group_id=int(data[command.ATTR_GROUP_ID]),
+            name=data[c.ATTR_NAME],
+            group_id=int(data[c.ATTR_GROUP_ID]),
             lead_player_id=player_id,
             member_player_ids=player_ids,
             heos=heos,
@@ -52,8 +53,8 @@ class HeosGroup:
         member_player_ids: list[int] = []
         for member_player in players:
             # Find the loaded player
-            member_player_id = int(member_player[command.ATTR_PLAYER_ID])
-            if member_player[command.ATTR_ROLE] == command.VALUE_LEADER:
+            member_player_id = int(member_player[c.ATTR_PLAYER_ID])
+            if member_player[c.ATTR_ROLE] == c.VALUE_LEADER:
                 lead_player_id = member_player_id
             else:
                 member_player_ids.append(member_player_id)
@@ -63,21 +64,21 @@ class HeosGroup:
 
     def _update_from_data(self, data: dict[str, Any]) -> None:
         """Update the group with the provided data."""
-        self.name = data[command.ATTR_NAME]
-        self.group_id = int(data[command.ATTR_GROUP_ID])
+        self.name = data[c.ATTR_NAME]
+        self.group_id = int(data[c.ATTR_GROUP_ID])
         self.lead_player_id, self.member_player_ids = self.__get_ids(
-            data[command.ATTR_PLAYERS]
+            data[c.ATTR_PLAYERS]
         )
 
     async def _on_event(self, event: HeosMessage) -> bool:
         """Handle a group update event."""
         if not (
-            event.command == const.EVENT_GROUP_VOLUME_CHANGED
-            and event.get_message_value_int(command.ATTR_GROUP_ID) == self.group_id
+            event.command == EVENT_GROUP_VOLUME_CHANGED
+            and event.get_message_value_int(c.ATTR_GROUP_ID) == self.group_id
         ):
             return False
-        self.volume = event.get_message_value_int(command.ATTR_LEVEL)
-        self.is_muted = event.get_message_value(command.ATTR_MUTE) == command.VALUE_ON
+        self.volume = event.get_message_value_int(c.ATTR_LEVEL)
+        self.is_muted = event.get_message_value(c.ATTR_MUTE) == c.VALUE_ON
         return True
 
     def add_on_group_event(self, callback: EventCallbackType) -> DisconnectType:
@@ -121,12 +122,12 @@ class HeosGroup:
         assert self.heos, "Heos instance not set"
         await self.heos.set_group_volume(self.group_id, level)
 
-    async def volume_up(self, step: int = const.DEFAULT_STEP) -> None:
+    async def volume_up(self, step: int = DEFAULT_STEP) -> None:
         """Raise the volume."""
         assert self.heos, "Heos instance not set"
         await self.heos.group_volume_up(self.group_id, step)
 
-    async def volume_down(self, step: int = const.DEFAULT_STEP) -> None:
+    async def volume_down(self, step: int = DEFAULT_STEP) -> None:
         """Raise the volume."""
         assert self.heos, "Heos instance not set"
         await self.heos.group_volume_down(self.group_id, step)

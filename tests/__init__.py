@@ -10,12 +10,7 @@ from typing import Any, cast
 from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
 
 from pyheos import Heos
-from pyheos import command as const
-from pyheos.command import (
-    COMMAND_ACCOUNT_CHECK,
-    COMMAND_REBOOT,
-    COMMAND_REGISTER_FOR_CHANGE_EVENTS,
-)
+from pyheos import command as c
 from pyheos.connection import CLI_PORT, SEPARATOR, SEPARATOR_BYTES
 
 FILE_IO_POOL = ThreadPoolExecutor()
@@ -69,7 +64,7 @@ class ArgumentValue:
         assert self.arg_name is not None
         arg_value = args[self.arg_name]
         if self.formatter == "on_off":
-            return const.VALUE_ON if arg_value else const.VALUE_OFF
+            return c.VALUE_ON if arg_value else c.VALUE_OFF
         return arg_value
 
 
@@ -128,7 +123,7 @@ def calls_commands(*commands: CallCommand) -> Callable:
             for command in matched_commands:
                 # Get the fixture command
                 fixture_data = json.loads(await get_fixture(command.fixture))
-                command_name = fixture_data[const.ATTR_HEOS][const.ATTR_COMMAND]
+                command_name = fixture_data[c.ATTR_HEOS][c.ATTR_COMMAND]
 
                 # Resolve command arguments (they may contain a ArgumentValue)
                 resolved_args = command.get_resolve_args(kwargs)
@@ -215,13 +210,13 @@ def calls_player_commands(
     for player_id in player_ids:
         commands.extend(
             [
-                CallCommand("player.get_play_state", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_play_state", {c.ATTR_PLAYER_ID: player_id}),
                 CallCommand(
-                    "player.get_now_playing_media", {const.ATTR_PLAYER_ID: player_id}
+                    "player.get_now_playing_media", {c.ATTR_PLAYER_ID: player_id}
                 ),
-                CallCommand("player.get_volume", {const.ATTR_PLAYER_ID: player_id}),
-                CallCommand("player.get_mute", {const.ATTR_PLAYER_ID: player_id}),
-                CallCommand("player.get_play_mode", {const.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_volume", {c.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_mute", {c.ATTR_PLAYER_ID: player_id}),
+                CallCommand("player.get_play_mode", {c.ATTR_PLAYER_ID: player_id}),
             ]
         )
     commands.extend(additional)
@@ -231,8 +226,8 @@ def calls_player_commands(
 def calls_group_commands(*additional: CallCommand) -> Callable:
     commands = [
         CallCommand("group.get_groups"),
-        CallCommand("group.get_volume", {const.ATTR_GROUP_ID: 1}),
-        CallCommand("group.get_mute", {const.ATTR_GROUP_ID: 1}),
+        CallCommand("group.get_volume", {c.ATTR_GROUP_ID: 1}),
+        CallCommand("group.get_mute", {c.ATTR_GROUP_ID: 1}),
     ]
     commands.extend(additional)
     return calls_commands(*commands)
@@ -286,7 +281,7 @@ class MockHeosDevice:
             self._handle_connection, "127.0.0.1", CLI_PORT
         )
 
-        self.register(COMMAND_ACCOUNT_CHECK, None, "system.check_account")
+        self.register(c.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
 
     async def stop(self) -> None:
         """Stop the heos server."""
@@ -399,15 +394,15 @@ class MockHeosDevice:
                 continue
 
             # Special processing for known/unknown commands
-            if command == COMMAND_REBOOT:
+            if command == c.COMMAND_REBOOT:
                 # Simulate a reboot by shutting down the server
                 await self.stop()
                 await asyncio.sleep(0.3)
                 await self.start()
                 return
-            if command == COMMAND_REGISTER_FOR_CHANGE_EVENTS:
-                enable = str(query[const.ATTR_ENABLE])
-                log.is_registered_for_events = enable == const.VALUE_ON
+            if command == c.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
+                enable = str(query[c.ATTR_ENABLE])
+                log.is_registered_for_events = enable == c.VALUE_ON
                 response = (await get_fixture(fixture_name)).replace("{enable}", enable)
             else:
                 response = (
@@ -471,10 +466,10 @@ class CommandMatcher:
     async def _get_response(self, response: str, query: dict) -> str:
         response = await get_fixture(response)
         keys = {
-            const.ATTR_PLAYER_ID: "{player_id}",
-            const.ATTR_STATE: "{state}",
-            const.ATTR_LEVEL: "{level}",
-            const.ATTR_OPTIONS: "{options}",
+            c.ATTR_PLAYER_ID: "{player_id}",
+            c.ATTR_STATE: "{state}",
+            c.ATTR_LEVEL: "{level}",
+            c.ATTR_OPTIONS: "{options}",
         }
         for key, token in keys.items():
             value = query.get(key)

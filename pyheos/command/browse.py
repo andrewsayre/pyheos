@@ -11,7 +11,22 @@ Not implemented (commands do not exist/obsolete):
 
 from typing import Any
 
-from pyheos import command, const
+from pyheos import command as c
+from pyheos.const import (
+    SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+    SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY,
+    SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+    SERVICE_OPTION_ADD_TO_FAVORITES,
+    SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+    SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA,
+    SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_FROM_FAVORITES,
+    SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+    SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+    SERVICE_OPTION_THUMBS_DOWN,
+    SERVICE_OPTION_THUMBS_UP,
+)
 from pyheos.message import HeosCommand
 from pyheos.types import AddCriteriaType
 
@@ -34,12 +49,12 @@ class BrowseCommands:
             4.4.13 Get HEOS Playlists
             4.4.16 Get HEOS History
         """
-        params: dict[str, Any] = {command.ATTR_SOURCE_ID: source_id}
+        params: dict[str, Any] = {c.ATTR_SOURCE_ID: source_id}
         if container_id:
-            params[command.ATTR_CONTAINER_ID] = container_id
+            params[c.ATTR_CONTAINER_ID] = container_id
         if isinstance(range_start, int) and isinstance(range_end, int):
-            params[command.ATTR_RANGE] = f"{range_start},{range_end}"
-        return HeosCommand(command.COMMAND_BROWSE_BROWSE, params)
+            params[c.ATTR_RANGE] = f"{range_start},{range_end}"
+        return HeosCommand(c.COMMAND_BROWSE_BROWSE, params)
 
     @staticmethod
     def get_music_sources(refresh: bool = False) -> HeosCommand:
@@ -51,8 +66,8 @@ class BrowseCommands:
         """
         params = {}
         if refresh:
-            params[command.ATTR_REFRESH] = command.VALUE_ON
-        return HeosCommand(command.COMMAND_BROWSE_GET_SOURCES, params)
+            params[c.ATTR_REFRESH] = c.VALUE_ON
+        return HeosCommand(c.COMMAND_BROWSE_GET_SOURCES, params)
 
     @staticmethod
     def get_music_source_info(source_id: int) -> HeosCommand:
@@ -63,7 +78,7 @@ class BrowseCommands:
             4.4.2 Get Source Info
         """
         return HeosCommand(
-            command.COMMAND_BROWSE_GET_SOURCE_INFO, {command.ATTR_SOURCE_ID: source_id}
+            c.COMMAND_BROWSE_GET_SOURCE_INFO, {c.ATTR_SOURCE_ID: source_id}
         )
 
     @staticmethod
@@ -75,8 +90,8 @@ class BrowseCommands:
             4.4.5 Get Search Criteria
         """
         return HeosCommand(
-            command.COMMAND_BROWSE_GET_SEARCH_CRITERIA,
-            {command.ATTR_SOURCE_ID: source_id},
+            c.COMMAND_BROWSE_GET_SEARCH_CRITERIA,
+            {c.ATTR_SOURCE_ID: source_id},
         )
 
     @staticmethod
@@ -100,13 +115,13 @@ class BrowseCommands:
                 "'search' parameter must be less than or equal to 128 characters"
             )
         params = {
-            command.ATTR_SOURCE_ID: source_id,
-            command.ATTR_SEARCH: search,
-            command.ATTR_SEARCH_CRITERIA_ID: criteria_id,
+            c.ATTR_SOURCE_ID: source_id,
+            c.ATTR_SEARCH: search,
+            c.ATTR_SEARCH_CRITERIA_ID: criteria_id,
         }
         if isinstance(range_start, int) and isinstance(range_end, int):
-            params[command.ATTR_RANGE] = f"{range_start},{range_end}"
-        return HeosCommand(command.COMMAND_BROWSE_SEARCH, params)
+            params[c.ATTR_RANGE] = f"{range_start},{range_end}"
+        return HeosCommand(c.COMMAND_BROWSE_SEARCH, params)
 
     @staticmethod
     def play_station(
@@ -124,13 +139,13 @@ class BrowseCommands:
         Note: Parameters 'cid' and 'name' do not appear to be required in testing, however send 'cid' if provided.
         """
         params = {
-            command.ATTR_PLAYER_ID: player_id,
-            command.ATTR_SOURCE_ID: source_id,
-            command.ATTR_MEDIA_ID: media_id,
+            c.ATTR_PLAYER_ID: player_id,
+            c.ATTR_SOURCE_ID: source_id,
+            c.ATTR_MEDIA_ID: media_id,
         }
         if container_id is not None:
-            params[command.ATTR_CONTAINER_ID] = container_id
-        return HeosCommand(command.COMMAND_BROWSE_PLAY_STREAM, params)
+            params[c.ATTR_CONTAINER_ID] = container_id
+        return HeosCommand(c.COMMAND_BROWSE_PLAY_STREAM, params)
 
     @staticmethod
     def play_preset_station(player_id: int, preset: int) -> HeosCommand:
@@ -143,8 +158,8 @@ class BrowseCommands:
         if preset < 1:
             raise ValueError(f"Invalid preset: {preset}")
         return HeosCommand(
-            command.COMMAND_BROWSE_PLAY_PRESET,
-            {command.ATTR_PLAYER_ID: player_id, command.ATTR_PRESET: preset},
+            c.COMMAND_BROWSE_PLAY_PRESET,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_PRESET: preset},
         )
 
     @staticmethod
@@ -158,12 +173,12 @@ class BrowseCommands:
             4.4.9 Play Input Source
         """
         params = {
-            command.ATTR_PLAYER_ID: player_id,
-            command.ATTR_INPUT: input_name,
+            c.ATTR_PLAYER_ID: player_id,
+            c.ATTR_INPUT: input_name,
         }
         if source_player_id is not None:
-            params[command.ATTR_SOURCE_PLAYER_ID] = source_player_id
-        return HeosCommand(command.COMMAND_BROWSE_PLAY_INPUT, params)
+            params[c.ATTR_SOURCE_PLAYER_ID] = source_player_id
+        return HeosCommand(c.COMMAND_BROWSE_PLAY_INPUT, params)
 
     @staticmethod
     def play_url(player_id: int, url: str) -> HeosCommand:
@@ -174,8 +189,8 @@ class BrowseCommands:
             4.4.10 Play URL
         """
         return HeosCommand(
-            command.COMMAND_BROWSE_PLAY_STREAM,
-            {command.ATTR_PLAYER_ID: player_id, command.ATTR_URL: url},
+            c.COMMAND_BROWSE_PLAY_STREAM,
+            {c.ATTR_PLAYER_ID: player_id, c.ATTR_URL: url},
         )
 
     @staticmethod
@@ -194,14 +209,14 @@ class BrowseCommands:
             4.4.12 Add Track to Queue with Options
         """
         params = {
-            command.ATTR_PLAYER_ID: player_id,
-            command.ATTR_SOURCE_ID: source_id,
-            command.ATTR_CONTAINER_ID: container_id,
-            command.ATTR_ADD_CRITERIA_ID: add_criteria,
+            c.ATTR_PLAYER_ID: player_id,
+            c.ATTR_SOURCE_ID: source_id,
+            c.ATTR_CONTAINER_ID: container_id,
+            c.ATTR_ADD_CRITERIA_ID: add_criteria,
         }
         if media_id is not None:
-            params[command.ATTR_MEDIA_ID] = media_id
-        return HeosCommand(command.COMMAND_BROWSE_ADD_TO_QUEUE, params)
+            params[c.ATTR_MEDIA_ID] = media_id
+        return HeosCommand(c.COMMAND_BROWSE_ADD_TO_QUEUE, params)
 
     @staticmethod
     def rename_playlist(
@@ -220,11 +235,11 @@ class BrowseCommands:
                 "'new_name' parameter must be less than or equal to 128 characters"
             )
         return HeosCommand(
-            command.COMMAND_BROWSE_RENAME_PLAYLIST,
+            c.COMMAND_BROWSE_RENAME_PLAYLIST,
             {
-                command.ATTR_SOURCE_ID: source_id,
-                command.ATTR_CONTAINER_ID: container_id,
-                command.ATTR_NAME: new_name,
+                c.ATTR_SOURCE_ID: source_id,
+                c.ATTR_CONTAINER_ID: container_id,
+                c.ATTR_NAME: new_name,
             },
         )
 
@@ -236,10 +251,10 @@ class BrowseCommands:
         References:
             4.4.15 Delete HEOS Playlist"""
         return HeosCommand(
-            command.COMMAND_BROWSE_DELETE__PLAYLIST,
+            c.COMMAND_BROWSE_DELETE__PLAYLIST,
             {
-                command.ATTR_SOURCE_ID: source_id,
-                command.ATTR_CONTAINER_ID: container_id,
+                c.ATTR_SOURCE_ID: source_id,
+                c.ATTR_CONTAINER_ID: container_id,
             },
         )
 
@@ -252,10 +267,10 @@ class BrowseCommands:
             4.4.17 Retrieve Metadata
         """
         return HeosCommand(
-            command.COMMAND_BROWSE_RETRIEVE_METADATA,
+            c.COMMAND_BROWSE_RETRIEVE_METADATA,
             {
-                command.ATTR_SOURCE_ID: source_it,
-                command.ATTR_CONTAINER_ID: container_id,
+                c.ATTR_SOURCE_ID: source_it,
+                c.ATTR_CONTAINER_ID: container_id,
             },
         )
 
@@ -277,14 +292,14 @@ class BrowseCommands:
         References:
             4.4.19 Set Service Option
         """
-        params: dict[str, Any] = {command.ATTR_OPTION_ID: option_id}
+        params: dict[str, Any] = {c.ATTR_OPTION_ID: option_id}
         disallowed_params = {}
 
         if option_id in (
-            const.SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
-            const.SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
-            const.SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
-            const.SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
+            SERVICE_OPTION_ADD_TRACK_TO_LIBRARY,
+            SERVICE_OPTION_ADD_STATION_TO_LIBRARY,
+            SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY,
+            SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY,
         ):
             if source_id is None or media_id is None:
                 raise ValueError(
@@ -298,12 +313,12 @@ class BrowseCommands:
                 "range_start": range_start,
                 "range_end": range_end,
             }
-            params[command.ATTR_SOURCE_ID] = source_id
-            params[command.ATTR_MEDIA_ID] = media_id
+            params[c.ATTR_SOURCE_ID] = source_id
+            params[c.ATTR_MEDIA_ID] = media_id
         elif option_id in (
-            const.SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
-            const.SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
-            const.SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
+            SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY,
+            SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY,
+            SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY,
         ):
             if source_id is None or container_id is None:
                 raise ValueError(
@@ -317,9 +332,9 @@ class BrowseCommands:
                 "range_start": range_start,
                 "range_end": range_end,
             }
-            params[command.ATTR_SOURCE_ID] = source_id
-            params[command.ATTR_CONTAINER_ID] = container_id
-        elif option_id == const.SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY:
+            params[c.ATTR_SOURCE_ID] = source_id
+            params[c.ATTR_CONTAINER_ID] = container_id
+        elif option_id == SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY:
             if source_id is None or container_id is None or name is None:
                 raise ValueError(
                     f"source_id, container_id, and name parameters are required for service option_id {option_id}"
@@ -331,12 +346,12 @@ class BrowseCommands:
                 "range_start": range_start,
                 "range_end": range_end,
             }
-            params[command.ATTR_SOURCE_ID] = source_id
-            params[command.ATTR_CONTAINER_ID] = container_id
-            params[command.ATTR_NAME] = name
+            params[c.ATTR_SOURCE_ID] = source_id
+            params[c.ATTR_CONTAINER_ID] = container_id
+            params[c.ATTR_NAME] = name
         elif option_id in (
-            const.SERVICE_OPTION_THUMBS_UP,
-            const.SERVICE_OPTION_THUMBS_DOWN,
+            SERVICE_OPTION_THUMBS_UP,
+            SERVICE_OPTION_THUMBS_DOWN,
         ):
             if source_id is None or player_id is None:
                 raise ValueError(
@@ -350,9 +365,9 @@ class BrowseCommands:
                 "range_start": range_start,
                 "range_end": range_end,
             }
-            params[command.ATTR_SOURCE_ID] = source_id
-            params[command.ATTR_PLAYER_ID] = player_id
-        elif option_id == const.SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA:
+            params[c.ATTR_SOURCE_ID] = source_id
+            params[c.ATTR_PLAYER_ID] = player_id
+        elif option_id == SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA:
             if source_id is None or name is None or criteria_id is None:
                 raise ValueError(
                     f"source_id, name, and criteria_id parameters are required for service option_id {option_id}"
@@ -362,12 +377,12 @@ class BrowseCommands:
                 "container_id": container_id,
                 "player_id": player_id,
             }
-            params[command.ATTR_SOURCE_ID] = source_id
-            params[command.ATTR_SEARCH_CRITERIA_ID] = criteria_id
-            params[command.ATTR_NAME] = name
+            params[c.ATTR_SOURCE_ID] = source_id
+            params[c.ATTR_SEARCH_CRITERIA_ID] = criteria_id
+            params[c.ATTR_NAME] = name
             if isinstance(range_start, int) and isinstance(range_end, int):
-                params[command.ATTR_RANGE] = f"{range_start},{range_end}"
-        elif option_id == const.SERVICE_OPTION_ADD_TO_FAVORITES:
+                params[c.ATTR_RANGE] = f"{range_start},{range_end}"
+        elif option_id == SERVICE_OPTION_ADD_TO_FAVORITES:
             if not bool(player_id) ^ (
                 source_id is not None and media_id is not None and name is not None
             ):
@@ -379,23 +394,23 @@ class BrowseCommands:
                     raise ValueError(
                         f"source_id, media_id, and name parameters are not allowed when using player_id for service option_id {option_id}"
                     )
-                params[command.ATTR_PLAYER_ID] = player_id
+                params[c.ATTR_PLAYER_ID] = player_id
             else:
-                params[command.ATTR_SOURCE_ID] = source_id
-                params[command.ATTR_MEDIA_ID] = media_id
-                params[command.ATTR_NAME] = name
+                params[c.ATTR_SOURCE_ID] = source_id
+                params[c.ATTR_MEDIA_ID] = media_id
+                params[c.ATTR_NAME] = name
             disallowed_params = {
                 "container_id": container_id,
                 "criteria_id": criteria_id,
                 "range_start": range_start,
                 "range_end": range_end,
             }
-        elif option_id == const.SERVICE_OPTION_REMOVE_FROM_FAVORITES:
+        elif option_id == SERVICE_OPTION_REMOVE_FROM_FAVORITES:
             if media_id is None:
                 raise ValueError(
                     f"media_id parameter is required for service option_id {option_id}"
                 )
-            params[command.ATTR_MEDIA_ID] = media_id
+            params[c.ATTR_MEDIA_ID] = media_id
             disallowed_params = {
                 "source_id": source_id,
                 "player_id": player_id,
@@ -415,7 +430,7 @@ class BrowseCommands:
             )
 
         # return the command
-        return HeosCommand(command.COMMAND_BROWSE_SET_SERVICE_OPTION, params)
+        return HeosCommand(c.COMMAND_BROWSE_SET_SERVICE_OPTION, params)
 
     @staticmethod
     def multi_search(
@@ -431,9 +446,9 @@ class BrowseCommands:
             raise ValueError(
                 "'search' parameter must be less than or equal to 128 characters"
             )
-        params = {command.ATTR_SEARCH: search}
+        params = {c.ATTR_SEARCH: search}
         if source_ids is not None:
-            params[command.ATTR_SOURCE_ID] = ",".join(map(str, source_ids))
+            params[c.ATTR_SOURCE_ID] = ",".join(map(str, source_ids))
         if criteria_ids is not None:
-            params[command.ATTR_SEARCH_CRITERIA_ID] = ",".join(map(str, criteria_ids))
-        return HeosCommand(command.COMMAND_BROWSE_MULTI_SEARCH, params)
+            params[c.ATTR_SEARCH_CRITERIA_ID] = ",".join(map(str, criteria_ids))
+        return HeosCommand(c.COMMAND_BROWSE_MULTI_SEARCH, params)

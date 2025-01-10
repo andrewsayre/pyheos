@@ -3,8 +3,15 @@
 import asyncio
 from typing import Final
 
-from pyheos import command as command_const
-from pyheos import const
+from pyheos.command import ATTR_ERROR_ID, ATTR_SYSTEM_ERROR_NUMBER, ATTR_TEXT
+from pyheos.const import (
+    ERROR_INVALID_CREDNETIALS,
+    ERROR_SYSTEM_ERROR,
+    ERROR_USER_NOT_FOUND,
+    ERROR_USER_NOT_LOGGED_IN,
+    SYSTEM_ERROR_USER_NOT_FOUND,
+    SYSTEM_ERROR_USER_NOT_LOGGED_IN,
+)
 from pyheos.message import HeosMessage
 
 DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
@@ -68,26 +75,26 @@ class CommandFailedError(CommandError):
         error_id: int, system_error_number: int | None
     ) -> bool:
         """Return True if the error is related to authentication, otherwise False."""
-        if error_id == const.ERROR_SYSTEM_ERROR:
+        if error_id == ERROR_SYSTEM_ERROR:
             return system_error_number in (
-                const.SYSTEM_ERROR_USER_NOT_LOGGED_IN,
-                const.SYSTEM_ERROR_USER_NOT_FOUND,
+                SYSTEM_ERROR_USER_NOT_LOGGED_IN,
+                SYSTEM_ERROR_USER_NOT_FOUND,
             )
         return error_id in (
-            const.ERROR_INVALID_CREDNETIALS,
-            const.ERROR_USER_NOT_LOGGED_IN,
-            const.ERROR_USER_NOT_FOUND,
+            ERROR_INVALID_CREDNETIALS,
+            ERROR_USER_NOT_LOGGED_IN,
+            ERROR_USER_NOT_FOUND,
         )
 
     @classmethod
     def _from_message(cls, message: HeosMessage) -> "CommandFailedError":
         """Create a new instance of the error from a message."""
-        error_text = message.get_message_value(command_const.ATTR_TEXT)
+        error_text = message.get_message_value(ATTR_TEXT)
         system_error_number = None
-        error_id = message.get_message_value_int(command_const.ATTR_ERROR_ID)
-        if error_id == const.ERROR_SYSTEM_ERROR:
+        error_id = message.get_message_value_int(ATTR_ERROR_ID)
+        if error_id == ERROR_SYSTEM_ERROR:
             system_error_number = message.get_message_value_int(
-                command_const.ATTR_SYSTEM_ERROR_NUMBER
+                ATTR_SYSTEM_ERROR_NUMBER
             )
             error_text += f" {system_error_number}"
 

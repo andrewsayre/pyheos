@@ -9,7 +9,7 @@ Commands not implemented:
         This command will not be implemented in the library.
 """
 
-from pyheos import command
+from pyheos import command as c
 from pyheos.message import HeosCommand
 
 
@@ -23,49 +23,49 @@ class SystemCommands:
         References:
             4.1.1 Register for Change Events"""
         return HeosCommand(
-            command.COMMAND_REGISTER_FOR_CHANGE_EVENTS,
-            {command.ATTR_ENABLE: command.VALUE_ON if enable else command.VALUE_OFF},
+            c.COMMAND_REGISTER_FOR_CHANGE_EVENTS,
+            {c.ATTR_ENABLE: c.VALUE_ON if enable else c.VALUE_OFF},
         )
 
     @staticmethod
     def check_account() -> HeosCommand:
-        """Create a check account command.
+        """Create a check account c.
 
         References:
             4.1.2 HEOS Account Check"""
-        return HeosCommand(command.COMMAND_ACCOUNT_CHECK)
+        return HeosCommand(c.COMMAND_ACCOUNT_CHECK)
 
     @staticmethod
     def sign_in(username: str, password: str) -> HeosCommand:
-        """Create a sign in command.
+        """Create a sign in c.
 
         References:
             4.1.3 HEOS Account Sign In"""
         return HeosCommand(
-            command.COMMAND_SIGN_IN,
-            {command.ATTR_USER_NAME: username, command.ATTR_PASSWORD: password},
+            c.COMMAND_SIGN_IN,
+            {c.ATTR_USER_NAME: username, c.ATTR_PASSWORD: password},
         )
 
     @staticmethod
     def sign_out() -> HeosCommand:
-        """Create a sign out command.
+        """Create a sign out c.
 
         References:
             4.1.4 HEOS Account Sign Out"""
-        return HeosCommand(command.COMMAND_SIGN_OUT)
+        return HeosCommand(c.COMMAND_SIGN_OUT)
 
     @staticmethod
     def heart_beat() -> HeosCommand:
-        """Create a heart beat command.
+        """Create a heart beat c.
 
         References:
             4.1.5 HEOS System Heart Beat"""
-        return HeosCommand(command.COMMAND_HEART_BEAT)
+        return HeosCommand(c.COMMAND_HEART_BEAT)
 
     @staticmethod
     def reboot() -> HeosCommand:
-        """Create a reboot command.
+        """Create a reboot c.
 
         References:
             4.1.6 HEOS Speaker Reboot"""
-        return HeosCommand(command.COMMAND_REBOOT)
+        return HeosCommand(c.COMMAND_REBOOT)

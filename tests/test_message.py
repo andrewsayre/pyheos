@@ -4,14 +4,14 @@ import re
 
 import pytest
 
-from pyheos import command
+from pyheos import command as c
 from pyheos.message import HeosMessage
 
 
 def test_get_message_value_missing_key_raises() -> None:
     """Test creating a browse result from data."""
 
-    message = HeosMessage(command.COMMAND_BROWSE_BROWSE)
+    message = HeosMessage(c.COMMAND_BROWSE_BROWSE)
 
     with pytest.raises(
         KeyError, match=re.escape("Key 'missing_key' not found in message parameters.")
