@@ -30,7 +30,7 @@ DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
 }
 
 
-def __format_error_message(error: Exception) -> str:
+def _format_error_message(error: Exception) -> str:
     """Format the error message based on a base error."""
     error_message: str = str(error)
     if not error_message:
@@ -195,7 +195,7 @@ class ConnectionBase:
             except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
                 self._register_task(self._disconnect_from_error(error))
-                message = __format_error_message(error)
+                message = _format_error_message(error)
                 _LOGGER.debug(f"Command failed '{command.uri_masked}': {message}")
                 raise CommandError(command.command, message) from error
             else:
@@ -215,7 +215,7 @@ class ConnectionBase:
                 # Occurs when the command times out
                 _LOGGER.debug(f"Command timed out '{command.uri_masked}'")
                 raise CommandError(
-                    command.command, __format_error_message(error)
+                    command.command, _format_error_message(error)
                 ) from error
             finally:
                 self._pending_command_event.clear()
@@ -254,7 +254,7 @@ class ConnectionBase:
                 asyncio.open_connection(self._host, CLI_PORT), self._timeout
             )
         except (OSError, ConnectionError, asyncio.TimeoutError) as err:
-            raise HeosError(__format_error_message(err)) from err
+            raise HeosError(_format_error_message(err)) from err
 
         # Start read handler
         self._register_task(self._read_handler(reader))
