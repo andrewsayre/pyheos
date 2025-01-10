@@ -101,9 +101,6 @@ SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
 SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
 
 
-DATA_NEW: Final = "new"
-DATA_MAPPED_IDS: Final = "mapped_ids"
-
 # Music Sources
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1
@@ -126,28 +123,6 @@ MUSIC_SOURCE_PLAYLISTS: Final = 1025
 MUSIC_SOURCE_HISTORY: Final = 1026
 MUSIC_SOURCE_AUX_INPUT: Final = 1027
 MUSIC_SOURCE_FAVORITES: Final = 1028
-
-# Supported controls
-CONTROL_PLAY: Final = "play"
-CONTROL_PAUSE: Final = "pause"
-CONTROL_STOP: Final = "stop"
-CONTROL_PLAY_NEXT: Final = "play_next"
-CONTROL_PLAY_PREVIOUS: Final = "play_previous"
-
-CONTROLS_ALL: Final = [
-    CONTROL_PLAY,
-    CONTROL_PAUSE,
-    CONTROL_STOP,
-    CONTROL_PLAY_NEXT,
-    CONTROL_PLAY_PREVIOUS,
-]
-CONTROLS_FORWARD_ONLY: Final = [
-    CONTROL_PLAY,
-    CONTROL_PAUSE,
-    CONTROL_STOP,
-    CONTROL_PLAY_NEXT,
-]
-CONTROL_PLAY_STOP: Final = [CONTROL_PLAY, CONTROL_STOP]
 
 
 # Inputs

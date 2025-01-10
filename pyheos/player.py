@@ -10,49 +10,69 @@ from pyheos.command import parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, MediaType, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
-from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
+from pyheos.types import (
+    AddCriteriaType,
+    ControlType,
+    NetworkType,
+    PlayState,
+    RepeatType,
+)
 
 from . import const
 
 if TYPE_CHECKING:
     from .heos import Heos
 
+CONTROLS_ALL: Final = [
+    ControlType.PLAY,
+    ControlType.PAUSE,
+    ControlType.STOP,
+    ControlType.PLAY_NEXT,
+    ControlType.PLAY_PREVIOUS,
+]
+CONTROLS_FORWARD_ONLY: Final = [
+    ControlType.PLAY,
+    ControlType.PAUSE,
+    ControlType.STOP,
+    ControlType.PLAY_NEXT,
+]
+CONTROLS_PLAY_STOP: Final = [ControlType.PLAY, ControlType.STOP]
 
 SOURCE_CONTROLS: Final = {
-    const.MUSIC_SOURCE_CONNECT: {MediaType.STATION: const.CONTROLS_ALL},
-    const.MUSIC_SOURCE_PANDORA: {MediaType.STATION: const.CONTROLS_FORWARD_ONLY},
+    const.MUSIC_SOURCE_CONNECT: {MediaType.STATION: CONTROLS_ALL},
+    const.MUSIC_SOURCE_PANDORA: {MediaType.STATION: CONTROLS_FORWARD_ONLY},
     const.MUSIC_SOURCE_RHAPSODY: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
     const.MUSIC_SOURCE_TUNEIN: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROL_PLAY_STOP,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_PLAY_STOP,
     },
     const.MUSIC_SOURCE_SPOTIFY: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
     const.MUSIC_SOURCE_DEEZER: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
     const.MUSIC_SOURCE_NAPSTER: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROLS_FORWARD_ONLY,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_FORWARD_ONLY,
     },
     const.MUSIC_SOURCE_IHEARTRADIO: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROL_PLAY_STOP,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_PLAY_STOP,
     },
-    const.MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: const.CONTROL_PLAY_STOP},
-    const.MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: const.CONTROLS_ALL},
-    const.MUSIC_SOURCE_TIDAL: {MediaType.SONG: const.CONTROLS_ALL},
+    const.MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: CONTROLS_PLAY_STOP},
+    const.MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: CONTROLS_ALL},
+    const.MUSIC_SOURCE_TIDAL: {MediaType.SONG: CONTROLS_ALL},
     const.MUSIC_SOURCE_AMAZON: {
-        MediaType.SONG: const.CONTROLS_ALL,
-        MediaType.STATION: const.CONTROLS_ALL,
+        MediaType.SONG: CONTROLS_ALL,
+        MediaType.STATION: CONTROLS_ALL,
     },
-    const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: const.CONTROL_PLAY_STOP},
+    const.MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROLS_PLAY_STOP},
 }
 
 
@@ -74,7 +94,7 @@ class HeosNowPlayingMedia:
     current_position_updated: datetime | None = None
     duration: int | None = None
     supported_controls: Sequence[str] = field(
-        default_factory=lambda: const.CONTROLS_ALL, init=False
+        default_factory=lambda: CONTROLS_ALL, init=False
     )
     options: Sequence[ServiceOption] = field(
         repr=False, hash=False, compare=False, default_factory=list
@@ -110,13 +130,11 @@ class HeosNowPlayingMedia:
 
     def _update_supported_controls(self) -> None:
         """Updates the supported controls based on the source and type."""
-        new_supported_controls = (
-            const.CONTROLS_ALL if self.source_id is not None else []
-        )
+        new_supported_controls = CONTROLS_ALL if self.source_id is not None else []
         if self.source_id is not None and self.type is not None:
             if controls := SOURCE_CONTROLS.get(self.source_id):
                 new_supported_controls = controls.get(
-                    MediaType(self.type), const.CONTROLS_ALL
+                    MediaType(self.type), CONTROLS_ALL
                 )
         self.supported_controls = new_supported_controls
 

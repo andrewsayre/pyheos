@@ -20,7 +20,7 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import DATA_MAPPED_IDS, DATA_NEW, Heos, HeosOptions
 from pyheos.media import MediaItem, MediaMusicSource, MediaType
-from pyheos.player import HeosPlayer
+from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import AddCriteriaType, NetworkType, PlayState, RepeatType
 from tests.common import MediaItems
 
@@ -623,7 +623,7 @@ async def test_player_now_playing_changed_event(
     assert now_playing.media_id == "4256592506324148495"
     assert now_playing.queue_id == 1
     assert now_playing.source_id == 13
-    assert now_playing.supported_controls == const.CONTROLS_ALL
+    assert now_playing.supported_controls == CONTROLS_ALL
     assert len(now_playing.options) == 3
     option = now_playing.options[2]
     assert option.id == 19
@@ -668,7 +668,7 @@ async def test_player_now_playing_changed_event(
     assert now_playing.current_position is None
     assert now_playing.current_position_updated is None
     assert now_playing.duration is None
-    assert now_playing.supported_controls == const.CONTROLS_FORWARD_ONLY
+    assert now_playing.supported_controls == CONTROLS_FORWARD_ONLY
     assert len(now_playing.options) == 3
     option = now_playing.options[2]
     assert option.id == 20
@@ -908,7 +908,7 @@ async def test_players_changed_event_new_ids(
 
     async def handler(event: str, data: dict[str, Any]) -> None:
         assert event == const.EVENT_PLAYERS_CHANGED
-        assert data == {const.DATA_NEW: [], const.DATA_MAPPED_IDS: {101: 1, 102: 2}}
+        assert data == {DATA_NEW: [], DATA_MAPPED_IDS: {101: 1, 102: 2}}
         signal.set()
 
     heos.dispatcher.connect(const.SIGNAL_CONTROLLER_EVENT, handler)
@@ -1474,7 +1474,7 @@ async def test_get_now_playing_media(heos: Heos) -> None:
     assert media.media_id == "4256592506324148495"
     assert media.queue_id == 1
     assert media.source_id == 13
-    assert media.supported_controls == const.CONTROLS_ALL
+    assert media.supported_controls == CONTROLS_ALL
 
 
 @calls_command("system.heart_beat")

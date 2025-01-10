@@ -34,6 +34,9 @@ from .media import (
     ServiceOption,
 )
 from .player import (
+    CONTROLS_ALL,
+    CONTROLS_FORWARD_ONLY,
+    CONTROLS_PLAY_STOP,
     HeosNowPlayingMedia,
     HeosPlayer,
     PlayMode,
@@ -50,6 +53,9 @@ __all__ = [
     "CommandAuthenticationError",
     "CommandError",
     "CommandFailedError",
+    "CONTROLS_ALL",
+    "CONTROLS_FORWARD_ONLY",
+    "CONTROLS_PLAY_STOP",
     "ConnectionState",
     "ConnectType",
     "const",

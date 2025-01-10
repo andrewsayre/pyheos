@@ -20,6 +20,16 @@ class NetworkType(StrEnum):
     UNKNOWN = "unknown"
 
 
+class ControlType(StrEnum):
+    """Define the control types."""
+
+    PLAY = "play"
+    PAUSE = "pause"
+    STOP = "stop"
+    PLAY_NEXT = "play_next"
+    PLAY_PREVIOUS = "play_previous"
+
+
 class PlayState(StrEnum):
     """Define the play states."""
 
