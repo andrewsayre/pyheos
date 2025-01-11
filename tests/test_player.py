@@ -459,7 +459,7 @@ async def test_add_to_queue(player: HeosPlayer) -> None:
 )
 async def test_add_search_to_queue(player: HeosPlayer) -> None:
     """Test adding a track to the queue."""
-    await player.add_search_to_queue(1, MUSIC_SOURCE_TIDAL, "Tangerine Rays")
+    await player.add_search_to_queue(MUSIC_SOURCE_TIDAL, "Tangerine Rays")
 
 
 @calls_command("player.get_now_playing_media_blank", {c.ATTR_PLAYER_ID: 1})

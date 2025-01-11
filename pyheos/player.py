@@ -465,7 +465,6 @@ class HeosPlayer:
 
     async def add_search_to_queue(
         self,
-        player_id: int,
         source_id: int,
         search: str,
         criteria_container_id: str = const.SEARCHED_TRACKS,
@@ -477,7 +476,6 @@ class HeosPlayer:
             4.4.11 Add Container to Queue with Options
 
         Args:
-            player_id: The identifier of the player to add the search results.
             source_id: The identifier of the source to search.
             search: The search string.
             criteria_container_id: the criteria container id prefix.
@@ -485,7 +483,7 @@ class HeosPlayer:
         """
         assert self.heos, "Heos instance not set"
         await self.heos.add_search_to_queue(
-            player_id=player_id,
+            player_id=self.player_id,
             source_id=source_id,
             search=search,
             criteria_container_id=criteria_container_id,
