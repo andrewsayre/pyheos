@@ -34,24 +34,24 @@ class HeosCommand:
     def _get_uri(self, mask: bool = False) -> str:
         """Get the command as a URI string."""
         query_string = (
-            f"?{HeosCommand._encode_query(self.parameters, mask=mask)}"
+            f"?{HeosCommand.__encode_query(self.parameters, mask=mask)}"
             if self.parameters
             else ""
         )
         return f"{BASE_URI}{self.command}{query_string}"
 
-    @classmethod
-    def _quote(cls, value: Any) -> str:
+    @staticmethod
+    def __quote(value: Any) -> str:
         """Quote a string per the CLI specification."""
         return "".join([QUOTE_MAP.get(char, char) for char in str(value)])
 
-    @classmethod
-    def _encode_query(cls, items: dict[str, Any], *, mask: bool = False) -> str:
+    @staticmethod
+    def __encode_query(items: dict[str, Any], *, mask: bool = False) -> str:
         """Encode a dict to query string per CLI specifications."""
         pairs = []
         for key in sorted(items.keys()):
             value = MASK if mask and key in MASKED_PARAMS else items[key]
-            item = f"{key}={HeosCommand._quote(value)}"
+            item = f"{key}={HeosCommand.__quote(value)}"
             # Ensure 'url' goes last per CLI spec and is not quoted
             if key == c.ATTR_URL:
                 pairs.append(f"{key}={value}")
