@@ -6,8 +6,7 @@ from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
-from pyheos.command import COMMAND_REBOOT
-from pyheos.command.system import SystemCommands
+from pyheos.command import COMMAND_HEART_BEAT, COMMAND_REBOOT
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
@@ -309,7 +308,7 @@ class AutoReconnectingConnection(ConnectionBase):
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
                 try:
-                    await self.command(SystemCommands.heart_beat())
+                    await self.command(HeosCommand(COMMAND_HEART_BEAT))
                 except (CommandError, asyncio.TimeoutError):
                     # Exit the task, as the connection will be reset/closed.
                     return

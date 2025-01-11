@@ -8,10 +8,10 @@ from typing import Any, Final, cast
 
 from pyheos.command import COMMAND_SIGN_IN
 from pyheos.command.browse import BrowseCommands
+from pyheos.command.connection import ConnectionMixin
 from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
-from pyheos.credentials import Credentials
 from pyheos.dispatch import (
     CallbackType,
     ControllerEventCallbackType,
@@ -28,12 +28,12 @@ from pyheos.media import (
     RetreiveMetadataResult,
 )
 from pyheos.message import HeosMessage
+from pyheos.options import HeosOptions
 from pyheos.search import MultiSearchResult, SearchCriteria, SearchResult
-from pyheos.system import HeosHost, HeosSystem
+from pyheos.system import HeosSystem
 
 from . import command as c
 from . import const
-from .connection import AutoReconnectingConnection
 from .dispatch import Dispatcher
 from .group import HeosGroup
 from .player import HeosNowPlayingMedia, HeosPlayer, PlayMode
@@ -63,176 +63,6 @@ class PlayerUpdateResult:
     added_player_ids: list[int] = field(default_factory=list)
     removed_player_ids: list[int] = field(default_factory=list)
     updated_player_ids: dict[int, int] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class HeosOptions:
-    """
-    The HeosOptions encapsulates options for connecting to a Heos System.
-
-    Args:
-        host: A host name or IP address of a HEOS-capable device.
-        timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
-        events: Set to True to enable event updates, False to disable. The default is True.
-        heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
-        heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
-        all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
-        dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
-        auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
-        auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
-        credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
-    """
-
-    host: str
-    timeout: float = field(default=const.DEFAULT_TIMEOUT, kw_only=True)
-    events: bool = field(default=True, kw_only=True)
-    all_progress_events: bool = field(default=True, kw_only=True)
-    dispatcher: Dispatcher | None = field(default=None, kw_only=True)
-    auto_reconnect: bool = field(default=False, kw_only=True)
-    auto_reconnect_delay: float = field(
-        default=const.DEFAULT_RECONNECT_DELAY, kw_only=True
-    )
-    auto_reconnect_max_attempts: int = field(
-        default=const.DEFAULT_RECONNECT_ATTEMPTS, kw_only=True
-    )
-    heart_beat: bool = field(default=True, kw_only=True)
-    heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
-    credentials: Credentials | None = field(default=None, kw_only=True)
-
-
-class ConnectionMixin:
-    "A mixin to provide access to the connection."
-
-    def __init__(self, options: HeosOptions) -> None:
-        """Init a new instance of the ConnectionMixin."""
-        self._options = options
-        self._connection = AutoReconnectingConnection(
-            options.host,
-            timeout=options.timeout,
-            reconnect=options.auto_reconnect,
-            reconnect_delay=options.auto_reconnect_delay,
-            reconnect_max_attempts=options.auto_reconnect_max_attempts,
-            heart_beat=options.heart_beat,
-            heart_beat_interval=options.heart_beat_interval,
-        )
-
-    @property
-    def connection_state(self) -> ConnectionState:
-        """Get the state of the connection."""
-        return self._connection.state
-
-
-class SystemMixin(ConnectionMixin):
-    """A mixin to provide access to the system commands."""
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """Init a new instance of the BrowseMixin."""
-        super(SystemMixin, self).__init__(*args, **kwargs)
-
-        self._current_credentials = self._options.credentials
-        self._signed_in_username: str | None = None
-
-    @property
-    def is_signed_in(self) -> bool:
-        """Return True if the HEOS accuont is signed in."""
-        return bool(self._signed_in_username)
-
-    @property
-    def signed_in_username(self) -> str | None:
-        """Return the signed-in username."""
-        return self._signed_in_username
-
-    @property
-    def current_credentials(self) -> Credentials | None:
-        """Return the current credential, if any set."""
-        return self._current_credentials
-
-    @current_credentials.setter
-    def current_credentials(self, credentials: Credentials | None) -> None:
-        """Update the current credential."""
-        self._current_credentials = credentials
-
-    async def register_for_change_events(self, enable: bool) -> None:
-        """Register for change events.
-
-        References:
-            4.1.1 Register for Change Events"""
-        await self._connection.command(
-            SystemCommands.register_for_change_events(enable)
-        )
-
-    async def check_account(self) -> str | None:
-        """Return the logged in username.
-
-        References:
-            4.1.2 HEOS Account Check"""
-        result = await self._connection.command(SystemCommands.check_account())
-        if c.ATTR_SIGNED_IN in result.message:
-            self._signed_in_username = result.get_message_value(c.ATTR_USER_NAME)
-        else:
-            self._signed_in_username = None
-        return self._signed_in_username
-
-    async def sign_in(
-        self, username: str, password: str, *, update_credential: bool = True
-    ) -> str:
-        """Sign in to the HEOS account using the provided credential and return the user name.
-
-        Args:
-            username: The username of the HEOS account.
-            password: The password of the HEOS account.
-            update_credential: Set to True to update the stored credential if login is successful, False to keep the current credential. The default is True. If the credential is updated, it will be used to signed in automatically upon reconnection.
-
-        Returns:
-            The username of the signed in account.
-
-        References:
-            4.1.3 HEOS Account Sign In"""
-        result = await self._connection.command(
-            SystemCommands.sign_in(username, password)
-        )
-        self._signed_in_username = result.get_message_value(c.ATTR_USER_NAME)
-        if update_credential:
-            self.current_credentials = Credentials(username, password)
-        return self._signed_in_username
-
-    async def sign_out(self, *, update_credential: bool = True) -> None:
-        """Sign out of the HEOS account.
-
-        Args:
-            update_credential: Set to True to clear the stored credential, False to keep it. The default is True. If the credential is cleared, the account will not be signed in automatically upon reconnection.
-
-        References:
-            4.1.4 HEOS Account Sign Out"""
-        await self._connection.command(SystemCommands.sign_out())
-        self._signed_in_username = None
-        if update_credential:
-            self.current_credentials = None
-
-    async def heart_beat(self) -> None:
-        """Send a heart beat message to the HEOS device.
-
-        References:
-            4.1.5 HEOS System Heart Beat"""
-        await self._connection.command(SystemCommands.heart_beat())
-
-    async def reboot(self) -> None:
-        """Reboot the HEOS device.
-
-        References:
-            4.1.6 HEOS Speaker Reboot"""
-        await self._connection.command(SystemCommands.reboot())
-
-    async def get_system_info(self) -> HeosSystem:
-        """Get information about the HEOS system.
-
-        References:
-            4.2.1 Get Players"""
-        response = await self._connection.command(PlayerCommands.get_players())
-        payload = cast(Sequence[dict], response.payload)
-        hosts = list([HeosHost._from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
-        return HeosSystem(self._signed_in_username, host, hosts)
 
 
 class BrowseMixin(ConnectionMixin):
@@ -1245,7 +1075,7 @@ class GroupMixin(ConnectionMixin):
         await self._connection.command(GroupCommands.group_toggle_mute(group_id))
 
 
-class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
+class Heos(SystemCommands, BrowseMixin, GroupMixin, PlayerMixin):
     """The Heos class provides access to the CLI API."""
 
     @classmethod

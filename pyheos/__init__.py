@@ -21,7 +21,7 @@ from .error import (
     HeosError,
 )
 from .group import HeosGroup
-from .heos import Heos, HeosOptions, PlayerUpdateResult
+from .heos import Heos, PlayerUpdateResult
 from .media import (
     AlbumMetadata,
     BrowseResult,
@@ -33,6 +33,7 @@ from .media import (
     RetreiveMetadataResult,
     ServiceOption,
 )
+from .options import HeosOptions
 from .player import (
     CONTROLS_ALL,
     CONTROLS_FORWARD_ONLY,
