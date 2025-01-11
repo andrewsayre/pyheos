@@ -37,7 +37,7 @@ from pyheos.error import (
     HeosError,
 )
 from pyheos.group import HeosGroup
-from pyheos.heos import DATA_MAPPED_IDS, DATA_NEW, Heos, HeosOptions
+from pyheos.heos import Heos, HeosOptions, PlayerUpdateResult
 from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import (
@@ -907,9 +907,11 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, data: dict[str, Any]) -> None:
+    async def handler(event: str, result: PlayerUpdateResult) -> None:
         assert event == EVENT_PLAYERS_CHANGED
-        assert data == {DATA_NEW: [3], DATA_MAPPED_IDS: {}}
+        assert result.added_player_ids == [3]
+        assert result.updated_player_ids == {}
+        assert result.removed_player_ids == [2]
         signal.set()
 
     heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
@@ -946,9 +948,11 @@ async def test_players_changed_event_new_ids(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, data: dict[str, Any]) -> None:
+    async def handler(event: str, result: PlayerUpdateResult) -> None:
         assert event == EVENT_PLAYERS_CHANGED
-        assert data == {DATA_NEW: [], DATA_MAPPED_IDS: {101: 1, 102: 2}}
+        assert result.added_player_ids == []
+        assert result.updated_player_ids == {1: 101, 2: 102}
+        assert result.removed_player_ids == []
         signal.set()
 
     heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)

@@ -21,7 +21,7 @@ from .error import (
     HeosError,
 )
 from .group import HeosGroup
-from .heos import Heos, HeosOptions
+from .heos import Heos, HeosOptions, PlayerUpdateResult
 from .media import (
     AlbumMetadata,
     BrowseResult,
@@ -92,6 +92,7 @@ __all__ = [
     "PlayMode",
     "PlayState",
     "PlayerEventCallbackType",
+    "PlayerUpdateResult",
     "QueueItem",
     "RepeatType",
     "RetreiveMetadataResult",

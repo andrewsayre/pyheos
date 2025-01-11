@@ -50,8 +50,19 @@ from .types import (
 _LOGGER: Final = logging.getLogger(__name__)
 
 
-DATA_NEW: Final = "new"
-DATA_MAPPED_IDS: Final = "mapped_ids"
+@dataclass
+class PlayerUpdateResult:
+    """Define the result of refreshing players.
+
+    Args:
+        added_player_ids: The list of player identifiers that have been added.
+        removed_player_ids: The list of player identifiers that have been removed.
+        updated_player_ids: A dictionary that maps the previous player_id to the updated player_id
+    """
+
+    added_player_ids: list[int] = field(default_factory=list)
+    removed_player_ids: list[int] = field(default_factory=list)
+    updated_player_ids: dict[int, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -726,16 +737,16 @@ class PlayerMixin(ConnectionMixin):
             await player.refresh(refresh_base_info=False)
         return player
 
-    async def load_players(self) -> dict[str, list | dict]:
+    async def load_players(self) -> "PlayerUpdateResult":
         """Refresh the players."""
-        new_player_ids = []
-        mapped_player_ids = {}
-        players = {}
+        result = PlayerUpdateResult()
+
+        players: dict[int, HeosPlayer] = {}
         response = await self._connection.command(PlayerCommands.get_players())
         payload = cast(Sequence[dict], response.payload)
         existing = list(self._players.values())
         for player_data in payload:
-            player_id = player_data[c.ATTR_PLAYER_ID]
+            player_id = int(player_data[c.ATTR_PLAYER_ID])
             name = player_data[c.ATTR_NAME]
             version = player_data[c.ATTR_VERSION]
             serial = player_data.get(c.ATTR_SERIAL)
@@ -752,9 +763,9 @@ class PlayerMixin(ConnectionMixin):
                 None,
             )
             if player:
-                # Existing player matched - update
+                # Found existing, update
                 if player.player_id != player_id:
-                    mapped_player_ids[player_id] = player.player_id
+                    result.updated_player_ids[player.player_id] = player_id
                 player._update_from_data(player_data)
                 player.available = True
                 players[player_id] = player
@@ -762,14 +773,15 @@ class PlayerMixin(ConnectionMixin):
             else:
                 # New player
                 player = HeosPlayer._from_data(player_data, cast("Heos", self))
-                new_player_ids.append(player_id)
+                result.added_player_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
         for player in existing:
+            result.removed_player_ids.append(player.player_id)
             player.available = False
             players[player.player_id] = player
 
-        # Update all statuses
+        # Pull data for available players
         await asyncio.gather(
             *[
                 player.refresh(refresh_base_info=False)
@@ -779,10 +791,7 @@ class PlayerMixin(ConnectionMixin):
         )
         self._players = players
         self._players_loaded = True
-        return {
-            DATA_NEW: new_player_ids,
-            DATA_MAPPED_IDS: mapped_player_ids,
-        }
+        return result
 
     async def player_get_play_state(self, player_id: int) -> PlayState:
         """Get the state of the player.
@@ -1399,7 +1408,7 @@ class Heos(SystemMixin, BrowseMixin, GroupMixin, PlayerMixin):
 
     async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
-        result: dict[str, list | dict] | None = None
+        result: PlayerUpdateResult | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             result = await self.load_players()
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
