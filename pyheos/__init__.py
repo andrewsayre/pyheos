@@ -21,7 +21,7 @@ from .error import (
     HeosError,
 )
 from .group import HeosGroup
-from .heos import Heos, PlayerUpdateResult
+from .heos import Heos
 from .media import (
     AlbumMetadata,
     BrowseResult,
@@ -40,6 +40,7 @@ from .player import (
     CONTROLS_PLAY_STOP,
     HeosNowPlayingMedia,
     HeosPlayer,
+    PlayerUpdateResult,
     PlayMode,
 )
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic

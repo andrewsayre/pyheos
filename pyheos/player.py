@@ -82,6 +82,21 @@ SOURCE_CONTROLS: Final = {
 
 
 @dataclass
+class PlayerUpdateResult:
+    """Define the result of refreshing players.
+
+    Args:
+        added_player_ids: The list of player identifiers that have been added.
+        removed_player_ids: The list of player identifiers that have been removed.
+        updated_player_ids: A dictionary that maps the previous player_id to the updated player_id
+    """
+
+    added_player_ids: list[int] = field(default_factory=list)
+    removed_player_ids: list[int] = field(default_factory=list)
+    updated_player_ids: dict[int, int] = field(default_factory=dict)
+
+
+@dataclass
 class HeosNowPlayingMedia:
     """Define now playing media information."""
 
