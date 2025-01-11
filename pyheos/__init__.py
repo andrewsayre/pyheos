@@ -48,12 +48,15 @@ from .system import HeosHost, HeosSystem
 from .types import (
     AddCriteriaType,
     ConnectionState,
+    ControlType,
+    LineOutLevelType,
     MediaType,
     NetworkType,
     PlayState,
     RepeatType,
     SignalHeosEvent,
     SignalType,
+    VolumeControlType,
 )
 
 __all__ = [
@@ -61,6 +64,7 @@ __all__ = [
     "AlbumMetadata",
     "BrowseResult",
     "CallbackType",
+    "ControlType",
     "CommandAuthenticationError",
     "CommandError",
     "CommandFailedError",
@@ -85,6 +89,7 @@ __all__ = [
     "HeosPlayer",
     "HeosSystem",
     "ImageMetadata",
+    "LineOutLevelType",
     "Media",
     "MediaItem",
     "MediaMusicSource",
@@ -106,4 +111,5 @@ __all__ = [
     "SignalHeosEvent",
     "SignalType",
     "TargetType",
+    "VolumeControlType",
 ]
