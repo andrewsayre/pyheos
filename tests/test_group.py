@@ -27,7 +27,7 @@ def test_group_from_data_no_leader_raises() -> None:
         ],
     }
     with pytest.raises(ValueError, match="No leader found in group data"):
-        HeosGroup.from_data(data, None)
+        HeosGroup._from_data(data, None)
 
 
 @pytest.mark.parametrize(

@@ -124,7 +124,7 @@ class HeosNowPlayingMedia:
         self.source_id = optional_int(data.get(c.ATTR_SOURCE_ID))
         self.options = ServiceOption._from_options(message.options)
         self._update_supported_controls()
-        self.clear_progress()
+        self._clear_progress()
 
     def _update_supported_controls(self) -> None:
         """Updates the supported controls based on the source and type."""
@@ -145,7 +145,7 @@ class HeosNowPlayingMedia:
             return True
         return False
 
-    def clear_progress(self) -> None:
+    def _clear_progress(self) -> None:
         """Clear the current position."""
         self.current_position = None
         self.current_position_updated = None
@@ -254,7 +254,7 @@ class HeosPlayer:
         if event.command == const.EVENT_PLAYER_STATE_CHANGED:
             self.state = PlayState(event.get_message_value(c.ATTR_STATE))
             if self.state == PlayState.PLAY:
-                self.now_playing_media.clear_progress()
+                self.now_playing_media._clear_progress()
         elif event.command == const.EVENT_PLAYER_NOW_PLAYING_CHANGED:
             await self.refresh_now_playing_media()
         elif event.command == const.EVENT_PLAYER_VOLUME_CHANGED:

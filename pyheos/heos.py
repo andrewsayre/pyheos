@@ -230,7 +230,7 @@ class SystemMixin(ConnectionMixin):
             4.2.1 Get Players"""
         response = await self._connection.command(PlayerCommands.get_players())
         payload = cast(Sequence[dict], response.payload)
-        hosts = list([HeosHost.from_data(item) for item in payload])
+        hosts = list([HeosHost._from_data(item) for item in payload])
         host = next(host for host in hosts if host.ip_address == self._options.host)
         return HeosSystem(self._signed_in_username, host, hosts)
 
@@ -1055,7 +1055,7 @@ class GroupMixin(ConnectionMixin):
             result = await self._connection.command(GroupCommands.get_groups())
             payload = cast(Sequence[dict], result.payload)
             for data in payload:
-                group = HeosGroup.from_data(data, cast("Heos", self))
+                group = HeosGroup._from_data(data, cast("Heos", self))
                 groups[group.group_id] = group
             self._groups = groups
             # Update all statuses
@@ -1105,7 +1105,7 @@ class GroupMixin(ConnectionMixin):
             )
             payload = cast(dict[str, Any], result.payload)
             if group is None:
-                group = HeosGroup.from_data(payload, cast("Heos", self))
+                group = HeosGroup._from_data(payload, cast("Heos", self))
             else:
                 group._update_from_data(payload)
             await group.refresh(refresh_base_info=False)

@@ -28,17 +28,16 @@ class HeosGroup:
     is_muted: bool = False
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
-    @classmethod
-    def from_data(
-        cls,
+    @staticmethod
+    def _from_data(
         data: dict[str, Any],
         heos: Optional["Heos"] = None,
     ) -> "HeosGroup":
         """Create a new instance from the provided data."""
         player_id: int | None = None
         player_ids: list[int] = []
-        player_id, player_ids = cls.__get_ids(data[c.ATTR_PLAYERS])
-        return cls(
+        player_id, player_ids = HeosGroup.__get_ids(data[c.ATTR_PLAYERS])
+        return HeosGroup(
             name=data[c.ATTR_NAME],
             group_id=int(data[c.ATTR_GROUP_ID]),
             lead_player_id=player_id,

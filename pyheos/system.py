@@ -21,8 +21,8 @@ class HeosHost:
     ip_address: str
     network: NetworkType
 
-    @classmethod
-    def from_data(cls, data: dict[str, str]) -> "HeosHost":
+    @staticmethod
+    def _from_data(data: dict[str, str]) -> "HeosHost":
         """Create a HeosHost object from a dictionary.
 
         Args:
