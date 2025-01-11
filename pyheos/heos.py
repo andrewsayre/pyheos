@@ -738,13 +738,15 @@ class PlayerMixin(ConnectionMixin):
             player_id = player_data[c.ATTR_PLAYER_ID]
             name = player_data[c.ATTR_NAME]
             version = player_data[c.ATTR_VERSION]
-            # Try finding existing player by id or match name when firmware
-            # version is different because IDs change after a firmware upgrade
+            serial = player_data.get(c.ATTR_SERIAL)
+            # Try matching by serial (if available), then try matching by player_id
+            # and fallback to matching name when firmware version is different
             player = next(
                 (
                     player
                     for player in existing
-                    if player.player_id == player_id
+                    if (player.serial == serial and serial is not None)
+                    or player.player_id == player_id
                     or (player.name == name and player.version != version)
                 ),
                 None,
