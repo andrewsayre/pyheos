@@ -219,7 +219,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         elif event.command in const.GROUP_EVENTS:
             await self._on_event_group(event)
         else:
-            _LOGGER.debug("Unrecognized event: %s", event)
+            _LOGGER.debug("Unrecognized event: %s", event.command)
 
     async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
@@ -239,7 +239,6 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         await self._dispatcher.wait_send(
             SignalType.CONTROLLER_EVENT, event.command, result, return_exceptions=True
         )
-        _LOGGER.debug("Event received: %s", event)
 
     async def _on_event_player(self, event: HeosMessage) -> None:
         """Process an event about a player."""
