@@ -19,24 +19,6 @@ MAX_RECONNECT_DELAY = 600
 
 _LOGGER: Final = logging.getLogger(__name__)
 
-DEFAULT_ERROR_MESSAGES: Final[dict[type[Exception], str]] = {
-    asyncio.TimeoutError: "Command timed out",
-    ConnectionError: "Connection error",
-    BrokenPipeError: "Broken pipe",
-    ConnectionAbortedError: "Connection aborted",
-    ConnectionRefusedError: "Connection refused",
-    ConnectionResetError: "Connection reset",
-    OSError: "OS I/O error",
-}
-
-
-def _format_error_message(error: Exception) -> str:
-    """Format the error message based on a base error."""
-    error_message: str = str(error)
-    if not error_message:
-        error_message = DEFAULT_ERROR_MESSAGES.get(type(error), type(error).__name__)
-    return error_message
-
 
 class ConnectionBase:
     """
@@ -139,7 +121,12 @@ class ConnectionBase:
     async def _disconnect_from_error(self, error: Exception) -> None:
         """Disconnect and reset as an of an error."""
         await self._reset()
-        _LOGGER.debug(f"Disconnected from {self._host} due to error: {error}")
+        _LOGGER.debug(
+            "Disconnected from %s due to error: %s: %s",
+            self._host,
+            type(error).__name__,
+            error,
+        )
         await self._on_disconnected(due_to_error=True)
 
     async def _read_handler(self, reader: asyncio.StreamReader) -> None:
@@ -164,10 +151,10 @@ class ConnectionBase:
     async def _handle_message(self, message: HeosMessage) -> None:
         """Handle a message received from the HEOS device."""
         if message.is_under_process:
-            _LOGGER.debug(f"Command under process '{message.command}': '{message}'")
+            _LOGGER.debug("Command under process '%s'", message.command)
             return
         if message.is_event:
-            _LOGGER.debug(f"Event received: '{message.command}': '{message}'")
+            _LOGGER.debug("Event received: '%s': '%s'", message.command, message)
             self._register_task(self._on_event(message))
             return
 
@@ -181,9 +168,7 @@ class ConnectionBase:
         async def _command_impl() -> HeosMessage:
             """Implementation of the command."""
             if self._state is not ConnectionState.CONNECTED:
-                _LOGGER.debug(
-                    f"Command failed '{command.uri_masked}': Not connected to device"
-                )
+                _LOGGER.debug("Command failed '%s': Not connected to device", command)
                 raise CommandError(command.command, "Not connected to device")
             if TYPE_CHECKING:
                 assert self._writer is not None
@@ -195,15 +180,18 @@ class ConnectionBase:
             except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
                 self._register_task(self._disconnect_from_error(error))
-                message = _format_error_message(error)
-                _LOGGER.debug(f"Command failed '{command.uri_masked}': {message}")
-                raise CommandError(command.command, message) from error
+                _LOGGER.debug(
+                    "Command failed '%s': %s: %s", command, type(error).__name__, error
+                )
+                raise CommandError(
+                    command.command, f"Command failed: {error}"
+                ) from error
             else:
                 self._last_activity = datetime.now()
 
             # If the command is a reboot, we won't get a response.
             if command.command == COMMAND_REBOOT:
-                _LOGGER.debug(f"Command executed '{command.uri_masked}': No response")
+                _LOGGER.debug("Command executed '%s': No response", command)
                 return HeosMessage(COMMAND_REBOOT)
 
             # Wait for the response with a timeout
@@ -213,10 +201,8 @@ class ConnectionBase:
                 )
             except asyncio.TimeoutError as error:
                 # Occurs when the command times out
-                _LOGGER.debug(f"Command timed out '{command.uri_masked}'")
-                raise CommandError(
-                    command.command, _format_error_message(error)
-                ) from error
+                _LOGGER.debug("Command timed out '%s'", command)
+                raise CommandError(command.command, "Command timed out") from error
             finally:
                 self._pending_command_event.clear()
 
@@ -225,10 +211,10 @@ class ConnectionBase:
 
             # Check the result
             if not response.result:
-                _LOGGER.debug(f"Command failed '{command.uri_masked}': '{response}'")
+                _LOGGER.debug("Command failed '%s': '%s'", command, response)
                 raise CommandFailedError._from_message(response)
 
-            _LOGGER.debug(f"Command executed '{command.uri_masked}': '{response}'")
+            _LOGGER.debug("Command executed '%s': '%s'", command, response)
             return response
 
         # Run the within the lock
@@ -253,20 +239,28 @@ class ConnectionBase:
             reader, self._writer = await asyncio.wait_for(
                 asyncio.open_connection(self._host, CLI_PORT), self._timeout
             )
-        except (OSError, ConnectionError, asyncio.TimeoutError) as err:
-            raise HeosError(_format_error_message(err)) from err
+        except asyncio.TimeoutError as err:
+            _LOGGER.debug("Failed to connect to %s: Connection timed out", self._host)
+            raise HeosError("Connection timed out") from err
+        except (OSError, ConnectionError) as err:
+            _LOGGER.debug(
+                "Failed to connect to %s: %s: %s", self._host, type(err).__name__, err
+            )
+            raise HeosError(
+                f"Unable to connect to {self._host}: {type(err).__name__}: {err}"
+            ) from err
 
         # Start read handler
         self._register_task(self._read_handler(reader))
         self._last_activity = datetime.now()
         self._state = ConnectionState.CONNECTED
-        _LOGGER.debug(f"Connected to {self._host}")
+        _LOGGER.debug("Connected to %s", self._host)
         await self._on_connected()
 
     async def disconnect(self) -> None:
         """Disconnect from the HEOS device."""
         await self._reset()
-        _LOGGER.debug(f"Disconnected from {self._host}")
+        _LOGGER.debug("Disconnected from %s", self._host)
         await self._on_disconnected()
 
 
@@ -324,16 +318,16 @@ class AutoReconnectingConnection(ConnectionBase):
         while (attempts < self._reconnect_max_attempts) or unlimited_attempts:
             try:
                 _LOGGER.debug(
-                    "Attempting to reconnect to %s in %s seconds", self._host, delay
+                    "Waiting %s seconds before attempting to reconnect", delay
                 )
                 await asyncio.sleep(delay)
+                _LOGGER.debug(
+                    "Attempting reconnect #%s to %s", (attempts + 1), self._host
+                )
                 await self.connect()
-            except HeosError as err:
+            except HeosError:
                 attempts += 1
                 delay = min(delay * 2, MAX_RECONNECT_DELAY)
-                _LOGGER.debug(
-                    "Failed reconnect attempt %s to %s: %s", attempts, self._host, err
-                )
             else:
                 return  # This never actually hits as the task is cancelled when the connection is established, but it's here for completeness.
 

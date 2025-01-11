@@ -253,7 +253,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                 event.command,
                 return_exceptions=True,
             )
-            _LOGGER.debug("Event received for player %s: %s", player, event)
+            _LOGGER.debug("Event received for player %s: %s", player, event.command)
 
     async def _on_event_group(self, event: HeosMessage) -> None:
         """Process an event about a group."""
@@ -266,7 +266,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                 event.command,
                 return_exceptions=True,
             )
-            _LOGGER.debug("Event received for group %s: %s", group_id, event)
+            _LOGGER.debug("Event received for group %s: %s", group_id, event.command)
 
     @property
     def dispatcher(self) -> Dispatcher:

@@ -177,7 +177,7 @@ def parse_enum(
         return enum_type(value)
     except ValueError:
         _LOGGER.warning(
-            "Unrecognized '%s' value: '%s', using default value: '%s'. Full data: %s. %s.",
+            "Unrecognized '%s' value: '%s', using default value: '%s'. Full data: %s. %s",
             key,
             value,
             default,

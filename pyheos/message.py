@@ -21,12 +21,16 @@ class HeosCommand:
     command: str
     parameters: dict[str, Any] = field(default_factory=dict)
 
-    @property
+    def __repr__(self) -> str:
+        """Get a string representaton of the message."""
+        return self.uri_masked
+
+    @cached_property
     def uri(self) -> str:
         """Get the command as a URI string that can be sent to the controller."""
         return self._get_uri(False)
 
-    @property
+    @cached_property
     def uri_masked(self) -> str:
         """Get the command as a URI string that has sensitive fields masked."""
         return self._get_uri(True)
