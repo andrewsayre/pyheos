@@ -40,6 +40,9 @@ SYSTEM_ERROR_CONTENT_AUTHENTICATION_ERROR: Final = -1201
 SYSTEM_ERROR_CONTENT_AUTHORIZATION_ERROR: Final = -1232
 SYSTEM_ERROR_ACCOUNT_PARAMETERS_INVALID: Final = -1239
 
+# Search Crtieria Container IDs (keep discrete values as we do not control the list)
+SEARCHED_TRACKS: Final = "SEARCHED_TRACKS-"
+
 # Music Sources (keep discrete values as we do not control the list)
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1

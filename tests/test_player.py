@@ -5,7 +5,13 @@ import re
 import pytest
 
 from pyheos import command as c
-from pyheos.const import INPUT_AUX_IN_1, MUSIC_SOURCE_DEEZER, MUSIC_SOURCE_PLAYLISTS
+from pyheos.const import (
+    INPUT_AUX_IN_1,
+    MUSIC_SOURCE_DEEZER,
+    MUSIC_SOURCE_PLAYLISTS,
+    MUSIC_SOURCE_TIDAL,
+    SEARCHED_TRACKS,
+)
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
 from pyheos.types import (
@@ -439,6 +445,21 @@ async def test_add_to_queue(player: HeosPlayer) -> None:
     await player.add_to_queue(
         MUSIC_SOURCE_DEEZER, "123", "456", AddCriteriaType.PLAY_NOW
     )
+
+
+@calls_command(
+    "browse.add_to_queue_search",
+    {
+        c.ATTR_PLAYER_ID: 1,
+        c.ATTR_SOURCE_ID: MUSIC_SOURCE_TIDAL,
+        c.ATTR_CONTAINER_ID: SEARCHED_TRACKS + "Tangerine Rays",
+        c.ATTR_ADD_CRITERIA_ID: AddCriteriaType.PLAY_NOW,
+    },
+    add_command_under_process=True,
+)
+async def test_add_search_to_queue(player: HeosPlayer) -> None:
+    """Test adding a track to the queue."""
+    await player.add_search_to_queue(MUSIC_SOURCE_TIDAL, "Tangerine Rays")
 
 
 @calls_command("player.get_now_playing_media_blank", {c.ATTR_PLAYER_ID: 1})

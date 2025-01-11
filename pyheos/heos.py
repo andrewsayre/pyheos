@@ -498,6 +498,33 @@ class BrowseMixin(ConnectionMixin):
             )
         )
 
+    async def add_search_to_queue(
+        self,
+        player_id: int,
+        source_id: int,
+        search: str,
+        criteria_container_id: str = const.SEARCHED_TRACKS,
+        add_criteria: AddCriteriaType = AddCriteriaType.PLAY_NOW,
+    ) -> None:
+        """Add searched tracks to the queue of the specified player.
+
+        References:
+            4.4.11 Add Container to Queue with Options
+
+        Args:
+            player_id: The identifier of the player to add the search results.
+            source_id: The identifier of the source to search.
+            search: The search string.
+            criteria_container_id: the criteria container id prefix.
+            add_criteria: Determines how tracks are added to the queue. The default is AddCriteriaType.PLAY_NOW.
+        """
+        await self.add_to_queue(
+            player_id=player_id,
+            source_id=source_id,
+            container_id=f"{criteria_container_id}{search}",
+            add_criteria=add_criteria,
+        )
+
     async def rename_playlist(
         self, source_id: int, container_id: str, new_name: str
     ) -> None:
