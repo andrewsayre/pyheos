@@ -16,6 +16,7 @@ from .error import CommandError, CommandFailedError, HeosError
 CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
+MAX_RECONNECT_DELAY = 600
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -317,20 +318,25 @@ class AutoReconnectingConnection(ConnectionBase):
 
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect after disconnection from error."""
+        self._state = ConnectionState.RECONNECTING
         attempts = 0
         unlimited_attempts = self._reconnect_max_attempts == 0
-        self._state = ConnectionState.RECONNECTING
+        delay = min(self._reconnect_delay, MAX_RECONNECT_DELAY)
         while (attempts < self._reconnect_max_attempts) or unlimited_attempts:
             try:
-                await asyncio.sleep(self._reconnect_delay)
+                _LOGGER.debug(
+                    "Attempting to reconnect to %s in %s seconds", self._host, delay
+                )
+                await asyncio.sleep(delay)
                 await self.connect()
             except HeosError as err:
                 attempts += 1
+                delay = min(delay * 2, MAX_RECONNECT_DELAY)
                 _LOGGER.debug(
-                    f"Failed reconnect attempt {attempts} to {self._host}: {err}"
+                    "Failed reconnect attempt %s to %s: %s", attempts, self._host, err
                 )
             else:
-                return
+                return  # This never actually hits as the task is cancelled when the connection is established, but it's here for completeness.
 
     async def _on_connected(self) -> None:
         """Handle when the connection is established."""
