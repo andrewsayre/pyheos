@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from functools import cached_property
 
-from pyheos import const
+from pyheos import command as c
+from pyheos.types import NetworkType
 
 
 @dataclass(frozen=True)
@@ -18,10 +19,10 @@ class HeosHost:
     serial: str | None
     version: str
     ip_address: str
-    network: str
+    network: NetworkType
 
-    @classmethod
-    def from_data(cls, data: dict[str, str]) -> "HeosHost":
+    @staticmethod
+    def _from_data(data: dict[str, str]) -> "HeosHost":
         """Create a HeosHost object from a dictionary.
 
         Args:
@@ -31,12 +32,12 @@ class HeosHost:
             HeosHost: The created HeosHost object.
         """
         return HeosHost(
-            data[const.ATTR_NAME],
-            data[const.ATTR_MODEL],
-            data.get(const.ATTR_SERIAL),
-            data[const.ATTR_VERSION],
-            data[const.ATTR_IP_ADDRESS],
-            data[const.ATTR_NETWORK],
+            data[c.ATTR_NAME],
+            data[c.ATTR_MODEL],
+            data.get(c.ATTR_SERIAL),
+            data[c.ATTR_VERSION],
+            data[c.ATTR_IP_ADDRESS],
+            c.parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
         )
 
 
@@ -59,9 +60,7 @@ class HeosSystem:
     @cached_property
     def preferred_hosts(self) -> list[HeosHost]:
         """Return the preferred hosts."""
-        return list(
-            [host for host in self.hosts if host.network == const.NETWORK_TYPE_WIRED]
-        )
+        return list([host for host in self.hosts if host.network == NetworkType.WIRED])
 
     @cached_property
     def connected_to_preferred_host(self) -> bool:

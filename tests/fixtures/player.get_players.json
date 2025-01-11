@@ -11,11 +11,13 @@
 			"version": "1.493.180",
 			"ip": "127.0.0.1",
 			"network": "wired",
-			"lineout": 1,
+			"lineout": 2,
+			"control": 2,
 			"serial": "B1A2C3K"
 		}, {
 			"name": "Front Porch",
 			"pid": 2,
+			"gid": 2,
 			"model": "HEOS Drive",
 			"version": "1.493.180",
 			"ip": "127.0.0.2",

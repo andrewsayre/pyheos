@@ -1,0 +1,1 @@
+{"heos": {"command": "player/check_update", "result": "success", "message": "pid={player_id}"}, "payload": {"update": "update_exist"}}

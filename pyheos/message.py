@@ -6,10 +6,11 @@ from functools import cached_property
 from typing import Any, Final
 from urllib.parse import parse_qsl
 
-from pyheos import const
+from pyheos import command as c
 
+BASE_URI: Final = "heos://"
 QUOTE_MAP: Final = {"&": "%26", "=": "%3D", "%": "%25"}
-MASKED_PARAMS: Final = {const.ATTR_PASSWORD}
+MASKED_PARAMS: Final = {c.ATTR_PASSWORD}
 MASK: Final = "********"
 
 
@@ -20,12 +21,16 @@ class HeosCommand:
     command: str
     parameters: dict[str, Any] = field(default_factory=dict)
 
-    @property
+    def __repr__(self) -> str:
+        """Get a string representaton of the message."""
+        return self.uri_masked
+
+    @cached_property
     def uri(self) -> str:
         """Get the command as a URI string that can be sent to the controller."""
         return self._get_uri(False)
 
-    @property
+    @cached_property
     def uri_masked(self) -> str:
         """Get the command as a URI string that has sensitive fields masked."""
         return self._get_uri(True)
@@ -33,26 +38,26 @@ class HeosCommand:
     def _get_uri(self, mask: bool = False) -> str:
         """Get the command as a URI string."""
         query_string = (
-            f"?{HeosCommand._encode_query(self.parameters, mask=mask)}"
+            f"?{HeosCommand.__encode_query(self.parameters, mask=mask)}"
             if self.parameters
             else ""
         )
-        return f"{const.BASE_URI}{self.command}{query_string}"
+        return f"{BASE_URI}{self.command}{query_string}"
 
-    @classmethod
-    def _quote(cls, value: Any) -> str:
+    @staticmethod
+    def __quote(value: Any) -> str:
         """Quote a string per the CLI specification."""
         return "".join([QUOTE_MAP.get(char, char) for char in str(value)])
 
-    @classmethod
-    def _encode_query(cls, items: dict[str, Any], *, mask: bool = False) -> str:
+    @staticmethod
+    def __encode_query(items: dict[str, Any], *, mask: bool = False) -> str:
         """Encode a dict to query string per CLI specifications."""
         pairs = []
         for key in sorted(items.keys()):
             value = MASK if mask and key in MASKED_PARAMS else items[key]
-            item = f"{key}={HeosCommand._quote(value)}"
+            item = f"{key}={HeosCommand.__quote(value)}"
             # Ensure 'url' goes last per CLI spec and is not quoted
-            if key == const.ATTR_URL:
+            if key == c.ATTR_URL:
                 pairs.append(f"{key}={value}")
             else:
                 pairs.insert(0, item)
@@ -67,6 +72,7 @@ class HeosMessage:
     result: bool = True
     message: dict[str, str] = field(default_factory=dict)
     payload: dict[str, Any] | list[Any] | None = None
+    options: list[dict[str, list[dict[str, Any]]]] | None = None
 
     _raw_message: str | None = field(
         init=False, hash=False, repr=False, compare=False, default=None
@@ -76,20 +82,19 @@ class HeosMessage:
         """Get a string representaton of the message."""
         return self._raw_message or f"{self.command} {self.message}"
 
-    @classmethod
-    def from_raw_message(cls, raw_message: str) -> "HeosMessage":
+    @staticmethod
+    def _from_raw_message(raw_message: str) -> "HeosMessage":
         """Create a HeosMessage from a raw message."""
         container = json.loads(raw_message)
-        heos = container[const.ATTR_HEOS]
-        instance = cls(
-            command=str(heos[const.ATTR_COMMAND]),
-            result=bool(
-                heos.get(const.ATTR_RESULT, const.VALUE_SUCCESS) == const.VALUE_SUCCESS
-            ),
+        heos = container[c.ATTR_HEOS]
+        instance = HeosMessage(
+            command=str(heos[c.ATTR_COMMAND]),
+            result=bool(heos.get(c.ATTR_RESULT, c.VALUE_SUCCESS) == c.VALUE_SUCCESS),
             message=dict(
-                parse_qsl(heos.get(const.ATTR_MESSAGE, ""), keep_blank_values=True)
+                parse_qsl(heos.get(c.ATTR_MESSAGE, ""), keep_blank_values=True)
             ),
-            payload=container.get(const.ATTR_PAYLOAD),
+            payload=container.get(c.ATTR_PAYLOAD),
+            options=container.get(c.ATTR_OPTIONS),
         )
         instance._raw_message = raw_message
         return instance

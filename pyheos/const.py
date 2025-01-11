@@ -1,6 +1,9 @@
-"""Define consts for the pyheos package."""
+"""Define consts for the pyheos package.
 
-from enum import IntEnum, StrEnum
+This module only contains constants needed to interact with the library (that are exported). Constants only
+used internally are located in the modules where they are used.
+"""
+
 from typing import Final
 
 DEFAULT_TIMEOUT: Final = 10.0
@@ -9,128 +12,38 @@ DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
 DEFAULT_STEP: Final = 5
 
-ATTR_ADD_CRITERIA_ID: Final = "aid"
-ATTR_ALBUM_ID: Final = "album_id"
-ATTR_ALBUM: Final = "album"
-ATTR_ARTIST: Final = "artist"
-ATTR_AVAILABLE: Final = "available"
-ATTR_COMMAND: Final = "command"
-ATTR_CONTAINER: Final = "container"
-ATTR_CONTAINER_ID: Final = "cid"
-ATTR_COUNT: Final = "count"
-ATTR_CURRENT_POSITION: Final = "cur_pos"
-ATTR_DURATION: Final = "duration"
-ATTR_ENABLE: Final = "enable"
-ATTR_ERROR: Final = "error"
-ATTR_ERROR_ID: Final = "eid"
-ATTR_GROUP_ID: Final = "gid"
-ATTR_HEOS: Final = "heos"
-ATTR_ID: Final = "id"
-ATTR_IMAGE_URL: Final = "image_url"
-ATTR_INPUT: Final = "input"
-ATTR_IP_ADDRESS: Final = "ip"
-ATTR_LEVEL: Final = "level"
-ATTR_LINE_OUT: Final = "lineout"
-ATTR_MEDIA_ID: Final = "mid"
-ATTR_MESSAGE: Final = "message"
-ATTR_MODEL: Final = "model"
-ATTR_MUTE: Final = "mute"
-ATTR_NAME: Final = "name"
-ATTR_NETWORK: Final = "network"
-ATTR_PASSWORD: Final = "pw"
-ATTR_PAYLOAD: Final = "payload"
-ATTR_PLAYABLE: Final = "playable"
-ATTR_PLAYER_ID: Final = "pid"
-ATTR_PLAYERS: Final = "players"
-ATTR_PRESET: Final = "preset"
-ATTR_QUEUE_ID: Final = "qid"
-ATTR_RANGE: Final = "range"
-ATTR_REFRESH: Final = "refresh"
-ATTR_REPEAT: Final = "repeat"
-ATTR_RESULT: Final = "result"
-ATTR_RETURNED: Final = "returned"
-ATTR_ROLE: Final = "role"
-ATTR_SERIAL: Final = "serial"
-ATTR_SERVICE_USER_NAME: Final = "service_username"
-ATTR_SHUFFLE: Final = "shuffle"
-ATTR_SONG: Final = "song"
-ATTR_SOURCE_ID: Final = "sid"
-ATTR_SOURCE_PLAYER_ID: Final = "spid"
-ATTR_SIGNED_OUT: Final = "signed_out"
-ATTR_SIGNED_IN: Final = "signed_in"
-ATTR_STATE: Final = "state"
-ATTR_STATION: Final = "station"
-ATTR_STEP: Final = "step"
-ATTR_SYSTEM_ERROR_NUMBER: Final = "syserrno"
-ATTR_TEXT: Final = "text"
-ATTR_TYPE: Final = "type"
-ATTR_URL: Final = "url"
-ATTR_USER_NAME: Final = "un"
-ATTR_VERSION: Final = "version"
-
-VALUE_ON: Final = "on"
-VALUE_OFF: Final = "off"
-VALUE_TRUE: Final = "true"
-VALUE_FALSE: Final = "false"
-VALUE_YES: Final = "yes"
-VALUE_NO: Final = "no"
-VALUE_SUCCESS: Final = "success"
-VALUE_LEADER: Final = "leader"
-VALUE_MEMBER: Final = "member"
-
+# Command error codes (keep discrete values as we do not control the list)
+ERROR_UNREGONIZED_COMMAND: Final = 1
+ERROR_INVALID_ID: Final = 2
+ERROR_WRONG_ARGUMENTS: Final = 3
+ERROR_DATA_NOT_AVAILABLE: Final = 4
+ERROR_RESOURCE_NOT_AVAILABLE: Final = 5
 ERROR_INVALID_CREDNETIALS: Final = 6
+ERROR_COMMAND_NOT_EXECUTED: Final = 7
 ERROR_USER_NOT_LOGGED_IN: Final = 8
+ERROR_PARAMETER_OUT_OF_RANGE: Final = 9
 ERROR_USER_NOT_FOUND: Final = 10
+ERROR_INTERNAL: Final = 11
 ERROR_SYSTEM_ERROR: Final = 12
+ERROR_PROCESSING_PREVIOUS_COMMAND: Final = 13
+ERROR_MEDIA_CANNOT_BE_PLAYED: Final = 14
+ERROR_OPTION_NOTP_SUPPORTED: Final = 15
+ERROR_TOO_MANY_COMMANDS_IN_QUEUE: Final = 16
+ERROR_SKIP_LIMIT_REACHED: Final = 17
 
+# Document system error codes (keep discrete values as we do not control the list)
+SYSTEM_ERROR_REMOTE_SERVICE_ERROR: Final = -9
+SYSTEM_ERROR_SERVICE_NOT_REGISTERED: Final = -1061
 SYSTEM_ERROR_USER_NOT_LOGGED_IN: Final = -1063
 SYSTEM_ERROR_USER_NOT_FOUND: Final = -1056
+SYSTEM_ERROR_CONTENT_AUTHENTICATION_ERROR: Final = -1201
+SYSTEM_ERROR_CONTENT_AUTHORIZATION_ERROR: Final = -1232
+SYSTEM_ERROR_ACCOUNT_PARAMETERS_INVALID: Final = -1239
 
-STATE_CONNECTED: Final = "connected"
-STATE_DISCONNECTED: Final = "disconnected"
-STATE_RECONNECTING: Final = "reconnecting"
+# Search Crtieria Container IDs (keep discrete values as we do not control the list)
+SEARCHED_TRACKS: Final = "SEARCHED_TRACKS-"
 
-NETWORK_TYPE_WIRED: Final = "wired"
-NETWORK_TYPE_WIFI: Final = "wifi"
-NETWORK_TYPE_UNKNOWN: Final = "unknown"
-
-DATA_NEW: Final = "new"
-DATA_MAPPED_IDS: Final = "mapped_ids"
-
-
-class PlayState(StrEnum):
-    """Define the play states."""
-
-    PLAY = "play"
-    PAUSE = "pause"
-    STOP = "stop"
-
-
-class RepeatType(StrEnum):
-    """Define the repeat types."""
-
-    ON_ALL = "on_all"
-    ON_ONE = "on_one"
-    OFF = "off"
-
-
-class MediaType(StrEnum):
-    """Define the media types."""
-
-    ALBUM = "album"
-    ARTIST = "artist"
-    CONTAINER = "container"
-    DLNA_SERVER = "dlna_server"
-    GENRE = "genre"
-    HEOS_SERVER = "heos_server"
-    HEOS_SERVICE = "heos_service"
-    MUSIC_SERVICE = "music_service"
-    PLAYLIST = "playlist"
-    SONG = "song"
-    STATION = "station"
-
-
-# Music Sources
+# Music Sources (keep discrete values as we do not control the list)
 MUSIC_SOURCE_CONNECT: Final = 0  # TIDAL Connect // possibly Spotify Connect as well (?)
 MUSIC_SOURCE_PANDORA: Final = 1
 MUSIC_SOURCE_RHAPSODY: Final = 2
@@ -153,67 +66,7 @@ MUSIC_SOURCE_HISTORY: Final = 1026
 MUSIC_SOURCE_AUX_INPUT: Final = 1027
 MUSIC_SOURCE_FAVORITES: Final = 1028
 
-# Supported controls
-CONTROL_PLAY: Final = "play"
-CONTROL_PAUSE: Final = "pause"
-CONTROL_STOP: Final = "stop"
-CONTROL_PLAY_NEXT: Final = "play_next"
-CONTROL_PLAY_PREVIOUS: Final = "play_previous"
-
-CONTROLS_ALL: Final = [
-    CONTROL_PLAY,
-    CONTROL_PAUSE,
-    CONTROL_STOP,
-    CONTROL_PLAY_NEXT,
-    CONTROL_PLAY_PREVIOUS,
-]
-CONTROLS_FORWARD_ONLY: Final = [
-    CONTROL_PLAY,
-    CONTROL_PAUSE,
-    CONTROL_STOP,
-    CONTROL_PLAY_NEXT,
-]
-CONTROL_PLAY_STOP: Final = [CONTROL_PLAY, CONTROL_STOP]
-
-SOURCE_CONTROLS: Final = {
-    MUSIC_SOURCE_CONNECT: {MediaType.STATION: CONTROLS_ALL},
-    MUSIC_SOURCE_PANDORA: {MediaType.STATION: CONTROLS_FORWARD_ONLY},
-    MUSIC_SOURCE_RHAPSODY: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_TUNEIN: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROL_PLAY_STOP,
-    },
-    MUSIC_SOURCE_SPOTIFY: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_DEEZER: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_NAPSTER: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_FORWARD_ONLY,
-    },
-    MUSIC_SOURCE_IHEARTRADIO: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROL_PLAY_STOP,
-    },
-    MUSIC_SOURCE_SIRIUSXM: {MediaType.STATION: CONTROL_PLAY_STOP},
-    MUSIC_SOURCE_SOUNDCLOUD: {MediaType.SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_TIDAL: {MediaType.SONG: CONTROLS_ALL},
-    MUSIC_SOURCE_AMAZON: {
-        MediaType.SONG: CONTROLS_ALL,
-        MediaType.STATION: CONTROLS_ALL,
-    },
-    MUSIC_SOURCE_AUX_INPUT: {MediaType.STATION: CONTROL_PLAY_STOP},
-}
-
-
-# Inputs
+# Inputs (keep discrete values as we do not control the list)
 INPUT_ANALOG_IN_1: Final = "inputs/analog_in_1"
 INPUT_ANALOG_IN_2: Final = "inputs/analog_in_2"
 INPUT_AUX_8K: Final = "inputs/aux_8k"
@@ -341,29 +194,22 @@ VALID_INPUTS: Final = (
     INPUT_USB_AC,
 )
 
+# Service options (keep discrete values as we do not control the list)
+SERVICE_OPTION_ADD_TRACK_TO_LIBRARY: Final = 1
+SERVICE_OPTION_ADD_ALBUM_TO_LIBRARY: Final = 2
+SERVICE_OPTION_ADD_STATION_TO_LIBRARY: Final = 3
+SERVICE_OPTION_ADD_PLAYLIST_TO_LIBRARY: Final = 4
+SERVICE_OPTION_REMOVE_TRACK_FROM_LIBRARY: Final = 5
+SERVICE_OPTION_REMOVE_ALBUM_FROM_LIBRARY: Final = 6
+SERVICE_OPTION_REMOVE_STATION_FROM_LIBRARY: Final = 7
+SERVICE_OPTION_REMOVE_PLAYLIST_FROM_LIBRARY: Final = 8
+SERVICE_OPTION_THUMBS_UP: Final = 11
+SERVICE_OPTION_THUMBS_DOWN: Final = 12
+SERVICE_OPTION_CREATE_NEW_STATION_BY_SEARCH_CRITERIA: Final = 13
+SERVICE_OPTION_ADD_TO_FAVORITES: Final = 19
+SERVICE_OPTION_REMOVE_FROM_FAVORITES: Final = 20
 
-class AddCriteriaType(IntEnum):
-    """Define the add to queue options."""
-
-    PLAY_NOW = 1
-    PLAY_NEXT = 2
-    ADD_TO_END = 3
-    REPLACE_AND_PLAY = 4
-
-
-# Signals
-SIGNAL_PLAYER_EVENT: Final = "player_event"
-SIGNAL_GROUP_EVENT: Final = "group_event"
-SIGNAL_CONTROLLER_EVENT: Final = "controller_event"
-SIGNAL_HEOS_EVENT: Final = "heos_event"
-EVENT_CONNECTED: Final = "connected"
-EVENT_DISCONNECTED: Final = "disconnected"
-EVENT_USER_CREDENTIALS_INVALID: Final = "user credentials invalid"
-
-BASE_URI: Final = "heos://"
-
-
-# Events
+# HEOS Events (keep discrete values as we do not control the list)
 EVENT_PLAYER_STATE_CHANGED: Final = "event/player_state_changed"
 EVENT_PLAYER_NOW_PLAYING_CHANGED: Final = "event/player_now_playing_changed"
 EVENT_PLAYER_NOW_PLAYING_PROGRESS: Final = "event/player_now_playing_progress"
