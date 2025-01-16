@@ -1,10 +1,9 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
+name: Report a bug in pyheos
+about: Create a report to help us improve the library
+title: ""
 labels: bug, triage
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug**
@@ -17,10 +16,20 @@ Steps to reproduce the behavior.
 A clear and concise description of what you expected to happen.
 
 **Environment (please complete the following information):**
- - pyheos version: [e.g. 1.0.0]
- - python version: [e.g. 3.12]
+
+- pyheos version: [e.g. 1.0.0]
+- python version: [e.g. 3.12]
+- HEOS device model: [e.g. HEOS Drive]
+- HEOS device firmware version: [e.g. 3.34.620]
+
+**Logs**
+
+```
+
+```
 
 **Traceback (if applicable)**
+
 ```
 
 ```
