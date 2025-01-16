@@ -44,6 +44,6 @@
         ".mypy_cache": true
     },
     "yaml.schemas": {
-        "https://json.schemastore.org/github-issue-config.json": "file:///workspaces/pyheos/.github/ISSUE_TEMPLATE/config.yaml"
+        "https://json.schemastore.org/github-issue-config.json": "file:///workspaces/pyheos/.github/ISSUE_TEMPLATE/config.yml"
     }
 }
