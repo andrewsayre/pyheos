@@ -493,6 +493,7 @@ async def test_get_players(heos: Heos) -> None:
     assert len(heos.players) == 2
     player = heos.players[1]
     assert player.player_id == 1
+    assert player.group_id == 2
     assert player.name == "Back Patio"
     assert player.ip_address == "127.0.0.1"
     assert player.line_out == LineOutLevelType.FIXED
@@ -507,8 +508,6 @@ async def test_get_players(heos: Heos) -> None:
     assert not player.shuffle
     assert player.available
     assert player.heos == heos
-    assert player.group_id is None
-    assert heos.players[2].group_id == 2
 
 
 @calls_commands(
