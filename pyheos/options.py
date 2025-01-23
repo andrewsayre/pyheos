@@ -14,7 +14,7 @@ class HeosOptions:
 
     Args:
         host: A host name or IP address of a HEOS-capable device.
-        timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+        timeout: The timeout in seconds for opening a connection and issuing commands to the device.
         events: Set to True to enable event updates, False to disable. The default is True.
         heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
         heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.

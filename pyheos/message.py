@@ -22,7 +22,7 @@ class HeosCommand:
     parameters: dict[str, Any] = field(default_factory=dict)
 
     def __repr__(self) -> str:
-        """Get a string representaton of the message."""
+        """Get a string representation of the message."""
         return self.uri_masked
 
     @cached_property
@@ -79,7 +79,7 @@ class HeosMessage:
     )
 
     def __repr__(self) -> str:
-        """Get a string representaton of the message."""
+        """Get a string representation of the message."""
         return self._raw_message or f"{self.command} {self.message}"
 
     @staticmethod

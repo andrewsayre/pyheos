@@ -91,14 +91,14 @@ class MultiSearchResult:
         """Create a new instance from a message."""
         source_ids = message.get_message_value(c.ATTR_SOURCE_ID).split(",")
         criteria_ids = message.get_message_value(c.ATTR_SEARCH_CRITERIA_ID).split(",")
-        statisics = SearchStatistic._from_string(
+        statistics = SearchStatistic._from_string(
             message.get_message_value(c.ATTR_STATS)
         )
         items: list[MediaItem] = []
         # In order to determine the source_id of the result, we match up the index with how many items were returned for a given source
         payload = cast(list[dict[str, str]], message.payload)
         index = 0
-        for stat in statisics:
+        for stat in statistics:
             assert stat.returned is not None
             for _ in range(stat.returned):
                 items.append(
@@ -114,7 +114,7 @@ class MultiSearchResult:
             returned=message.get_message_value_int(c.ATTR_RETURNED),
             count=message.get_message_value_int(c.ATTR_COUNT),
             items=items,
-            statistics=statisics,
+            statistics=statistics,
             errors=SearchStatistic._from_string(
                 message.get_message_value(c.ATTR_ERROR_NUMBER)
             ),
