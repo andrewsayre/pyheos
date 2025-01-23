@@ -46,7 +46,6 @@ class PlayerCommands(ConnectionMixin):
 
         References:
             4.2.1 Get Players"""
-        # get players and pull initial state
         if not self._players_loaded or refresh:
             await self.load_players()
         return self._players
