@@ -234,6 +234,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             else:
                 self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+            if self._players_loaded:
+                await self.get_players(refresh=True)
             await self.get_groups(refresh=True)
 
         await self._dispatcher.wait_send(
