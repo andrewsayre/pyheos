@@ -5,6 +5,7 @@ from typing import Any
 
 import pytest
 import pytest_asyncio
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions
@@ -12,8 +13,15 @@ from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.player import HeosPlayer
 from pyheos.types import LineOutLevelType, NetworkType
 from tests.common import MediaItems, MediaMusicSources
+from tests.syrupy import HeosSnapshotExtension
 
 from . import MockHeos, MockHeosDevice
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Return snapshot assertion fixture with the Heos extension."""
+    return snapshot.use_extension(HeosSnapshotExtension)
 
 
 @pytest_asyncio.fixture(name="mock_device")

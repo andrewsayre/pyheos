@@ -213,6 +213,13 @@ class HeosPlayer:
     group_id: int | None = field(repr=False, hash=False, compare=False, default=None)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
+    def __post_init__(self) -> None:
+        """Post initialize the player."""
+        # Prevent the heos instance from being serialized
+        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
+        del fields["heos"]
+        self.__dataclass_fields__ = fields
+
     @staticmethod
     def _from_data(
         data: dict[str, Any],

@@ -49,6 +49,13 @@ class SearchResult:
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
+    def __post_init__(self) -> None:
+        """Post initialize the player."""
+        # Prevent the heos instance from being serialized
+        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
+        del fields["heos"]
+        self.__dataclass_fields__ = fields
+
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "SearchResult":
         """Create a new instance from a message."""
@@ -85,6 +92,13 @@ class MultiSearchResult:
     )
     errors: Sequence["SearchStatistic"] = field(repr=False, hash=False, compare=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
+
+    def __post_init__(self) -> None:
+        """Post initialize the player."""
+        # Prevent the heos instance from being serialized
+        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
+        del fields["heos"]
+        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "MultiSearchResult":

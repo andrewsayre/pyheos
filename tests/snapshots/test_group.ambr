@@ -1,0 +1,25 @@
+# serializer version: 1
+# name: test_refresh
+  dict({
+    'group_id': -263109739,
+    'is_muted': False,
+    'lead_player_id': -263109739,
+    'member_player_ids': list([
+      845195621,
+    ]),
+    'name': 'Zone 1 + Zone 2',
+    'volume': 42,
+  })
+# ---
+# name: test_refresh_no_base_update
+  dict({
+    'group_id': 1,
+    'is_muted': False,
+    'lead_player_id': 1,
+    'member_player_ids': list([
+      2,
+    ]),
+    'name': 'Back Patio + Front Porch',
+    'volume': 42,
+  })
+# ---

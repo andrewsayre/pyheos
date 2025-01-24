@@ -52,6 +52,13 @@ class Media:
     image_url: str = field(repr=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False)
 
+    def __post_init__(self) -> None:
+        """Post initialize the player."""
+        # Prevent the heos instance from being serialized
+        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
+        del fields["heos"]
+        self.__dataclass_fields__ = fields
+
 
 @dataclass
 class MediaMusicSource(Media):
@@ -256,6 +263,13 @@ class BrowseResult:
     options: Sequence[ServiceOption] = field(repr=False, hash=False, compare=False)
     container_id: str | None = None
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
+
+    def __post_init__(self) -> None:
+        """Post initialize the player."""
+        # Prevent the heos instance from being serialized
+        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
+        del fields["heos"]
+        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_message(

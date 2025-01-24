@@ -5,6 +5,7 @@ import re
 from typing import Any
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import (
@@ -43,14 +44,12 @@ from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,
-    LineOutLevelType,
     MediaType,
     NetworkType,
     PlayState,
     RepeatType,
     SignalHeosEvent,
     SignalType,
-    VolumeControlType,
 )
 from tests.common import MediaItems
 
@@ -486,28 +485,11 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 
 
 @calls_player_commands()
-async def test_get_players(heos: Heos) -> None:
+async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get_players method load players."""
-    await heos.get_players()
-    # Assert players loaded
-    assert len(heos.players) == 2
-    player = heos.players[1]
-    assert player.player_id == 1
-    assert player.group_id == 2
-    assert player.name == "Back Patio"
-    assert player.ip_address == "127.0.0.1"
-    assert player.line_out == LineOutLevelType.FIXED
-    assert player.control == VolumeControlType.IR
-    assert player.model == "HEOS Drive"
-    assert player.network == NetworkType.WIRED
-    assert player.state == PlayState.STOP
-    assert player.version == "1.493.180"
-    assert player.volume == 36
-    assert not player.is_muted
-    assert player.repeat == RepeatType.OFF
-    assert not player.shuffle
-    assert player.available
-    assert player.heos == heos
+    players = await heos.get_players()
+
+    assert players == snapshot
 
 
 @calls_commands(
