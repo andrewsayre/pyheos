@@ -1,5 +1,6 @@
 """Test fixtures for pyheos."""
 
+import dataclasses
 from collections.abc import AsyncGenerator, Callable, Coroutine
 from typing import Any
 
@@ -78,65 +79,47 @@ def async_handler() -> Callable[..., Coroutine]:
 
 @pytest.fixture
 def media_music_source(heos: MockHeos) -> MediaMusicSource:
-    source = MediaMusicSources.FAVORITES.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaMusicSources.FAVORITES, heos=heos)
 
 
 @pytest.fixture
 def media_music_source_unavailable(heos: MockHeos) -> MediaMusicSource:
-    source = MediaMusicSources.PANDORA.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaMusicSources.PANDORA, heos=heos)
 
 
 @pytest.fixture
 def media_music_source_tidal(heos: MockHeos) -> MediaMusicSource:
-    source = MediaMusicSources.TIDAL.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaMusicSources.TIDAL, heos=heos)
 
 
 @pytest.fixture
 def media_item_album(heos: MockHeos) -> MediaItem:
-    source = MediaItems.ALBUM.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.ALBUM, heos=heos)
 
 
 @pytest.fixture
 def media_item_song(heos: MockHeos) -> MediaItem:
-    source = MediaItems.SONG.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.SONG, heos=heos)
 
 
 @pytest.fixture(name="media_item_input")
 def media_item_input_fixture(heos: MockHeos) -> MediaItem:
-    source = MediaItems.INPUT.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.INPUT, heos=heos)
 
 
 @pytest.fixture
 def media_item_station(heos: MockHeos) -> MediaItem:
-    source = MediaItems.STATION.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.STATION, heos=heos)
 
 
 @pytest.fixture
 def media_item_playlist(heos: MockHeos) -> MediaItem:
-    source = MediaItems.PLAYLIST.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.PLAYLIST, heos=heos)
 
 
 @pytest.fixture
 def media_item_device(heos: MockHeos) -> MediaItem:
-    source = MediaItems.DEVICE.clone()
-    source.heos = heos
-    return source
+    return dataclasses.replace(MediaItems.DEVICE, heos=heos)
 
 
 @pytest_asyncio.fixture(name="player")
