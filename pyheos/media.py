@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional, cast
+from urllib.parse import unquote
 
 from pyheos import command as c
 from pyheos.abc import RemoveHeosFieldABC
@@ -140,7 +141,7 @@ class MediaItem(Media):
             source_id=new_source_id,
             container_id=data.get(c.ATTR_CONTAINER_ID, container_id),
             browsable=new_browseable,
-            name=data[c.ATTR_NAME],
+            name=unquote(data[c.ATTR_NAME]),
             type=MediaType(data[c.ATTR_TYPE]),
             image_url=data[c.ATTR_IMAGE_URL],
             playable=data.get(c.ATTR_PLAYABLE) == c.VALUE_YES,
