@@ -1,9 +1,9 @@
 """Tests for the browse mixin of the Heos module."""
 
 from typing import Any
-from syrupy.assertion import SnapshotAssertion
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import (

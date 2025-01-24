@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.const import DEFAULT_STEP, EVENT_GROUP_VOLUME_CHANGED
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.message import HeosMessage
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class HeosGroup:
+class HeosGroup(RemoveHeosFieldABC):
     """A group of players."""
 
     name: str
@@ -27,13 +28,6 @@ class HeosGroup:
     volume: int = 0
     is_muted: bool = False
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
-
-    def __post_init__(self) -> None:
-        """Post initialize the player."""
-        # Prevent the heos instance from being serialized
-        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
-        del fields["heos"]
-        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_data(

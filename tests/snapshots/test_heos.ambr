@@ -953,6 +953,7 @@
 # ---
 # name: test_validate_connection
   dict({
+    'connected_to_preferred_host': True,
     'host': dict({
       'ip_address': '127.0.0.1',
       'model': 'HEOS Drive',
@@ -976,6 +977,17 @@
         'name': 'Front Porch',
         'network': <NetworkType.WIFI: 'wifi'>,
         'serial': None,
+        'version': '1.493.180',
+      }),
+    ]),
+    'is_signed_in': True,
+    'preferred_hosts': list([
+      dict({
+        'ip_address': '127.0.0.1',
+        'model': 'HEOS Drive',
+        'name': 'Back Patio',
+        'network': <NetworkType.WIRED: 'wired'>,
+        'serial': 'B1A2C3K',
         'version': '1.493.180',
       }),
     ]),

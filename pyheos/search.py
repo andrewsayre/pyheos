@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Optional, cast
 
 from pyheos import command as c
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
@@ -38,7 +39,7 @@ class SearchCriteria:
 
 
 @dataclass
-class SearchResult:
+class SearchResult(RemoveHeosFieldABC):
     """Define the search result."""
 
     source_id: int
@@ -48,13 +49,6 @@ class SearchResult:
     count: int
     items: Sequence[MediaItem] = field(repr=False, hash=False, compare=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
-
-    def __post_init__(self) -> None:
-        """Post initialize the player."""
-        # Prevent the heos instance from being serialized
-        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
-        del fields["heos"]
-        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "SearchResult":
@@ -78,7 +72,7 @@ class SearchResult:
 
 
 @dataclass
-class MultiSearchResult:
+class MultiSearchResult(RemoveHeosFieldABC):
     """Define the results of a multi-search."""
 
     source_ids: Sequence[int]
@@ -92,13 +86,6 @@ class MultiSearchResult:
     )
     errors: Sequence["SearchStatistic"] = field(repr=False, hash=False, compare=False)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
-
-    def __post_init__(self) -> None:
-        """Post initialize the player."""
-        # Prevent the heos instance from being serialized
-        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
-        del fields["heos"]
-        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_message(message: HeosMessage, heos: "Heos") -> "MultiSearchResult":

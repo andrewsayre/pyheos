@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.command import optional_int, parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
@@ -184,7 +185,7 @@ class PlayMode:
 
 
 @dataclass
-class HeosPlayer:
+class HeosPlayer(RemoveHeosFieldABC):
     """Define a HEOS player."""
 
     name: str = field(repr=True, hash=False, compare=False)
@@ -212,13 +213,6 @@ class HeosPlayer:
     available: bool = field(repr=False, hash=False, compare=False, default=True)
     group_id: int | None = field(repr=False, hash=False, compare=False, default=None)
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
-
-    def __post_init__(self) -> None:
-        """Post initialize the player."""
-        # Prevent the heos instance from being serialized
-        fields = self.__dataclass_fields__.copy()  # pylint: disable=access-member-before-definition
-        del fields["heos"]
-        self.__dataclass_fields__ = fields
 
     @staticmethod
     def _from_data(

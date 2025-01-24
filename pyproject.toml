@@ -367,4 +367,4 @@ skip_empty = true
 sort = "Name"
 
 [tool.codespell]
-skip = "./tests/fixtures/*"
+skip = "./tests/fixtures/*,./tests/snapshots/*"
