@@ -4,6 +4,7 @@ import re
 from unittest.mock import Mock
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import MUSIC_SOURCE_FAVORITES
@@ -15,7 +16,7 @@ from tests import calls_command
 from tests.common import MediaItems, MediaMusicSources
 
 
-async def test_media_music_source_from_data() -> None:
+async def test_media_music_source_from_data(snapshot: SnapshotAssertion) -> None:
     """Test creating a media music source from data."""
     data = {
         c.ATTR_NAME: "Pandora",
@@ -27,13 +28,8 @@ async def test_media_music_source_from_data() -> None:
     }
 
     source = MediaMusicSource.from_data(data)
+    assert source == snapshot
 
-    assert source.name == data[c.ATTR_NAME]
-    assert source.image_url == data[c.ATTR_IMAGE_URL]
-    assert source.type == MediaType.MUSIC_SERVICE
-    assert source.source_id == data[c.ATTR_SOURCE_ID]
-    assert source.available
-    assert source.service_username == data[c.ATTR_SERVICE_USER_NAME]
     with pytest.raises(
         AssertionError,
         match="Heos instance not set",
@@ -43,24 +39,14 @@ async def test_media_music_source_from_data() -> None:
 
 @calls_command("browse.browse_favorites", {c.ATTR_SOURCE_ID: MUSIC_SOURCE_FAVORITES})
 async def test_media_music_source_browse(
-    media_music_source: MediaMusicSource,
+    media_music_source: MediaMusicSource, snapshot: SnapshotAssertion
 ) -> None:
     """Test browsing a media music source."""
     result = await media_music_source.browse()
-
-    assert result.returned == 3
-    assert result.source_id == MUSIC_SOURCE_FAVORITES
-
-    assert len(result.options) == 1
-    option = result.options[0]
-    assert option.context == "browse"
-    assert option.name == "Remove from HEOS Favorites"
-    assert option.id == 20
-
-    # further testing of the result is done in test_browse_result_from_data
+    assert result == snapshot
 
 
-async def test_browse_result_from_data() -> None:
+async def test_browse_result_from_data(snapshot: SnapshotAssertion) -> None:
     """Test creating a browse result from data."""
     heos = Mock(Heos)
     message = HeosMessage(
@@ -84,17 +70,10 @@ async def test_browse_result_from_data() -> None:
     )
 
     result = BrowseResult._from_message(message, heos)
-
-    assert result.returned == 1
-    assert result.count == 1
-    assert result.source_id == 1025
-    assert result.heos == heos
-    assert len(result.items) == 1
-    item = result.items[0]
-    assert item.heos == heos
+    assert result == snapshot
 
 
-async def test_media_item_from_data() -> None:
+async def test_media_item_from_data(snapshot: SnapshotAssertion) -> None:
     """Test creating a MediaItem from data."""
     source_id = 1
     container_id = "My Music"
@@ -111,18 +90,8 @@ async def test_media_item_from_data() -> None:
     }
 
     source = MediaItem.from_data(data, source_id, container_id)
+    assert source == snapshot
 
-    assert source.name == data[c.ATTR_NAME]
-    assert source.image_url == data[c.ATTR_IMAGE_URL]
-    assert source.type == MediaType.SONG
-    assert source.container_id == container_id
-    assert source.source_id == source_id
-    assert source.playable is True
-    assert source.browsable is False
-    assert source.album == data[c.ATTR_ALBUM]
-    assert source.artist == data[c.ATTR_ARTIST]
-    assert source.album_id == data[c.ATTR_ALBUM_ID]
-    assert source.media_id == data[c.ATTR_MEDIA_ID]
     with pytest.raises(
         AssertionError,
         match="Heos instance not set",
@@ -152,7 +121,7 @@ async def test_media_item_from_data_source_id_not_present_raises() -> None:
         MediaItem.from_data(data)
 
 
-async def test_media_item_from_data_source() -> None:
+async def test_media_item_from_data_source(snapshot: SnapshotAssertion) -> None:
     """Test creating a MediaItem from data."""
     data = {
         c.ATTR_NAME: "Plex Media Server",
@@ -162,21 +131,10 @@ async def test_media_item_from_data_source() -> None:
     }
 
     source = MediaItem.from_data(data)
-
-    assert source.name == data[c.ATTR_NAME]
-    assert source.image_url == data[c.ATTR_IMAGE_URL]
-    assert source.type == MediaType.HEOS_SERVER
-    assert source.source_id == data[c.ATTR_SOURCE_ID]
-    assert source.container_id is None
-    assert source.playable is False
-    assert source.browsable is True
-    assert source.album is None
-    assert source.artist is None
-    assert source.album_id is None
-    assert source.media_id is None
+    assert source == snapshot
 
 
-async def test_media_item_from_data_container() -> None:
+async def test_media_item_from_data_container(snapshot: SnapshotAssertion) -> None:
     """Test creating a MediaItem from data."""
     source_id = 123456789
     data = {
@@ -188,50 +146,30 @@ async def test_media_item_from_data_container() -> None:
     }
 
     source = MediaItem.from_data(data, source_id)
-
-    assert source.name == data[c.ATTR_NAME]
-    assert source.image_url == data[c.ATTR_IMAGE_URL]
-    assert source.type == MediaType.CONTAINER
-    assert source.container_id == data[c.ATTR_CONTAINER_ID]
-    assert source.source_id == source_id
-    assert source.playable is False
-    assert source.browsable is True
-    assert source.album is None
-    assert source.artist is None
-    assert source.album_id is None
-    assert source.media_id is None
+    assert source == snapshot
 
 
 @calls_command(
     "browse.browse_heos_drive", {c.ATTR_SOURCE_ID: MediaItems.DEVICE.source_id}
 )
-async def test_media_item_browse(media_item_device: MediaItem) -> None:
+async def test_media_item_browse(
+    media_item_device: MediaItem, snapshot: SnapshotAssertion
+) -> None:
     """Test browsing a media music source."""
     result = await media_item_device.browse()
-
-    assert result.container_id is None
-    assert result.source_id == media_item_device.source_id
-    assert result.returned == 8
-    assert result.count == 8
-    assert len(result.items) == 8
+    assert result == snapshot
 
 
 @calls_command(
     "browse.get_source_info",
     {c.ATTR_SOURCE_ID: MediaMusicSources.FAVORITES.source_id},
 )
-async def test_refresh(media_music_source: MediaMusicSource) -> None:
+async def test_refresh(
+    media_music_source: MediaMusicSource, snapshot: SnapshotAssertion
+) -> None:
     """Test refresh updates the data."""
     await media_music_source.refresh()
-    assert media_music_source.source_id == 1
-    assert media_music_source.name == "Pandora"
-    assert (
-        media_music_source.image_url
-        == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
-    )
-    assert media_music_source.type == MediaType.MUSIC_SERVICE
-    assert media_music_source.available
-    assert media_music_source.service_username == "email@email.com"
+    assert media_music_source == snapshot
 
 
 @calls_command(

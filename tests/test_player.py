@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import (
@@ -14,26 +15,16 @@ from pyheos.const import (
 )
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
-from pyheos.types import (
-    AddCriteriaType,
-    LineOutLevelType,
-    NetworkType,
-    PlayState,
-    RepeatType,
-)
+from pyheos.types import AddCriteriaType, PlayState, RepeatType
 from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
 
 @pytest.mark.parametrize(
-    ("network", "expected_network"),
-    [
-        (None, NetworkType.UNKNOWN),
-        ("wired", NetworkType.WIRED),
-        ("invalid", NetworkType.UNKNOWN),  # Invalid network type
-    ],
+    "network",
+    [None, "wired", "invalid"],
 )
-def test_from_data(network: str | None, expected_network: NetworkType) -> None:
+def test_from_data(network: str | None, snapshot: SnapshotAssertion) -> None:
     """Test the from_data function."""
     data = {
         c.ATTR_NAME: "Back Patio",
@@ -46,18 +37,12 @@ def test_from_data(network: str | None, expected_network: NetworkType) -> None:
         c.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer._from_data(data, None)
-
-    assert player.name == "Back Patio"
-    assert player.player_id == 1
-    assert player.model == "HEOS Drive"
-    assert player.version == "1.493.180"
-    assert player.ip_address == "192.168.0.1"
-    assert player.network == expected_network
-    assert player.line_out == LineOutLevelType.VARIABLE
-    assert player.serial == "1234567890"
+    assert player == snapshot
 
 
-async def test_update_from_data(player: HeosPlayer) -> None:
+async def test_update_from_data(
+    player: HeosPlayer, snapshot: SnapshotAssertion
+) -> None:
     """Test the __str__ function."""
     data = {
         c.ATTR_NAME: "Patio",
@@ -70,15 +55,7 @@ async def test_update_from_data(player: HeosPlayer) -> None:
         c.ATTR_SERIAL: "0987654321",
     }
     player._update_from_data(data)
-
-    assert player.name == "Patio"
-    assert player.player_id == 2
-    assert player.model == "HEOS Drives"
-    assert player.version == "2.0.0"
-    assert player.ip_address == "192.168.0.2"
-    assert player.network == NetworkType.WIFI
-    assert player.line_out == LineOutLevelType.UNKNOWN
-    assert player.serial == "0987654321"
+    assert player == snapshot
 
 
 @pytest.mark.parametrize("state", (PlayState.PAUSE, PlayState.PLAY, PlayState.STOP))
@@ -227,22 +204,10 @@ async def test_clear_queue(player: HeosPlayer) -> None:
 
 
 @calls_command("player.get_queue", {c.ATTR_PLAYER_ID: 1})
-async def test_get_queue(player: HeosPlayer) -> None:
+async def test_get_queue(player: HeosPlayer, snapshot: SnapshotAssertion) -> None:
     """Test the get queue c."""
     result = await player.get_queue()
-
-    assert len(result) == 11
-    item = result[0]
-    assert item.song == "Baby"
-    assert item.album == "22 Break"
-    assert item.artist == "Oh Wonder"
-    assert (
-        item.image_url
-        == "http://resources.wimpmusic.com/images/bdfd93c2/0b3a/495e/a557/4493fcbb7ab3/640x640.jpg"
-    )
-    assert item.queue_id == 1
-    assert item.media_id == "199555606"
-    assert item.album_id == "199555605"
+    assert result == snapshot
 
 
 @calls_command("player.play_queue", {c.ATTR_PLAYER_ID: 1, c.ATTR_QUEUE_ID: 1})
@@ -288,22 +253,12 @@ async def test_move_queue_item(player: HeosPlayer) -> None:
 
 
 @calls_command("player.get_queue", {c.ATTR_PLAYER_ID: 1, c.ATTR_RANGE: "0,10"})
-async def test_get_queue_with_range(player: HeosPlayer) -> None:
+async def test_get_queue_with_range(
+    player: HeosPlayer, snapshot: SnapshotAssertion
+) -> None:
     """Test the check_update c."""
     result = await player.get_queue(0, 10)
-
-    assert len(result) == 11
-    item = result[0]
-    assert item.song == "Baby"
-    assert item.album == "22 Break"
-    assert item.artist == "Oh Wonder"
-    assert (
-        item.image_url
-        == "http://resources.wimpmusic.com/images/bdfd93c2/0b3a/495e/a557/4493fcbb7ab3/640x640.jpg"
-    )
-    assert item.queue_id == 1
-    assert item.media_id == "199555606"
-    assert item.album_id == "199555605"
+    assert result == snapshot
 
 
 @calls_command(
@@ -372,17 +327,12 @@ async def test_set_quick_select(player: HeosPlayer) -> None:
 
 
 @calls_command("player.get_quickselects", {c.ATTR_PLAYER_ID: 1})
-async def test_get_quick_selects(player: HeosPlayer) -> None:
+async def test_get_quick_selects(
+    player: HeosPlayer, snapshot: SnapshotAssertion
+) -> None:
     """Test the play favorite."""
     selects = await player.get_quick_selects()
-    assert selects == {
-        1: "Quick Select 1",
-        2: "Quick Select 2",
-        3: "Quick Select 3",
-        4: "Quick Select 4",
-        5: "Quick Select 5",
-        6: "Quick Select 6",
-    }
+    assert selects == snapshot
 
 
 async def test_play_media_unplayable_source(
@@ -463,19 +413,12 @@ async def test_add_search_to_queue(player: HeosPlayer) -> None:
 
 
 @calls_command("player.get_now_playing_media_blank", {c.ATTR_PLAYER_ID: 1})
-async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
+async def test_now_playing_media_unavailable(
+    player: HeosPlayer, snapshot: SnapshotAssertion
+) -> None:
     """Test edge case where now_playing_media returns an empty payload."""
     await player.refresh_now_playing_media()
-    assert player.now_playing_media.supported_controls == []
-    assert player.now_playing_media.type is None
-    assert player.now_playing_media.song is None
-    assert player.now_playing_media.station is None
-    assert player.now_playing_media.album is None
-    assert player.now_playing_media.artist is None
-    assert player.now_playing_media.image_url is None
-    assert player.now_playing_media.album_id is None
-    assert player.now_playing_media.media_id is None
-    assert player.now_playing_media.options == []
+    assert player.now_playing_media == snapshot
 
 
 @calls_commands(
@@ -486,16 +429,10 @@ async def test_now_playing_media_unavailable(player: HeosPlayer) -> None:
     CallCommand("player.get_mute", {c.ATTR_PLAYER_ID: -263109739}),
     CallCommand("player.get_play_mode", {c.ATTR_PLAYER_ID: -263109739}),
 )
-async def test_refresh(player: HeosPlayer) -> None:
+async def test_refresh(player: HeosPlayer, snapshot: SnapshotAssertion) -> None:
     """Test refresh, including base, updates the correct information."""
     await player.refresh()
-
-    assert player.name == "Zone 1"
-    assert player.player_id == -263109739
-    assert player.model == "HEOS Drive"
-    assert player.version == "3.34.620"
-    assert player.ip_address == "127.0.0.1"
-    assert player.serial == "123456789"
+    assert player == snapshot
 
 
 @calls_commands(
