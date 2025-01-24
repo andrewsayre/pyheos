@@ -1,6 +1,7 @@
 """Tests for the group module."""
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import EVENT_GROUP_VOLUME_CHANGED, EVENT_PLAYER_VOLUME_CHANGED
@@ -154,29 +155,19 @@ async def test_toggle_mute(group: HeosGroup) -> None:
     CallCommand("group.get_volume", {c.ATTR_GROUP_ID: -263109739}),
     CallCommand("group.get_mute", {c.ATTR_GROUP_ID: -263109739}),
 )
-async def test_refresh(group: HeosGroup) -> None:
+async def test_refresh(group: HeosGroup, snapshot: SnapshotAssertion) -> None:
     """Test refresh, including base, updates the correct information."""
     await group.refresh()
-
-    assert group.name == "Zone 1 + Zone 2"
-    assert group.group_id == -263109739
-    assert group.lead_player_id == -263109739
-    assert group.member_player_ids == [845195621]
-    assert group.volume == 42
-    assert not group.is_muted
+    assert group == snapshot
 
 
 @calls_commands(
     CallCommand("group.get_volume", {c.ATTR_GROUP_ID: 1}),
     CallCommand("group.get_mute", {c.ATTR_GROUP_ID: 1}),
 )
-async def test_refresh_no_base_update(group: HeosGroup) -> None:
+async def test_refresh_no_base_update(
+    group: HeosGroup, snapshot: SnapshotAssertion
+) -> None:
     """Test refresh updates the correct information."""
     await group.refresh(refresh_base_info=False)
-
-    assert group.name == "Back Patio + Front Porch"
-    assert group.group_id == 1
-    assert group.lead_player_id == 1
-    assert group.member_player_ids == [2]
-    assert group.volume == 42
-    assert not group.is_muted
+    assert group == snapshot

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pyheos import command as c
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.message import HeosMessage
 from pyheos.types import AddCriteriaType, MediaType
 
@@ -39,7 +40,7 @@ class QueueItem:
 
 
 @dataclass(init=False)
-class Media:
+class Media(RemoveHeosFieldABC):
     """
     Define a base media item.
 
@@ -89,18 +90,6 @@ class MediaMusicSource(Media):
         self.image_url = data[c.ATTR_IMAGE_URL]
         self.available = data[c.ATTR_AVAILABLE] == c.VALUE_TRUE
         self.service_username = data.get(c.ATTR_SERVICE_USER_NAME)
-
-    def clone(self) -> "MediaMusicSource":
-        """Create a new instance from the current instance."""
-        return MediaMusicSource(
-            source_id=self.source_id,
-            name=self.name,
-            type=self.type,
-            image_url=self.image_url,
-            available=self.available,
-            service_username=self.service_username,
-            heos=self.heos,
-        )
 
     async def refresh(self) -> None:
         """Refresh the instance with the latest data."""
@@ -160,22 +149,6 @@ class MediaItem(Media):
             album=data.get(c.ATTR_ALBUM),
             album_id=data.get(c.ATTR_ALBUM_ID),
             heos=heos,
-        )
-
-    def clone(self) -> "MediaItem":
-        return MediaItem(
-            source_id=self.source_id,
-            name=self.name,
-            type=self.type,
-            image_url=self.image_url,
-            playable=self.playable,
-            browsable=self.browsable,
-            container_id=self.container_id,
-            media_id=self.media_id,
-            artist=self.artist,
-            album=self.album,
-            album_id=self.album_id,
-            heos=self.heos,
         )
 
     async def browse(
@@ -246,7 +219,7 @@ class ServiceOption:
 
 
 @dataclass
-class BrowseResult:
+class BrowseResult(RemoveHeosFieldABC):
     """Define the result of a browse operation."""
 
     count: int

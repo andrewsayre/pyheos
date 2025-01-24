@@ -3,6 +3,7 @@
 from typing import Any
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import (
@@ -27,24 +28,15 @@ from pyheos.const import (
 )
 from pyheos.heos import Heos, HeosOptions
 from pyheos.media import MediaMusicSource
-from pyheos.types import MediaType
 from tests import calls_command, value
 from tests.common import MediaMusicSources
 
 
 @calls_command("browse.get_source_info", {c.ATTR_SOURCE_ID: 123456})
-async def test_get_music_source_by_id(heos: Heos) -> None:
+async def test_get_music_source_by_id(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test retrieving music source by id."""
     source = await heos.get_music_source_info(123456)
-    assert source.source_id == 1
-    assert source.name == "Pandora"
-    assert (
-        source.image_url
-        == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
-    )
-    assert source.type == MediaType.MUSIC_SERVICE
-    assert source.available
-    assert source.service_username == "email@email.com"
+    assert source == snapshot
 
 
 @calls_command("browse.get_music_sources")
@@ -94,16 +86,10 @@ async def test_get_music_source_info_invalid_parameters_raises(
 
 
 @calls_command("browse.get_search_criteria", {c.ATTR_SOURCE_ID: MUSIC_SOURCE_TIDAL})
-async def test_get_search_criteria(heos: Heos) -> None:
+async def test_get_search_criteria(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test retrieving search criteria."""
     criteria = await heos.get_search_criteria(MUSIC_SOURCE_TIDAL)
-    assert len(criteria) == 4
-    item = criteria[2]
-    assert item.name == "Track"
-    assert item.criteria_id == 3
-    assert item.wildcard is False
-    assert item.container_id == "SEARCHED_TRACKS-"
-    assert item.playable is True
+    assert criteria == snapshot
 
 
 @calls_command(
@@ -114,17 +100,10 @@ async def test_get_search_criteria(heos: Heos) -> None:
         c.ATTR_SEARCH: "Tangerine Rays",
     },
 )
-async def test_search(heos: Heos) -> None:
+async def test_search(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the search method."""
-
     result = await heos.search(MUSIC_SOURCE_TIDAL, "Tangerine Rays", 3)
-
-    assert result.source_id == MUSIC_SOURCE_TIDAL
-    assert result.criteria_id == 3
-    assert result.search == "Tangerine Rays"
-    assert result.returned == 15
-    assert result.count == 15
-    assert len(result.items) == 15
+    assert result == snapshot
 
 
 @pytest.mark.parametrize(
@@ -221,23 +200,10 @@ async def test_delete_playlist(heos: Heos) -> None:
         c.ATTR_CONTAINER_ID: 123456,
     },
 )
-async def test_retrieve_metadata(heos: Heos) -> None:
+async def test_retrieve_metadata(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test deleting a playlist."""
     result = await heos.retrieve_metadata(MUSIC_SOURCE_NAPSTER, "123456")
-    assert result.source_id == MUSIC_SOURCE_NAPSTER
-    assert result.container_id == "123456"
-    assert result.returned == 1
-    assert result.count == 1
-    assert len(result.metadata) == 1
-    metadata = result.metadata[0]
-    assert metadata.album_id == "7890"
-    assert len(metadata.images) == 2
-    image = metadata.images[0]
-    assert (
-        image.image_url
-        == "http://resources.wimpmusic.com/images/fbfe5e8b/b775/4d97/9053/8f0ac7daf4fd/640x640.jpg"
-    )
-    assert image.width == 640
+    assert result == snapshot
 
 
 @calls_command(
@@ -713,22 +679,14 @@ async def test_set_sevice_option_invalid_add_favorite_raises(
         c.ATTR_SEARCH_CRITERIA_ID: "0,1,2,3",
     },
 )
-async def test_multi_search(heos: Heos) -> None:
+async def test_multi_search(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the multi-search c."""
     result = await heos.multi_search(
         "Tangerine Rays",
         [1, 4, 8, 13, 10],
         [0, 1, 2, 3],
     )
-
-    assert result.search == "Tangerine Rays"
-    assert result.source_ids == [1, 4, 8, 13, 10]
-    assert result.criteria_ids == [0, 1, 2, 3]
-    assert result.returned == 74
-    assert result.count == 74
-    assert len(result.items) == 74
-    assert len(result.statistics) == 4
-    assert len(result.errors) == 2
+    assert result == snapshot
 
 
 async def test_multi_search_invalid_search_rasis() -> None:

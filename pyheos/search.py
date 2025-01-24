@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Optional, cast
 
 from pyheos import command as c
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.media import MediaItem
 from pyheos.message import HeosMessage
 
@@ -38,7 +39,7 @@ class SearchCriteria:
 
 
 @dataclass
-class SearchResult:
+class SearchResult(RemoveHeosFieldABC):
     """Define the search result."""
 
     source_id: int
@@ -71,7 +72,7 @@ class SearchResult:
 
 
 @dataclass
-class MultiSearchResult:
+class MultiSearchResult(RemoveHeosFieldABC):
     """Define the results of a multi-search."""
 
     source_ids: Sequence[int]
@@ -91,14 +92,14 @@ class MultiSearchResult:
         """Create a new instance from a message."""
         source_ids = message.get_message_value(c.ATTR_SOURCE_ID).split(",")
         criteria_ids = message.get_message_value(c.ATTR_SEARCH_CRITERIA_ID).split(",")
-        statisics = SearchStatistic._from_string(
+        statistics = SearchStatistic._from_string(
             message.get_message_value(c.ATTR_STATS)
         )
         items: list[MediaItem] = []
         # In order to determine the source_id of the result, we match up the index with how many items were returned for a given source
         payload = cast(list[dict[str, str]], message.payload)
         index = 0
-        for stat in statisics:
+        for stat in statistics:
             assert stat.returned is not None
             for _ in range(stat.returned):
                 items.append(
@@ -114,7 +115,7 @@ class MultiSearchResult:
             returned=message.get_message_value_int(c.ATTR_RETURNED),
             count=message.get_message_value_int(c.ATTR_COUNT),
             items=items,
-            statistics=statisics,
+            statistics=statistics,
             errors=SearchStatistic._from_string(
                 message.get_message_value(c.ATTR_ERROR_NUMBER)
             ),

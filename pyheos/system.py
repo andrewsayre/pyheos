@@ -1,7 +1,6 @@
 """Define the System module."""
 
-from dataclasses import dataclass
-from functools import cached_property
+from dataclasses import dataclass, field
 
 from pyheos import command as c
 from pyheos.types import NetworkType
@@ -51,18 +50,14 @@ class HeosSystem:
     signed_in_username: str | None
     host: HeosHost
     hosts: list[HeosHost]
+    is_signed_in: bool = field(init=False)
+    preferred_hosts: list[HeosHost] = field(init=False)
+    connected_to_preferred_host: bool = field(init=False)
 
-    @property
-    def is_signed_in(self) -> bool:
-        """Return whether the system is signed in."""
-        return self.signed_in_username is not None
-
-    @cached_property
-    def preferred_hosts(self) -> list[HeosHost]:
-        """Return the preferred hosts."""
-        return list([host for host in self.hosts if host.network == NetworkType.WIRED])
-
-    @cached_property
-    def connected_to_preferred_host(self) -> bool:
-        """Return whether the system is connected to a host."""
-        return self.host in self.preferred_hosts
+    def __post_init__(self) -> None:
+        """Post initialize the system."""
+        self.is_signed_in = self.signed_in_username is not None
+        self.preferred_hosts = list(
+            [host for host in self.hosts if host.network == NetworkType.WIRED]
+        )
+        self.connected_to_preferred_host = self.host in self.preferred_hosts

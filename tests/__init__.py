@@ -350,9 +350,9 @@ class MockHeosDevice:
             if matcher.is_match(target_command, target_args, increment=False):
                 matcher.assert_called()
                 return
-        assert (
-            False
-        ), f"Command was not registered: {target_command} with args {target_args}."
+        assert False, (
+            f"Command was not registered: {target_command} with args {target_args}."
+        )
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -483,9 +483,9 @@ class CommandMatcher:
 
     def assert_called(self) -> None:
         """Assert that the command was called."""
-        assert (
-            self.match_count
-        ), f"Command {self.command} was not called with arguments {self._args}."
+        assert self.match_count, (
+            f"Command {self.command} was not called with arguments {self._args}."
+        )
 
 
 class ConnectionLog:

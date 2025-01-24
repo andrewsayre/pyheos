@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.command import optional_int, parse_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
@@ -184,7 +185,7 @@ class PlayMode:
 
 
 @dataclass
-class HeosPlayer:
+class HeosPlayer(RemoveHeosFieldABC):
     """Define a HEOS player."""
 
     name: str = field(repr=True, hash=False, compare=False)

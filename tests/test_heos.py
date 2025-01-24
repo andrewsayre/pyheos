@@ -5,6 +5,7 @@ import re
 from typing import Any
 
 import pytest
+from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
 from pyheos.const import (
@@ -21,10 +22,8 @@ from pyheos.const import (
     EVENT_SHUFFLE_MODE_CHANGED,
     EVENT_SOURCES_CHANGED,
     EVENT_USER_CHANGED,
-    INPUT_CABLE_SAT,
     MUSIC_SOURCE_AUX_INPUT,
     MUSIC_SOURCE_FAVORITES,
-    MUSIC_SOURCE_PANDORA,
     MUSIC_SOURCE_PLAYLISTS,
     MUSIC_SOURCE_TUNEIN,
 )
@@ -39,18 +38,14 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos, HeosOptions, PlayerUpdateResult
 from pyheos.media import MediaItem, MediaMusicSource
-from pyheos.player import CONTROLS_ALL, CONTROLS_FORWARD_ONLY, HeosPlayer
+from pyheos.player import HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,
-    LineOutLevelType,
-    MediaType,
-    NetworkType,
     PlayState,
     RepeatType,
     SignalHeosEvent,
     SignalType,
-    VolumeControlType,
 )
 from tests.common import MediaItems
 
@@ -75,29 +70,12 @@ async def test_init() -> None:
 
 
 @calls_command("player.get_players")
-async def test_validate_connection(mock_device: MockHeosDevice) -> None:
+async def test_validate_connection(
+    mock_device: MockHeosDevice, snapshot: SnapshotAssertion
+) -> None:
     """Test get_system_info method returns system info."""
     system_info = await Heos.validate_connection("127.0.0.1")
-
-    assert system_info.signed_in_username == "example@example.com"
-    assert system_info.is_signed_in
-    assert system_info.host.ip_address == "127.0.0.1"
-    assert system_info.connected_to_preferred_host is True
-    assert [system_info.host] == system_info.preferred_hosts
-
-    assert system_info.hosts[0].ip_address == "127.0.0.1"
-    assert system_info.hosts[0].model == "HEOS Drive"
-    assert system_info.hosts[0].name == "Back Patio"
-    assert system_info.hosts[0].network == NetworkType.WIRED
-    assert system_info.hosts[0].serial == "B1A2C3K"
-    assert system_info.hosts[0].version == "1.493.180"
-
-    assert system_info.hosts[1].ip_address == "127.0.0.2"
-    assert system_info.hosts[1].model == "HEOS Drive"
-    assert system_info.hosts[1].name == "Front Porch"
-    assert system_info.hosts[1].network == NetworkType.WIFI
-    assert system_info.hosts[1].serial is None
-    assert system_info.hosts[1].version == "1.493.180"
+    assert system_info == snapshot
 
 
 async def test_connect(mock_device: MockHeosDevice) -> None:
@@ -486,28 +464,11 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 
 
 @calls_player_commands()
-async def test_get_players(heos: Heos) -> None:
+async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get_players method load players."""
-    await heos.get_players()
-    # Assert players loaded
-    assert len(heos.players) == 2
-    player = heos.players[1]
-    assert player.player_id == 1
-    assert player.group_id == 2
-    assert player.name == "Back Patio"
-    assert player.ip_address == "127.0.0.1"
-    assert player.line_out == LineOutLevelType.FIXED
-    assert player.control == VolumeControlType.IR
-    assert player.model == "HEOS Drive"
-    assert player.network == NetworkType.WIRED
-    assert player.state == PlayState.STOP
-    assert player.version == "1.493.180"
-    assert player.volume == 36
-    assert not player.is_muted
-    assert player.repeat == RepeatType.OFF
-    assert not player.shuffle
-    assert player.available
-    assert player.heos == heos
+    players = await heos.get_players()
+
+    assert players == snapshot
 
 
 @calls_commands(
@@ -639,32 +600,13 @@ async def test_player_state_changed_event(
 
 @calls_player_commands()
 async def test_player_now_playing_changed_event(
-    mock_device: MockHeosDevice, heos: Heos
+    mock_device: MockHeosDevice, heos: Heos, snapshot: SnapshotAssertion
 ) -> None:
     """Test now playing updates when event is received."""
     # assert current state
     await heos.get_players()
     player = heos.players[1]
-    now_playing = player.now_playing_media
-    assert now_playing.type == "station"
-    assert now_playing.song == "Disney (Children's) Radio"
-    assert now_playing.station == "Disney (Children's) Radio"
-    assert now_playing.album == "Album"
-    assert now_playing.artist == "Artist"
-    assert (
-        now_playing.image_url
-        == "http://cont-5.p-cdn.us/images/public/int/6/1/1/9/050087149116_500W_500H.jpg"
-    )
-    assert now_playing.album_id == "123456"
-    assert now_playing.media_id == "4256592506324148495"
-    assert now_playing.queue_id == 1
-    assert now_playing.source_id == 13
-    assert now_playing.supported_controls == CONTROLS_ALL
-    assert len(now_playing.options) == 3
-    option = now_playing.options[2]
-    assert option.id == 19
-    assert option.name == "Add to HEOS Favorites"
-    assert option.context == "play"
+    assert player.now_playing_media == snapshot(name="current_state")
 
     # Attach dispatch handler
     signal = asyncio.Event()
@@ -691,25 +633,7 @@ async def test_player_now_playing_changed_event(
     await signal.wait()
     # Assert state changed
     command.assert_called()
-    assert now_playing.album == "I've Been Waiting (Single) (Explicit)"
-    assert now_playing.type == "station"
-    assert now_playing.album_id == "1"
-    assert now_playing.artist == "Lil Peep & ILoveMakonnen"
-    assert now_playing.image_url == "http://media/url"
-    assert now_playing.media_id == "2PxuY99Qty"
-    assert now_playing.queue_id == 1
-    assert now_playing.source_id == 1
-    assert now_playing.song == "I've Been Waiting (feat. Fall Out Boy)"
-    assert now_playing.station == "Today's Hits Radio"
-    assert now_playing.current_position is None
-    assert now_playing.current_position_updated is None
-    assert now_playing.duration is None
-    assert now_playing.supported_controls == CONTROLS_FORWARD_ONLY
-    assert len(now_playing.options) == 3
-    option = now_playing.options[2]
-    assert option.id == 20
-    assert option.name == "Remove from HEOS Favorites"
-    assert option.context == "play"
+    assert player.now_playing_media == snapshot(name="changed_state")
 
 
 @calls_player_commands()
@@ -1165,15 +1089,11 @@ async def test_user_changed_event(mock_device: MockHeosDevice, heos: Heos) -> No
     {c.ATTR_SOURCE_ID: MUSIC_SOURCE_FAVORITES},
 )
 async def test_browse_media_music_source(
-    heos: Heos,
-    media_music_source: MediaMusicSource,
+    heos: Heos, media_music_source: MediaMusicSource, snapshot: SnapshotAssertion
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
     result = await heos.browse_media(media_music_source)
-    assert result.source_id == MUSIC_SOURCE_FAVORITES
-    assert result.returned == 3
-    assert result.count == 3
-    assert len(result.items) == 3
+    assert result == snapshot
 
 
 async def test_browse_media_music_source_unavailable_rasises(
@@ -1193,15 +1113,12 @@ async def test_browse_media_music_source_unavailable_rasises(
         c.ATTR_RANGE: "0,13",
     },
 )
-async def test_browse_media_item(heos: Heos, media_item_album: MediaItem) -> None:
+async def test_browse_media_item(
+    heos: Heos, media_item_album: MediaItem, snapshot: SnapshotAssertion
+) -> None:
     """Test browse with an not browsable MediaItem raises."""
     result = await heos.browse_media(media_item_album, 0, 13)
-
-    assert result.source_id == media_item_album.source_id
-    assert result.container_id == media_item_album.container_id
-    assert result.count == 14
-    assert result.returned == 14
-    assert len(result.items) == 14
+    assert result == snapshot
 
 
 async def test_browse_media_item_not_browsable_raises(
@@ -1297,19 +1214,10 @@ async def test_play_media_station_missing_media_id_raises(
 
 
 @calls_command("browse.get_music_sources", {})
-async def test_get_music_sources(heos: Heos) -> None:
+async def test_get_music_sources(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the heos connect method."""
     sources = await heos.get_music_sources()
-    assert len(sources) == 15
-    pandora = sources[MUSIC_SOURCE_PANDORA]
-    assert pandora.source_id == MUSIC_SOURCE_PANDORA
-    assert (
-        pandora.image_url
-        == "https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png"
-    )
-    assert pandora.type == MediaType.MUSIC_SERVICE
-    assert pandora.available
-    assert pandora.service_username == "test@test.com"
+    assert sources == snapshot
 
 
 @calls_commands(
@@ -1320,53 +1228,30 @@ async def test_get_music_sources(heos: Heos) -> None:
     CallCommand("browse.browse_theater_receiver", {c.ATTR_SOURCE_ID: 546978854}),
     CallCommand("browse.browse_heos_drive", {c.ATTR_SOURCE_ID: -263109739}),
 )
-async def test_get_input_sources(heos: Heos) -> None:
+async def test_get_input_sources(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get input sources method."""
     sources = await heos.get_input_sources()
-    assert len(sources) == 18
-    source = sources[0]
-    assert source.playable
-    assert source.type == MediaType.STATION
-    assert source.name == "Theater Receiver - CBL/SAT"
-    assert source.media_id == INPUT_CABLE_SAT
-    assert source.source_id == 546978854
+    assert sources == snapshot
 
 
 @calls_command(
     "browse.browse_favorites",
     {c.ATTR_SOURCE_ID: MUSIC_SOURCE_FAVORITES},
 )
-async def test_get_favorites(heos: Heos) -> None:
+async def test_get_favorites(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get favorites method."""
     sources = await heos.get_favorites()
-    assert len(sources) == 3
-    assert sorted(sources.keys()) == [1, 2, 3]
-    fav = sources[1]
-    assert fav.playable
-    assert fav.name == "Thumbprint Radio"
-    assert fav.media_id == "3790855220637622543"
-    assert (
-        fav.image_url
-        == "http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg"
-    )
-    assert fav.type == MediaType.STATION
+    assert sources == snapshot
 
 
 @calls_command(
     "browse.browse_playlists",
     {c.ATTR_SOURCE_ID: MUSIC_SOURCE_PLAYLISTS},
 )
-async def test_get_playlists(heos: Heos) -> None:
+async def test_get_playlists(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get playlists method."""
     sources = await heos.get_playlists()
-    assert len(sources) == 1
-    playlist = sources[0]
-    assert playlist.playable
-    assert playlist.container_id == "171566"
-    assert playlist.name == "Rockin Songs"
-    assert playlist.image_url == ""
-    assert playlist.type == MediaType.PLAYLIST
-    assert playlist.source_id == MUSIC_SOURCE_PLAYLISTS
+    assert sources == snapshot
 
 
 @calls_command(
@@ -1449,18 +1334,10 @@ async def test_sign_in_updates_credential(
 
 
 @calls_group_commands()
-async def test_get_groups(heos: Heos) -> None:
+async def test_get_groups(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get groups method."""
     groups = await heos.get_groups()
-    assert len(groups) == 1
-    group = groups[1]
-    assert group.name == "Back Patio + Front Porch"
-    assert group.group_id == 1
-    assert group.lead_player_id == 1
-    assert len(group.member_player_ids) == 1
-    assert group.member_player_ids[0] == 2
-    assert group.volume == 42
-    assert not group.is_muted
+    assert groups == snapshot
 
 
 @calls_commands(
@@ -1468,15 +1345,10 @@ async def test_get_groups(heos: Heos) -> None:
     CallCommand("group.get_volume", {c.ATTR_GROUP_ID: -263109739}),
     CallCommand("group.get_mute", {c.ATTR_GROUP_ID: -263109739}),
 )
-async def test_get_group_info_by_id(heos: Heos) -> None:
+async def test_get_group_info_by_id(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test retrieving group info by group id."""
     group = await heos.get_group_info(-263109739)
-    assert group.name == "Zone 1 + Zone 2"
-    assert group.group_id == -263109739
-    assert group.lead_player_id == -263109739
-    assert group.member_player_ids == [845195621]
-    assert group.volume == 42
-    assert not group.is_muted
+    assert group == snapshot
 
 
 @calls_group_commands()
@@ -1494,19 +1366,16 @@ async def test_get_group_info_by_id_already_loaded(heos: Heos) -> None:
     CallCommand("group.get_volume", {c.ATTR_GROUP_ID: -263109739}),
     CallCommand("group.get_mute", {c.ATTR_GROUP_ID: -263109739}),
 )
-async def test_get_group_info_by_id_already_loaded_refresh(heos: Heos) -> None:
+async def test_get_group_info_by_id_already_loaded_refresh(
+    heos: Heos, snapshot: SnapshotAssertion
+) -> None:
     """Test retrieving group info by group id for already loaded group updates."""
     groups = await heos.get_groups()
     original_group = groups[1]
 
     group = await heos.get_group_info(1, refresh=True)
-    assert original_group == group
-    assert group.name == "Zone 1 + Zone 2"
-    assert group.group_id == -263109739
-    assert group.lead_player_id == -263109739
-    assert group.member_player_ids == [845195621]
-    assert group.volume == 42
-    assert not group.is_muted
+    assert original_group is group
+    assert group == snapshot
 
 
 @pytest.mark.parametrize(
@@ -1548,24 +1417,10 @@ async def test_update_group(heos: Heos) -> None:
 
 
 @calls_command("player.get_now_playing_media", {c.ATTR_PLAYER_ID: 1})
-async def test_get_now_playing_media(heos: Heos) -> None:
+async def test_get_now_playing_media(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test removing a group."""
     media = await heos.get_now_playing_media(1)
-
-    assert media.type == "station"
-    assert media.song == "Disney (Children's) Radio"
-    assert media.station == "Disney (Children's) Radio"
-    assert media.album == "Album"
-    assert media.artist == "Artist"
-    assert (
-        media.image_url
-        == "http://cont-5.p-cdn.us/images/public/int/6/1/1/9/050087149116_500W_500H.jpg"
-    )
-    assert media.album_id == "123456"
-    assert media.media_id == "4256592506324148495"
-    assert media.queue_id == 1
-    assert media.source_id == 13
-    assert media.supported_controls == CONTROLS_ALL
+    assert media == snapshot
 
 
 @calls_command("system.heart_beat")

@@ -5,6 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from pyheos.abc import RemoveHeosFieldABC
 from pyheos.const import DEFAULT_STEP, EVENT_GROUP_VOLUME_CHANGED
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.message import HeosMessage
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class HeosGroup:
+class HeosGroup(RemoveHeosFieldABC):
     """A group of players."""
 
     name: str
