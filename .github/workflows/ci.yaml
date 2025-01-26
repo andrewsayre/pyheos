@@ -26,6 +26,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
           uv pip install -r requirements.txt -r test-requirements.txt --upgrade --system
+      - run: pre-commit install-hooks
       - name: Spelling (codespell)
         run: pre-commit run --all-files --hook-stage manual codespell --show-diff-on-failure
       - name: Lint (Ruff)
