@@ -13,14 +13,8 @@ from pyheos import const
 from pyheos.command.connection import ConnectionMixin
 from pyheos.media import QueueItem
 from pyheos.message import HeosCommand
-from pyheos.player import (
-    HeosNowPlayingMedia,
-    HeosPlayer,
-    PlayerUpdateResult,
-    PlayMode,
-    PlayState,
-)
-from pyheos.types import RepeatType
+from pyheos.player import HeosNowPlayingMedia, HeosPlayer, PlayerUpdateResult, PlayMode
+from pyheos.types import PlayState, RepeatType
 
 if TYPE_CHECKING:
     from pyheos.heos import Heos
@@ -102,7 +96,7 @@ class PlayerCommands(ConnectionMixin):
 
         players: dict[int, HeosPlayer] = {}
         response = await self._connection.command(HeosCommand(c.COMMAND_GET_PLAYERS))
-        payload = cast(Sequence[dict], response.payload)
+        payload = cast(Sequence[dict[str, str]], response.payload)
         existing = list(self._players.values())
         for player_data in payload:
             player_id = int(player_data[c.ATTR_PLAYER_ID])
@@ -463,7 +457,7 @@ class PlayerCommands(ConnectionMixin):
         )
         return {
             int(data[c.ATTR_ID]): data[c.ATTR_NAME]
-            for data in cast(list[dict], result.payload)
+            for data in cast(list[dict[str, Any]], result.payload)
         }
 
     async def player_check_update(self, player_id: int) -> bool:

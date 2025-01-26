@@ -36,9 +36,10 @@ from pyheos.error import (
     HeosError,
 )
 from pyheos.group import HeosGroup
-from pyheos.heos import Heos, HeosOptions, PlayerUpdateResult
+from pyheos.heos import Heos
 from pyheos.media import MediaItem, MediaMusicSource
-from pyheos.player import HeosPlayer
+from pyheos.options import HeosOptions
+from pyheos.player import HeosPlayer, PlayerUpdateResult
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,

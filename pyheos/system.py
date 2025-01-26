@@ -1,6 +1,7 @@
 """Define the System module."""
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from pyheos import command as c
 from pyheos.types import NetworkType
@@ -21,7 +22,7 @@ class HeosHost:
     network: NetworkType
 
     @staticmethod
-    def _from_data(data: dict[str, str]) -> "HeosHost":
+    def _from_data(data: dict[str, Any]) -> "HeosHost":
         """Create a HeosHost object from a dictionary.
 
         Args:

@@ -27,7 +27,7 @@ repos:
     rev: v1.14.1
     hooks:
       - id: mypy
-        args: []
+        args: [--strict]
         additional_dependencies:
         - pydantic==2.10.5
         - pylint==3.3.3

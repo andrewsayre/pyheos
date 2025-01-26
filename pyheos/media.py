@@ -247,7 +247,7 @@ class BrowseResult(RemoveHeosFieldABC):
             items=list(
                 [
                     MediaItem.from_data(item, source_id, container_id, heos)
-                    for item in cast(Sequence[dict], message.payload)
+                    for item in cast(Sequence[dict[str, Any]], message.payload)
                 ]
             ),
             options=ServiceOption._from_options(message.options),
