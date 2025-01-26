@@ -1,9 +1,9 @@
 """Define the connection module."""
 
 import asyncio
-from contextlib import suppress
 import logging
 from collections.abc import Awaitable, Callable, Coroutine
+from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Final
 
