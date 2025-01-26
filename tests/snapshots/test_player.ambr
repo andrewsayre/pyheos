@@ -404,7 +404,7 @@
         <ControlType.PLAY_NEXT: 'play_next'>,
         <ControlType.PLAY_PREVIOUS: 'play_previous'>,
       ]),
-      'type': 'station',
+      'type': <MediaType.STATION: 'station'>,
     }),
     'playback_error': None,
     'player_id': -263109739,

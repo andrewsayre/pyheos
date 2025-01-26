@@ -730,7 +730,7 @@
       <ControlType.PLAY_NEXT: 'play_next'>,
       <ControlType.PLAY_PREVIOUS: 'play_previous'>,
     ]),
-    'type': 'station',
+    'type': <MediaType.STATION: 'station'>,
   })
 # ---
 # name: test_get_players
@@ -782,7 +782,7 @@
           <ControlType.PLAY_NEXT: 'play_next'>,
           <ControlType.PLAY_PREVIOUS: 'play_previous'>,
         ]),
-        'type': 'station',
+        'type': <MediaType.STATION: 'station'>,
       }),
       'playback_error': None,
       'player_id': 1,
@@ -840,7 +840,7 @@
           <ControlType.PLAY_NEXT: 'play_next'>,
           <ControlType.PLAY_PREVIOUS: 'play_previous'>,
         ]),
-        'type': 'station',
+        'type': <MediaType.STATION: 'station'>,
       }),
       'playback_error': None,
       'player_id': 2,
@@ -907,7 +907,7 @@
       <ControlType.STOP: 'stop'>,
       <ControlType.PLAY_NEXT: 'play_next'>,
     ]),
-    'type': 'station',
+    'type': <MediaType.STATION: 'station'>,
   })
 # ---
 # name: test_player_now_playing_changed_event[current_state]
@@ -948,7 +948,7 @@
       <ControlType.PLAY_NEXT: 'play_next'>,
       <ControlType.PLAY_PREVIOUS: 'play_previous'>,
     ]),
-    'type': 'station',
+    'type': <MediaType.STATION: 'station'>,
   })
 # ---
 # name: test_validate_connection
