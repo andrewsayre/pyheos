@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Final
@@ -35,15 +35,15 @@ class ConnectionBase:
         self._state: ConnectionState = ConnectionState.DISCONNECTED
         self._writer: asyncio.StreamWriter | None = None
         self._pending_command_event = ResponseEvent()
-        self._running_tasks: set[asyncio.Task] = set()
+        self._running_tasks: set[asyncio.Task[None]] = set()
         self._last_activity: datetime = datetime.now()
         self._command_lock = asyncio.Lock()
 
-        self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable]] = []
-        self._on_connected_callbacks: list[Callable[[], Awaitable]] = []
-        self._on_disconnected_callbacks: list[Callable[[bool], Awaitable]] = []
+        self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable[None]]] = []
+        self._on_connected_callbacks: list[Callable[[], Awaitable[None]]] = []
+        self._on_disconnected_callbacks: list[Callable[[bool], Awaitable[None]]] = []
         self._on_command_error_callbacks: list[
-            Callable[[CommandFailedError], Awaitable]
+            Callable[[CommandFailedError], Awaitable[None]]
         ] = []
 
     @property
@@ -51,7 +51,7 @@ class ConnectionBase:
         """Get the current state of the connection."""
         return self._state
 
-    def add_on_event(self, callback: Callable[[HeosMessage], Awaitable]) -> None:
+    def add_on_event(self, callback: Callable[[HeosMessage], Awaitable[None]]) -> None:
         """Add a callback to be invoked when an event is received."""
         self._on_event_callbacks.append(callback)
 
@@ -60,7 +60,7 @@ class ConnectionBase:
         for callback in self._on_event_callbacks:
             await callback(message)
 
-    def add_on_connected(self, callback: Callable[[], Awaitable]) -> None:
+    def add_on_connected(self, callback: Callable[[], Awaitable[None]]) -> None:
         """Add a callback to be invoked when connected."""
         self._on_connected_callbacks.append(callback)
 
@@ -69,7 +69,7 @@ class ConnectionBase:
         for callback in self._on_connected_callbacks:
             await callback()
 
-    def add_on_disconnected(self, callback: Callable[[bool], Awaitable]) -> None:
+    def add_on_disconnected(self, callback: Callable[[bool], Awaitable[None]]) -> None:
         """Add a callback to be invoked when connected."""
         self._on_disconnected_callbacks.append(callback)
 
@@ -79,7 +79,7 @@ class ConnectionBase:
             await callback(due_to_error)
 
     def add_on_command_error(
-        self, callback: Callable[[CommandFailedError], Awaitable]
+        self, callback: Callable[[CommandFailedError], Awaitable[None]]
     ) -> None:
         """Add a callback to be invoked when a command error occurs."""
         self._on_command_error_callbacks.append(callback)
@@ -89,7 +89,7 @@ class ConnectionBase:
         for callback in self._on_command_error_callbacks:
             await callback(error)
 
-    def _register_task(self, future: Coroutine) -> None:
+    def _register_task(self, future: Awaitable[None]) -> None:
         """Register a task that is running in the background, so it can be canceled and reset later."""
         task = asyncio.ensure_future(future)
         self._running_tasks.add(task)

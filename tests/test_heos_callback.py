@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from pyheos.heos import Heos, HeosOptions
+from pyheos.heos import Heos
+from pyheos.options import HeosOptions
 from pyheos.types import SignalHeosEvent, SignalType
 
 

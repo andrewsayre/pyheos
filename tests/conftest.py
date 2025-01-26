@@ -9,8 +9,9 @@ import pytest_asyncio
 from syrupy.assertion import SnapshotAssertion
 
 from pyheos.group import HeosGroup
-from pyheos.heos import Heos, HeosOptions
+from pyheos.heos import Heos
 from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.options import HeosOptions
 from pyheos.player import HeosPlayer
 from pyheos.types import LineOutLevelType, NetworkType
 from tests.common import MediaItems, MediaMusicSources
@@ -52,7 +53,7 @@ async def heos_fixture(mock_device: MockHeosDevice) -> AsyncGenerator[Heos]:
 
 
 @pytest.fixture
-def handler() -> Callable:
+def handler() -> Callable[..., Any]:
     """Fixture handler to mock in the dispatcher."""
 
     def target(*args: Any, **kwargs: Any) -> None:
@@ -65,7 +66,7 @@ def handler() -> Callable:
 
 
 @pytest.fixture
-def async_handler() -> Callable[..., Coroutine]:
+def async_handler() -> Callable[..., Coroutine[Any, Any, None]]:
     """Fixture async handler to mock in the dispatcher."""
 
     async def target(*args: Any, **kwargs: Any) -> None:

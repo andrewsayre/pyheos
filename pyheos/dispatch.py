@@ -5,24 +5,20 @@ import functools
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import Any, Final, TypeVar
+from typing import Any, Final
 
 _LOGGER: Final = logging.getLogger(__name__)
 
 TargetType = Callable[..., Any]
 DisconnectType = Callable[[], None]
 ConnectType = Callable[[str, TargetType], DisconnectType]
-SendType = Callable[..., Sequence[asyncio.Future]]
-
-TEvent = TypeVar("TEvent", bound=str)
-TPlayerId = TypeVar("TPlayerId", bound=int)
-TGroupId = TypeVar("TGroupId", bound=int)
+SendType = Callable[..., Sequence[asyncio.Future[Any]]]
 
 CallbackType = Callable[[], Any]
-EventCallbackType = Callable[[TEvent], Any]
-ControllerEventCallbackType = Callable[[TEvent, Any], Any]
-PlayerEventCallbackType = Callable[[TPlayerId, TEvent], Any]
-GroupEventCallbackType = Callable[[TGroupId, TEvent], Any]
+EventCallbackType = Callable[[str], Any]
+ControllerEventCallbackType = Callable[[str, Any], Any]
+PlayerEventCallbackType = Callable[[int, str], Any]
+GroupEventCallbackType = Callable[[int, str], Any]
 
 
 def _is_coroutine_function(func: TargetType) -> bool:
@@ -81,12 +77,12 @@ class Dispatcher:
     ) -> None:
         """Create a new instance of the dispatch component."""
         self._signal_prefix = signal_prefix
-        self._signals: dict[str, list] = defaultdict(list)
+        self._signals: dict[str, list[TargetType]] = defaultdict(list)
         self._loop = loop or asyncio.get_running_loop()
         self._connect = connect or self._default_connect
         self._send = send or self._default_send
-        self._disconnects: list[Callable] = []
-        self._running_tasks: set[asyncio.Future] = set()
+        self._disconnects: list[DisconnectType] = []
+        self._running_tasks: set[asyncio.Future[Any]] = set()
 
     def connect(self, signal: str, target: TargetType) -> DisconnectType:
         """Connect function to signal.  Must be ran in the event loop."""
@@ -94,7 +90,7 @@ class Dispatcher:
         self._disconnects.append(disconnect)
         return disconnect
 
-    def send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
+    def send(self, signal: str, *args: Any) -> Sequence[asyncio.Future[Any]]:
         """Fire a signal.  Must be ran in the event loop."""
         return self._send(self._signal_prefix + signal, *args)
 
@@ -137,7 +133,7 @@ class Dispatcher:
 
         return remove_dispatcher
 
-    def _log_target_exception(self, future: asyncio.Future) -> None:
+    def _log_target_exception(self, future: asyncio.Future[Any]) -> None:
         """Log the exception from the target, if raised."""
         if not future.cancelled() and future.exception():
             _LOGGER.exception(
@@ -146,7 +142,7 @@ class Dispatcher:
                 exc_info=future.exception(),
             )
 
-    def _default_send(self, signal: str, *args: Any) -> Sequence[asyncio.Future]:
+    def _default_send(self, signal: str, *args: Any) -> Sequence[asyncio.Future[Any]]:
         """Fire a signal.  Must be ran in the event loop."""
         targets = self._signals[signal]
         futures = []
@@ -158,7 +154,7 @@ class Dispatcher:
             futures.append(task)
         return futures
 
-    def _call_target(self, target: Callable, *args: Any) -> asyncio.Future:
+    def _call_target(self, target: TargetType, *args: Any) -> asyncio.Future[Any]:
         if _is_coroutine_function(target):
             return self._loop.create_task(target(*args))
         return self._loop.run_in_executor(None, target, *args)

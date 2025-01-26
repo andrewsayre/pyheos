@@ -80,7 +80,7 @@ class BrowseCommands(ConnectionMixin):
                 HeosCommand(c.COMMAND_BROWSE_GET_SOURCES, params)
             )
             self._music_sources.clear()
-            for data in cast(Sequence[dict], message.payload):
+            for data in cast(Sequence[dict[str, Any]], message.payload):
                 source = MediaMusicSource.from_data(data, cast("Heos", self))
                 self._music_sources[source.source_id] = source
             self._music_sources_loaded = True

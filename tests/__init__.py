@@ -68,7 +68,7 @@ class ArgumentValue:
         return arg_value
 
 
-def calls_commands(*commands: CallCommand) -> Callable:
+def calls_commands(*commands: CallCommand) -> Callable[..., Any]:
     """
     Decorator that registers commands prior to test execution.
 
@@ -76,7 +76,7 @@ def calls_commands(*commands: CallCommand) -> Callable:
         commands: The commands to register.
     """
 
-    def wrapper(func: Callable) -> Callable:
+    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         async def wrapped(*args: Any, **kwargs: Any) -> Any:
             # Build a list of commands that match the when conditions
@@ -118,7 +118,7 @@ def calls_commands(*commands: CallCommand) -> Callable:
                 )
 
             # Register commands
-            assert_list: list[Callable] = []
+            assert_list: list[Callable[..., None]] = []
 
             for command in matched_commands:
                 # Get the fixture command
@@ -174,7 +174,7 @@ def calls_command(
     when: dict[str, Any] | None = None,
     replace: bool = False,
     add_command_under_process: bool = False,
-) -> Callable:
+) -> Callable[..., Any]:
     """
     Decorator that registers a command prior to test execution.
 
@@ -200,7 +200,7 @@ def calls_command(
 
 def calls_player_commands(
     player_ids: Sequence[int] = (1, 2), *additional: CallCommand
-) -> Callable:
+) -> Callable[..., Any]:
     """
     Decorator that registers player commands and any optional additional commands.
     """
@@ -223,7 +223,7 @@ def calls_player_commands(
     return calls_commands(*commands)
 
 
-def calls_group_commands(*additional: CallCommand) -> Callable:
+def calls_group_commands(*additional: CallCommand) -> Callable[..., Any]:
     commands = [
         CallCommand("group.get_groups"),
         CallCommand("group.get_volume", {c.ATTR_GROUP_ID: 1}),
@@ -456,14 +456,14 @@ class CommandMatcher:
             self.match_count += 1
         return True
 
-    async def get_response(self, query: dict) -> list[str]:
+    async def get_response(self, query: dict[str, str]) -> list[str]:
         """Get the response body."""
         responses = []
         for fixture in self.responses:
             responses.append(await self._get_response(fixture, query))
         return responses
 
-    async def _get_response(self, response: str, query: dict) -> str:
+    async def _get_response(self, response: str, query: dict[str, str]) -> str:
         response = await get_fixture(response)
         keys = {
             c.ATTR_PLAYER_ID: "{player_id}",
