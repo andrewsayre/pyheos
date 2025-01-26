@@ -380,11 +380,17 @@ async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
 
     # Assert reconnects once server is back up and fires connected
     # Force reconnect timeout
-    await asyncio.sleep(0.5)  # type: ignore[unreachable]
+    reconnect_task = next(  # type: ignore[unreachable]
+        task
+        for task in heos._connection._running_tasks
+        if task.get_name() == "Reconnect"
+    )
+    await asyncio.sleep(0.5)
     await mock_device.start()
     await connect_signal.wait()
     assert heos.connection_state == ConnectionState.CONNECTED
 
+    await reconnect_task  # Ensures task completes, otherwise disconnect cancels it
     await heos.disconnect()
 
 
