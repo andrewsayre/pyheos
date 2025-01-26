@@ -1,6 +1,7 @@
 codespell==2.4.0
 coveralls==4.0.1
 mypy==1.14.1
+pre-commit==4.1.0
 pydantic==2.10.5
 pylint==3.3.3
 pylint-per-file-ignores==1.4.0
