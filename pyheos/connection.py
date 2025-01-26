@@ -1,6 +1,7 @@
 """Define the connection module."""
 
 import asyncio
+from contextlib import suppress
 import logging
 from collections.abc import Awaitable, Callable, Coroutine
 from datetime import datetime, timedelta
@@ -301,13 +302,10 @@ class AutoReconnectingConnection(ConnectionBase):
         while self._state == ConnectionState.CONNECTED:
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
-                try:
+                with suppress(CommandError):
                     await self.command(HeosCommand(COMMAND_HEART_BEAT))
-                except (CommandError, asyncio.TimeoutError):
-                    # Exit the task, as the connection will be reset/closed.
-                    return
             # Sleep until next interval
-            await asyncio.sleep(float(self._heart_beat_interval / 2))
+            await asyncio.sleep(self._heart_beat_interval)
 
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect after disconnection from error."""
