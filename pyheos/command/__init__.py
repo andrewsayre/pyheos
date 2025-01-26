@@ -166,22 +166,31 @@ def optional_int(value: str | None) -> int | None:
     return None
 
 
-def parse_enum(
-    key: str, data: dict[str, Any], enum_type: type[TEnum], default: TEnum
-) -> TEnum:
-    """Parse an enum value from the provided data. This is a safe operation that will return the default value if the key is missing or the value is not recognized."""
+def parse_optional_enum(
+    key: str, data: dict[str, Any], enum_type: type[TEnum]
+) -> TEnum | None:
+    """Parse an enum value from the provided data. This is a safe operation that will return None if the key is missing or the value is not recognized."""
     value = data.get(key)
     if value is None:
-        return default
+        return None
     try:
         return enum_type(value)
     except ValueError:
         _LOGGER.warning(
-            "Unrecognized '%s' value: '%s', using default value: '%s'. Full data: %s. %s",
+            "Unrecognized '%s' value: '%s'. Full data: %s. %s",
             key,
             value,
-            default,
             data,
             REPORT_ISSUE_TEXT,
         )
+        return None
+
+
+def parse_enum(
+    key: str, data: dict[str, Any], enum_type: type[TEnum], default: TEnum
+) -> TEnum:
+    """Parse an enum value from the provided data. This is a safe operation that will return the default value if the key is missing or the value is not recognized."""
+    value = parse_optional_enum(key, data, enum_type)
+    if value is None:
         return default
+    return value

@@ -38,9 +38,9 @@ class GroupCommands(ConnectionMixin):
         References:
             4.3.1 Get Groups"""
         if not self._groups_loaded or refresh:
-            groups = {}
+            groups: dict[int, HeosGroup] = {}
             result = await self._connection.command(HeosCommand(c.COMMAND_GET_GROUPS))
-            payload = cast(Sequence[dict], result.payload)
+            payload = cast(Sequence[dict[str, Any]], result.payload)
             for data in payload:
                 group = HeosGroup._from_data(data, cast("Heos", self))
                 groups[group.group_id] = group

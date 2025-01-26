@@ -1,0 +1,39 @@
+repos:
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.0
+    hooks:
+      - id: codespell
+        args:
+          - --skip="./.*,*.csv,*.json,*.ambr"
+        exclude_types: [csv, json, html]
+        exclude: ^tests/fixtures/|^tests/snapshots/
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: ruff
+        args:
+          - --extend-select=I
+          - --fix
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        require_serial: true
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        args: [--strict]
+        additional_dependencies:
+        - pydantic==2.10.5
+        - pylint==3.3.3
+        - pylint-per-file-ignores==1.4.0
+        - pytest==8.3.4
+        - pytest-asyncio==0.25.2
+        - pytest-cov==6.0.0
+        - pytest-timeout==2.3.1
+        - syrupy==4.8.1

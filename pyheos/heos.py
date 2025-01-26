@@ -43,7 +43,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
         Args:
             host: A host name or IP address of a HEOS-capable device.
-            timeout: The timeout in seconds for opening a connectoin and issuing commands to the device.
+            timeout: The timeout in seconds for opening a connection and issuing commands to the device.
             events: Set to True to enable event updates, False to disable. The default is True.
             all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
             dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
@@ -234,6 +234,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             else:
                 self._signed_in_username = None
         elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+            if self._players_loaded:
+                await self.get_players(refresh=True)
             await self.get_groups(refresh=True)
 
         await self._dispatcher.wait_send(

@@ -42,5 +42,8 @@
         ".ruff_cache": true,
         ".pytest_cache": true,
         ".mypy_cache": true
+    },
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-issue-config.json": "file:///workspaces/pyheos/.github/ISSUE_TEMPLATE/config.yml"
     }
 }

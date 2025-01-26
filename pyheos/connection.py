@@ -3,8 +3,9 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable, Coroutine
+from contextlib import suppress
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from pyheos.command import COMMAND_HEART_BEAT, COMMAND_REBOOT
 from pyheos.message import HeosCommand, HeosMessage
@@ -34,15 +35,15 @@ class ConnectionBase:
         self._state: ConnectionState = ConnectionState.DISCONNECTED
         self._writer: asyncio.StreamWriter | None = None
         self._pending_command_event = ResponseEvent()
-        self._running_tasks: set[asyncio.Task] = set()
+        self._running_tasks: set[asyncio.Task[None]] = set()
         self._last_activity: datetime = datetime.now()
         self._command_lock = asyncio.Lock()
 
-        self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable]] = []
-        self._on_connected_callbacks: list[Callable[[], Awaitable]] = []
-        self._on_disconnected_callbacks: list[Callable[[bool], Awaitable]] = []
+        self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable[None]]] = []
+        self._on_connected_callbacks: list[Callable[[], Awaitable[None]]] = []
+        self._on_disconnected_callbacks: list[Callable[[bool], Awaitable[None]]] = []
         self._on_command_error_callbacks: list[
-            Callable[[CommandFailedError], Awaitable]
+            Callable[[CommandFailedError], Awaitable[None]]
         ] = []
 
     @property
@@ -50,7 +51,7 @@ class ConnectionBase:
         """Get the current state of the connection."""
         return self._state
 
-    def add_on_event(self, callback: Callable[[HeosMessage], Awaitable]) -> None:
+    def add_on_event(self, callback: Callable[[HeosMessage], Awaitable[None]]) -> None:
         """Add a callback to be invoked when an event is received."""
         self._on_event_callbacks.append(callback)
 
@@ -59,7 +60,7 @@ class ConnectionBase:
         for callback in self._on_event_callbacks:
             await callback(message)
 
-    def add_on_connected(self, callback: Callable[[], Awaitable]) -> None:
+    def add_on_connected(self, callback: Callable[[], Awaitable[None]]) -> None:
         """Add a callback to be invoked when connected."""
         self._on_connected_callbacks.append(callback)
 
@@ -68,7 +69,7 @@ class ConnectionBase:
         for callback in self._on_connected_callbacks:
             await callback()
 
-    def add_on_disconnected(self, callback: Callable[[bool], Awaitable]) -> None:
+    def add_on_disconnected(self, callback: Callable[[bool], Awaitable[None]]) -> None:
         """Add a callback to be invoked when connected."""
         self._on_disconnected_callbacks.append(callback)
 
@@ -78,7 +79,7 @@ class ConnectionBase:
             await callback(due_to_error)
 
     def add_on_command_error(
-        self, callback: Callable[[CommandFailedError], Awaitable]
+        self, callback: Callable[[CommandFailedError], Awaitable[None]]
     ) -> None:
         """Add a callback to be invoked when a command error occurs."""
         self._on_command_error_callbacks.append(callback)
@@ -88,9 +89,11 @@ class ConnectionBase:
         for callback in self._on_command_error_callbacks:
             await callback(error)
 
-    def _register_task(self, future: Coroutine) -> None:
+    def _register_task(
+        self, future: Coroutine[Any, Any, None], name: str | None = None
+    ) -> None:
         """Register a task that is running in the background, so it can be canceled and reset later."""
-        task = asyncio.ensure_future(future)
+        task: asyncio.Task[None] = asyncio.create_task(future, name=name)
         self._running_tasks.add(task)
         task.add_done_callback(self._running_tasks.discard)
 
@@ -100,19 +103,14 @@ class ConnectionBase:
         while self._running_tasks:
             task = self._running_tasks.pop()
             if task.cancel():
-                try:
+                with suppress(asyncio.CancelledError):
                     await task
-                except asyncio.CancelledError:
-                    pass
         # Close the writer
         if self._writer:
             self._writer.close()
-            try:
+            with suppress(OSError, asyncio.CancelledError):
                 await self._writer.wait_closed()
-            except (ConnectionError, OSError, asyncio.CancelledError):
-                pass
-            finally:
-                self._writer = None
+            self._writer = None
         # Reset other parameters
         self._pending_command_event.clear()
         self._last_activity = datetime.now()
@@ -134,12 +132,7 @@ class ConnectionBase:
         while True:
             try:
                 binary_result = await reader.readuntil(SEPARATOR_BYTES)
-            except (
-                ConnectionError,
-                asyncio.IncompleteReadError,
-                RuntimeError,
-                OSError,
-            ) as error:
+            except (asyncio.IncompleteReadError, RuntimeError, OSError) as error:
                 await self._disconnect_from_error(error)
                 return
             else:
@@ -155,7 +148,7 @@ class ConnectionBase:
             return
         if message.is_event:
             _LOGGER.debug("Event received: '%s': '%s'", message.command, message)
-            self._register_task(self._on_event(message))
+            self._register_task(self._on_event(message), "Event Handler")
             return
 
         # Set the message on the pending command.
@@ -179,7 +172,9 @@ class ConnectionBase:
                 await self._writer.drain()
             except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
-                self._register_task(self._disconnect_from_error(error))
+                self._register_task(
+                    self._disconnect_from_error(error), "Disconnect From Error"
+                )
                 _LOGGER.debug(
                     "Command failed '%s': %s: %s", command, type(error).__name__, error
                 )
@@ -251,7 +246,7 @@ class ConnectionBase:
             ) from err
 
         # Start read handler
-        self._register_task(self._read_handler(reader))
+        self._register_task(self._read_handler(reader), "Read Handler")
         self._last_activity = datetime.now()
         self._state = ConnectionState.CONNECTED
         _LOGGER.debug("Connected to %s", self._host)
@@ -301,13 +296,10 @@ class AutoReconnectingConnection(ConnectionBase):
         while self._state == ConnectionState.CONNECTED:
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
-                try:
+                with suppress(CommandError):
                     await self.command(HeosCommand(COMMAND_HEART_BEAT))
-                except (CommandError, asyncio.TimeoutError):
-                    # Exit the task, as the connection will be reset/closed.
-                    return
             # Sleep until next interval
-            await asyncio.sleep(float(self._heart_beat_interval / 2))
+            await asyncio.sleep(self._heart_beat_interval)
 
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect after disconnection from error."""
@@ -316,32 +308,28 @@ class AutoReconnectingConnection(ConnectionBase):
         unlimited_attempts = self._reconnect_max_attempts == 0
         delay = min(self._reconnect_delay, MAX_RECONNECT_DELAY)
         while (attempts < self._reconnect_max_attempts) or unlimited_attempts:
+            _LOGGER.debug("Waiting %s seconds before attempting to reconnect", delay)
+            await asyncio.sleep(delay)
+            _LOGGER.debug("Attempting reconnect #%s to %s", (attempts + 1), self._host)
             try:
-                _LOGGER.debug(
-                    "Waiting %s seconds before attempting to reconnect", delay
-                )
-                await asyncio.sleep(delay)
-                _LOGGER.debug(
-                    "Attempting reconnect #%s to %s", (attempts + 1), self._host
-                )
                 await self.connect()
             except HeosError:
                 attempts += 1
                 delay = min(delay * 2, MAX_RECONNECT_DELAY)
             else:
-                return  # This never actually hits as the task is cancelled when the connection is established, but it's here for completeness.
+                return
 
     async def _on_connected(self) -> None:
         """Handle when the connection is established."""
         # Start heart beat when enabled
         if self._heart_beat:
-            self._register_task(self._heart_beat_handler())
+            self._register_task(self._heart_beat_handler(), "Heart Beat")
         await super()._on_connected()
 
     async def _on_disconnected(self, due_to_error: bool = False) -> None:
         """Handle when the connection is lost. Invoked after the connection has been reset."""
         if due_to_error and self._reconnect:
-            self._register_task(self._attempt_reconnect())
+            self._register_task(self._attempt_reconnect(), "Reconnect")
         await super()._on_disconnected(due_to_error)
 
 

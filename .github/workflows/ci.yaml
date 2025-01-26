@@ -26,16 +26,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
           uv pip install -r requirements.txt -r test-requirements.txt --upgrade --system
+      - name: Set up check hooks
+        run: pre-commit install-hooks
       - name: Spelling (codespell)
-        run: codespell
+        run: pre-commit run --all-files --hook-stage manual codespell --show-diff-on-failure
       - name: Lint (Ruff)
-        run: ruff check --select I
+        run: pre-commit run --all-files --hook-stage manual ruff --show-diff-on-failure
       - name: Format (Ruff)
-        run: ruff format --check
+        run: pre-commit run --all-files --hook-stage manual ruff-format --show-diff-on-failure
       - name: Format (Pylint)
-        run: pylint pyheos tests
+        run: pre-commit run --all-files --hook-stage manual pylint --show-diff-on-failure
       - name: Typing my[py]
-        run: mypy pyheos tests
+        run: pre-commit run --all-files --hook-stage manual mypy --show-diff-on-failure
 
   tests:
     name: "Run tests on ${{ matrix.python-version }}"

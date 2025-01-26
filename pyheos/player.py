@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
-from pyheos.command import optional_int, parse_enum
+from pyheos.abc import RemoveHeosFieldABC
+from pyheos.command import optional_int, parse_enum, parse_optional_enum
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
@@ -100,7 +101,7 @@ class PlayerUpdateResult:
 class HeosNowPlayingMedia:
     """Define now playing media information."""
 
-    type: str | None = None
+    type: MediaType | None = None
     song: str | None = None
     station: str | None = None
     album: str | None = None
@@ -127,7 +128,7 @@ class HeosNowPlayingMedia:
     def _update_from_message(self, message: HeosMessage) -> None:
         """Update the current instance from another instance."""
         data = cast(dict[str, Any], message.payload)
-        self.type = data.get(c.ATTR_TYPE)
+        self.type = parse_optional_enum(c.ATTR_TYPE, data, MediaType)
         self.song = data.get(c.ATTR_SONG)
         self.station = data.get(c.ATTR_STATION)
         self.album = data.get(c.ATTR_ALBUM)
@@ -184,7 +185,7 @@ class PlayMode:
 
 
 @dataclass
-class HeosPlayer:
+class HeosPlayer(RemoveHeosFieldABC):
     """Define a HEOS player."""
 
     name: str = field(repr=True, hash=False, compare=False)

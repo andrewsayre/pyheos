@@ -1,0 +1,263 @@
+# serializer version: 1
+# name: test_browse_result_from_data
+  dict({
+    'container_id': None,
+    'count': 1,
+    'items': list([
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': True,
+        'container_id': '171566',
+        'image_url': '',
+        'media_id': None,
+        'name': 'Rockin Songs',
+        'playable': True,
+        'source_id': 1025,
+        'type': <MediaType.PLAYLIST: 'playlist'>,
+      }),
+    ]),
+    'options': list([
+    ]),
+    'returned': 1,
+    'source_id': 1025,
+  })
+# ---
+# name: test_media_item_browse
+  dict({
+    'container_id': None,
+    'count': 8,
+    'items': list([
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/line_in_1',
+        'name': 'HEOS Drive - Line In 1',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/line_in_2',
+        'name': 'HEOS Drive - Line In 2',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/line_in_3',
+        'name': 'HEOS Drive - Line In 3',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/line_in_4',
+        'name': 'HEOS Drive - Line In 4',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/optical_in_1',
+        'name': 'HEOS Drive - Optical In 1',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/optical_in_2',
+        'name': 'HEOS Drive - Optical In 2',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/coax_in_1',
+        'name': 'HEOS Drive - Coaxial In 1',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': '',
+        'media_id': 'inputs/coax_in_2',
+        'name': 'HEOS Drive - Coaxial In 2',
+        'playable': True,
+        'source_id': -263109739,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+    ]),
+    'options': list([
+    ]),
+    'returned': 8,
+    'source_id': -263109739,
+  })
+# ---
+# name: test_media_item_from_data
+  dict({
+    'album': 'Future Friends',
+    'album_id': '78374740',
+    'artist': 'Superfruit',
+    'browsable': False,
+    'container_id': 'My Music',
+    'image_url': 'http://resources.wimpmusic.com/images/7e7bacc1/3e75/4761/a822/9342239edfa0/640x640.jpg',
+    'media_id': '78374741',
+    'name': 'Imaginary Parties',
+    'playable': True,
+    'source_id': 1,
+    'type': <MediaType.SONG: 'song'>,
+  })
+# ---
+# name: test_media_item_from_data_container
+  dict({
+    'album': None,
+    'album_id': None,
+    'artist': None,
+    'browsable': True,
+    'container_id': '94467912-bd40-4d2f-ad25-7b8423f7b05a',
+    'image_url': '',
+    'media_id': None,
+    'name': 'Video',
+    'playable': False,
+    'source_id': 123456789,
+    'type': <MediaType.CONTAINER: 'container'>,
+  })
+# ---
+# name: test_media_item_from_data_source
+  dict({
+    'album': None,
+    'album_id': None,
+    'artist': None,
+    'browsable': True,
+    'container_id': None,
+    'image_url': 'https://production.ws.skyegloup.com:443/media/images/service/logos/musicsource_logo_servers.png',
+    'media_id': None,
+    'name': 'Plex Media Server',
+    'playable': False,
+    'source_id': 123456789,
+    'type': <MediaType.HEOS_SERVER: 'heos_server'>,
+  })
+# ---
+# name: test_media_music_source_browse
+  dict({
+    'container_id': None,
+    'count': 3,
+    'items': list([
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg',
+        'media_id': '3790855220637622543',
+        'name': 'Thumbprint Radio',
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://cdn-radiotime-logos.tunein.com/s7332q.png',
+        'media_id': 's7332',
+        'name': '99.5 | Classical MPR (Classical Music)',
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://mediaserver-cont-dc6-2-v4v6.pandora.com/images/public/int/4/0/8/2/00602577432804_500W_500H.jpg',
+        'media_id': '1935916853323522319',
+        'name': "Today's Hits Radio",
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+    ]),
+    'options': list([
+      dict({
+        'context': 'browse',
+        'id': 20,
+        'name': 'Remove from HEOS Favorites',
+      }),
+    ]),
+    'returned': 3,
+    'source_id': 1028,
+  })
+# ---
+# name: test_media_music_source_from_data
+  dict({
+    'available': True,
+    'image_url': 'https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png',
+    'name': 'Pandora',
+    'service_username': 'test@test.com',
+    'source_id': 1,
+    'type': <MediaType.MUSIC_SERVICE: 'music_service'>,
+  })
+# ---
+# name: test_refresh
+  dict({
+    'available': True,
+    'image_url': 'https://production.ws.skyegloup.com:443/media/images/service/logos/pandora.png',
+    'name': 'Pandora',
+    'service_username': 'email@email.com',
+    'source_id': 1,
+    'type': <MediaType.MUSIC_SERVICE: 'music_service'>,
+  })
+# ---

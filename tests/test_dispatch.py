@@ -9,7 +9,7 @@ import pytest
 from pyheos.dispatch import Dispatcher
 
 
-async def test_connect(handler: Callable) -> None:
+async def test_connect(handler: Callable[..., Any]) -> None:
     """Tests the connect function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -19,7 +19,7 @@ async def test_connect(handler: Callable) -> None:
     assert handler in dispatcher.signals["TEST"]
 
 
-async def test_disconnect(handler: Callable) -> None:
+async def test_disconnect(handler: Callable[..., Any]) -> None:
     """Tests the disconnect function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -30,7 +30,7 @@ async def test_disconnect(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST"]
 
 
-async def test_disconnect_all(handler: Callable) -> None:
+async def test_disconnect_all(handler: Callable[..., Any]) -> None:
     """Tests the disconnect all function."""
     # Arrange
     dispatcher = Dispatcher()
@@ -46,7 +46,7 @@ async def test_disconnect_all(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST3"]
 
 
-async def test_already_disconnected(handler: Callable) -> None:
+async def test_already_disconnected(handler: Callable[..., Any]) -> None:
     """Tests that disconnect can be called more than once."""
     # Arrange
     dispatcher = Dispatcher()
@@ -58,7 +58,7 @@ async def test_already_disconnected(handler: Callable) -> None:
     assert handler not in dispatcher.signals["TEST"]
 
 
-async def test_send_async_handler(async_handler: Callable) -> None:
+async def test_send_async_handler(async_handler: Callable[..., Any]) -> None:
     """Tests sending to async handlers."""
     # Arrange
     dispatcher = Dispatcher()
@@ -105,7 +105,7 @@ async def test_send_async_handler_canceled(
     assert "Exception in target callback:" not in caplog.text
 
 
-async def test_send_async_partial_handler(async_handler: Callable) -> None:
+async def test_send_async_partial_handler(async_handler: Callable[..., Any]) -> None:
     """Tests sending to async handlers."""
     # Arrange
     partial = functools.partial(async_handler)
@@ -117,7 +117,7 @@ async def test_send_async_partial_handler(async_handler: Callable) -> None:
     assert async_handler.fired  # type: ignore[attr-defined]
 
 
-async def test_send(handler: Callable) -> None:
+async def test_send(handler: Callable[..., Any]) -> None:
     """Tests sending to async handlers."""
     # Arrange
     dispatcher = Dispatcher()
@@ -130,13 +130,13 @@ async def test_send(handler: Callable) -> None:
     assert handler.args[0] == args  # type: ignore[attr-defined]
 
 
-async def test_custom_connect_and_send(handler: Callable) -> None:
+async def test_custom_connect_and_send(handler: Callable[..., Any]) -> None:
     """Tests using the custom connect and send implementations."""
     # Arrange
     test_signal = "PREFIX_TEST"
     stored_target = None
 
-    def connect(signal: str, target: Callable) -> Callable:
+    def connect(signal: str, target: Callable[..., Any]) -> Callable[..., Any]:
         assert signal == test_signal
         nonlocal stored_target
         stored_target = target
