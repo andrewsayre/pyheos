@@ -11,9 +11,10 @@ from typing import TYPE_CHECKING, Any, cast
 from pyheos import command as c
 from pyheos import const
 from pyheos.command.connection import ConnectionMixin
+from pyheos.common import ChangeSummary
 from pyheos.media import QueueItem
 from pyheos.message import HeosCommand
-from pyheos.player import HeosNowPlayingMedia, HeosPlayer, PlayerUpdateResult, PlayMode
+from pyheos.player import HeosNowPlayingMedia, HeosPlayer, PlayMode
 from pyheos.types import PlayState, RepeatType
 
 if TYPE_CHECKING:
@@ -90,9 +91,9 @@ class PlayerCommands(ConnectionMixin):
             await player.refresh(refresh_base_info=False)
         return player
 
-    async def load_players(self) -> PlayerUpdateResult:
+    async def load_players(self) -> ChangeSummary:
         """Refresh the players."""
-        result = PlayerUpdateResult()
+        result = ChangeSummary()
 
         players: dict[int, HeosPlayer] = {}
         response = await self._connection.command(HeosCommand(c.COMMAND_GET_PLAYERS))
@@ -118,7 +119,7 @@ class PlayerCommands(ConnectionMixin):
             if player:
                 # Found existing, update
                 if player.player_id != player_id:
-                    result.updated_player_ids[player.player_id] = player_id
+                    result.changed_ids[player.player_id] = player_id
                 player._update_from_data(player_data)
                 player.available = True
                 players[player_id] = player
@@ -126,11 +127,11 @@ class PlayerCommands(ConnectionMixin):
             else:
                 # New player
                 player = HeosPlayer._from_data(player_data, cast("Heos", self))
-                result.added_player_ids.append(player_id)
+                result.added_ids.append(player_id)
                 players[player_id] = player
         # For any item remaining in existing, mark unavailalbe, add to updated
         for player in existing:
-            result.removed_player_ids.append(player.player_id)
+            result.removed_ids.append(player.player_id)
             player.available = False
             players[player.player_id] = player
 

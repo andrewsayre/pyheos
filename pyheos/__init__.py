@@ -1,6 +1,7 @@
 """pyheos - a library for interacting with HEOS devices."""
 
 from . import const
+from .common import ChangeSummary
 from .credentials import Credentials
 from .dispatch import (
     CallbackType,
@@ -40,7 +41,6 @@ from .player import (
     CONTROLS_PLAY_STOP,
     HeosNowPlayingMedia,
     HeosPlayer,
-    PlayerUpdateResult,
     PlayMode,
 )
 from .search import MultiSearchResult, SearchCriteria, SearchResult, SearchStatistic
@@ -64,6 +64,7 @@ __all__ = [
     "AlbumMetadata",
     "BrowseResult",
     "CallbackType",
+    "ChangeSummary",
     "ControlType",
     "CommandAuthenticationError",
     "CommandError",
@@ -99,7 +100,6 @@ __all__ = [
     "PlayMode",
     "PlayState",
     "PlayerEventCallbackType",
-    "PlayerUpdateResult",
     "QueueItem",
     "RepeatType",
     "RetreiveMetadataResult",

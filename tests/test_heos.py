@@ -8,6 +8,7 @@ import pytest
 from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
+from pyheos.common import ChangeSummary
 from pyheos.const import (
     EVENT_GROUP_VOLUME_CHANGED,
     EVENT_GROUPS_CHANGED,
@@ -39,7 +40,7 @@ from pyheos.group import HeosGroup
 from pyheos.heos import Heos
 from pyheos.media import MediaItem, MediaMusicSource
 from pyheos.options import HeosOptions
-from pyheos.player import HeosPlayer, PlayerUpdateResult
+from pyheos.player import HeosPlayer
 from pyheos.types import (
     AddCriteriaType,
     ConnectionState,
@@ -363,7 +364,7 @@ async def test_reconnect_refreshes_players(mock_device: MockHeosDevice) -> None:
 
     signal = asyncio.Event()
 
-    async def handler(event: str, result: PlayerUpdateResult) -> None:
+    async def handler(event: str, result: ChangeSummary) -> None:
         assert event == EVENT_PLAYERS_CHANGED
         assert result is not None
         signal.set()
@@ -868,11 +869,11 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, result: PlayerUpdateResult) -> None:
+    async def handler(event: str, result: ChangeSummary) -> None:
         assert event == EVENT_PLAYERS_CHANGED
-        assert result.added_player_ids == [3]
-        assert result.updated_player_ids == {}
-        assert result.removed_player_ids == [2]
+        assert result.added_ids == [3]
+        assert result.changed_ids == {}
+        assert result.removed_ids == [2]
         signal.set()
 
     heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
@@ -909,11 +910,11 @@ async def test_players_changed_event_new_ids(
     # Attach dispatch handler
     signal = asyncio.Event()
 
-    async def handler(event: str, result: PlayerUpdateResult) -> None:
+    async def handler(event: str, result: ChangeSummary) -> None:
         assert event == EVENT_PLAYERS_CHANGED
-        assert result.added_player_ids == []
-        assert result.updated_player_ids == {1: 101, 2: 102}
-        assert result.removed_player_ids == []
+        assert result.added_ids == []
+        assert result.changed_ids == {1: 101, 2: 102}
+        assert result.removed_ids == []
         signal.set()
 
     heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)

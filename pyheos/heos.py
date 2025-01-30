@@ -8,6 +8,7 @@ from pyheos.command.browse import BrowseCommands
 from pyheos.command.group import GroupCommands
 from pyheos.command.player import PlayerCommands
 from pyheos.command.system import SystemCommands
+from pyheos.common import ChangeSummary
 from pyheos.dispatch import (
     CallbackType,
     ControllerEventCallbackType,
@@ -18,7 +19,6 @@ from pyheos.dispatch import (
 from pyheos.error import CommandAuthenticationError, CommandFailedError
 from pyheos.message import HeosMessage
 from pyheos.options import HeosOptions
-from pyheos.player import PlayerUpdateResult
 from pyheos.system import HeosSystem
 
 from . import command as c
@@ -229,7 +229,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
     async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
-        result: PlayerUpdateResult | None = None
+        result: ChangeSummary | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             result = await self.load_players()
         if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:

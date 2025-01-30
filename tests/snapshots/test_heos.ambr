@@ -294,6 +294,7 @@
 # ---
 # name: test_get_group_info_by_id
   dict({
+    'available': True,
     'group_id': -263109739,
     'is_muted': False,
     'lead_player_id': -263109739,
@@ -306,6 +307,7 @@
 # ---
 # name: test_get_group_info_by_id_already_loaded_refresh
   dict({
+    'available': True,
     'group_id': -263109739,
     'is_muted': False,
     'lead_player_id': -263109739,
@@ -319,6 +321,7 @@
 # name: test_get_groups
   dict({
     1: dict({
+      'available': True,
       'group_id': 1,
       'is_muted': False,
       'lead_player_id': 1,

@@ -27,6 +27,7 @@ class HeosGroup(RemoveHeosFieldABC):
     member_player_ids: Sequence[int]
     volume: int = 0
     is_muted: bool = False
+    available: bool = True
     heos: Optional["Heos"] = field(repr=False, hash=False, compare=False, default=None)
 
     @staticmethod
