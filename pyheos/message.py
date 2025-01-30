@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Any, Final
+from typing import Any, Final, cast
 from urllib.parse import parse_qsl
 
 from pyheos import command as c
@@ -71,7 +71,7 @@ class HeosMessage:
     command: str
     result: bool = True
     message: dict[str, str] = field(default_factory=dict)
-    payload: dict[str, Any] | list[Any] | None = None
+    payload: dict[str, Any] | list[dict[str, Any]] | list[Any] | None = None
     options: list[dict[str, list[dict[str, Any]]]] | None = None
 
     _raw_message: str | None = field(
@@ -85,8 +85,8 @@ class HeosMessage:
     @staticmethod
     def _from_raw_message(raw_message: str) -> "HeosMessage":
         """Create a HeosMessage from a raw message."""
-        container = json.loads(raw_message)
-        heos = container[c.ATTR_HEOS]
+        container: dict[str, Any] = json.loads(raw_message)
+        heos: dict[str, Any] = container[c.ATTR_HEOS]
         instance = HeosMessage(
             command=str(heos[c.ATTR_COMMAND]),
             result=bool(heos.get(c.ATTR_RESULT, c.VALUE_SUCCESS) == c.VALUE_SUCCESS),
@@ -108,6 +108,12 @@ class HeosMessage:
     def is_event(self) -> bool:
         """Return True if the message is an event, otherwise False."""
         return self.command.startswith("event/")
+
+    @property
+    def payload_as_list_dict(self) -> list[dict[str, Any]]:
+        """Get the payload as a dictionary."""
+        assert self.payload is not None
+        return cast(list[dict[str, Any]], self.payload)
 
     def get_message_value(self, key: str) -> str:
         """Get a message parameter as a string."""

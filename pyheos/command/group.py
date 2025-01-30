@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pyheos import command as c
 from pyheos.command.connection import ConnectionMixin
+from pyheos.common import ChangeSummary
 from pyheos.const import DEFAULT_STEP
 from pyheos.group import HeosGroup
 from pyheos.message import HeosCommand
@@ -32,27 +33,53 @@ class GroupCommands(ConnectionMixin):
         """Get the loaded groups."""
         return self._groups
 
+    async def load_groups(self) -> ChangeSummary:
+        """Load the available groups.
+
+        References:
+            4.3.1 Get Groups
+
+        Returns:
+            A summary of the changes to loaded groups.
+        """
+        groups: dict[int, HeosGroup] = {}
+        existing_group_ids: list[int] = list(self._groups.keys())
+        changes = ChangeSummary()
+        result = await self._connection.command(HeosCommand(c.COMMAND_GET_GROUPS))
+
+        for group_data in result.payload_as_list_dict:
+            group_id = int(group_data[c.ATTR_GROUP_ID])
+            group = self._groups.get(group_id)
+            if group:
+                group._update_from_data(group_data)
+                existing_group_ids.remove(group_id)
+                changes.updated_ids.append(group_id)
+            else:
+                group = HeosGroup._from_data(group_data, cast("Heos", self))
+                changes.added_ids.append(group_id)
+            groups[group_id] = group
+
+        # Items that remain in existing_group_ids have been removed
+        changes.removed_ids = existing_group_ids
+        for group_id in existing_group_ids:
+            self._groups[group_id].available = False
+
+        # Update all statuses
+        await asyncio.gather(
+            *[group.refresh(refresh_base_info=False) for group in groups.values()]
+        )
+        self._groups = groups
+        self._groups_loaded = True
+
+        return changes
+
     async def get_groups(self, *, refresh: bool = False) -> dict[int, HeosGroup]:
         """Get available groups.
 
         References:
             4.3.1 Get Groups"""
         if not self._groups_loaded or refresh:
-            groups: dict[int, HeosGroup] = {}
-            result = await self._connection.command(HeosCommand(c.COMMAND_GET_GROUPS))
-            payload = cast(Sequence[dict[str, Any]], result.payload)
-            for data in payload:
-                group = HeosGroup._from_data(data, cast("Heos", self))
-                groups[group.group_id] = group
-            self._groups = groups
-            # Update all statuses
-            await asyncio.gather(
-                *[
-                    group.refresh(refresh_base_info=False)
-                    for group in self._groups.values()
-                ]
-            )
-            self._groups_loaded = True
+            await self.load_groups()
         return self._groups
 
     async def get_group_info(
