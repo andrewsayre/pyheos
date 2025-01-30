@@ -147,11 +147,6 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
     async def _on_connected(self) -> None:
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == ConnectionState.CONNECTED
-
-        await self._dispatcher.wait_send(
-            SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED, return_exceptions=True
-        )
-
         if self.current_credentials:
             # Sign-in to the account if provided
             try:
@@ -184,6 +179,18 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                 update,
                 return_exceptions=True,
             )
+        if self._groups_loaded:
+            update = await self.load_groups()
+            await self._dispatcher.wait_send(
+                SignalType.CONTROLLER_EVENT,
+                const.EVENT_GROUPS_CHANGED,
+                update,
+                return_exceptions=True,
+            )
+
+        await self._dispatcher.wait_send(
+            SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED, return_exceptions=True
+        )
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
@@ -191,6 +198,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         # Mark loaded players unavailable
         for player in self.players.values():
             player.available = False
+        for group in self.groups.values():
+            group.available = False
         await self._dispatcher.wait_send(
             SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED, return_exceptions=True
         )
@@ -232,17 +241,22 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         result: ChangeSummary | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             result = await self.load_players()
-        if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
+            # When players change, HEOS may send a group change event separately, no need to refresh groups explicitly.
+        elif (
+            event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded
+        ):
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
             if c.ATTR_SIGNED_IN in event.message:
                 self._signed_in_username = event.get_message_value(c.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
-        elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+        elif event.command == const.EVENT_GROUPS_CHANGED:
             if self._players_loaded:
-                await self.get_players(refresh=True)
-            await self.get_groups(refresh=True)
+                # We don't send the player change result here because we only want to refresh the player attributes
+                await self.load_players()
+            if self._groups_loaded:
+                result = await self.load_groups()
 
         await self._dispatcher.wait_send(
             SignalType.CONTROLLER_EVENT, event.command, result, return_exceptions=True

@@ -49,11 +49,10 @@ class GroupCommands(ConnectionMixin):
 
         for group_data in result.payload_as_list_dict:
             group_id = int(group_data[c.ATTR_GROUP_ID])
-            group = self._groups.get(group_id)
-            if group:
+            if group := self._groups.get(group_id):
                 group._update_from_data(group_data)
+                group.available = True
                 existing_group_ids.remove(group_id)
-                changes.updated_ids.append(group_id)
             else:
                 group = HeosGroup._from_data(group_data, cast("Heos", self))
                 changes.added_ids.append(group_id)
@@ -62,11 +61,17 @@ class GroupCommands(ConnectionMixin):
         # Items that remain in existing_group_ids have been removed
         changes.removed_ids = existing_group_ids
         for group_id in existing_group_ids:
-            self._groups[group_id].available = False
+            group = self._groups[group_id]
+            groups[group_id] = group
+            group.available = False
 
         # Update all statuses
         await asyncio.gather(
-            *[group.refresh(refresh_base_info=False) for group in groups.values()]
+            *[
+                group.refresh(refresh_base_info=False)
+                for group in groups.values()
+                if group.available
+            ]
         )
         self._groups = groups
         self._groups_loaded = True

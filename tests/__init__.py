@@ -223,12 +223,19 @@ def calls_player_commands(
     return calls_commands(*commands)
 
 
-def calls_group_commands(*additional: CallCommand) -> Callable[..., Any]:
+def calls_group_commands(
+    group_ids: Sequence[int] = (1,), *additional: CallCommand
+) -> Callable[..., Any]:
     commands = [
         CallCommand("group.get_groups"),
-        CallCommand("group.get_volume", {c.ATTR_GROUP_ID: 1}),
-        CallCommand("group.get_mute", {c.ATTR_GROUP_ID: 1}),
     ]
+    for group_id in group_ids:
+        commands.extend(
+            [
+                CallCommand("group.get_volume", {c.ATTR_GROUP_ID: group_id}),
+                CallCommand("group.get_mute", {c.ATTR_GROUP_ID: group_id}),
+            ]
+        )
     commands.extend(additional)
     return calls_commands(*commands)
 
