@@ -177,7 +177,13 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
         # Refresh players and mark available
         if self._players_loaded:
-            await self.load_players()
+            update = await self.load_players()
+            await self._dispatcher.wait_send(
+                SignalType.CONTROLLER_EVENT,
+                const.EVENT_PLAYERS_CHANGED,
+                update,
+                return_exceptions=True,
+            )
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""
