@@ -1518,3 +1518,29 @@ async def test_unrecognized_event_logs(
     await heos.dispatcher.wait_all()
 
     assert "Unrecognized event: " in caplog.text
+
+
+@calls_player_commands()
+async def test_uncaught_error_in_event_callback_logs(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test unexpected exception during event callback execution logs."""
+    await heos.get_players()
+    player = heos.players[1]
+
+    # Register command that results in an exception
+    command = mock_device.register(
+        c.COMMAND_GET_NOW_PLAYING_MEDIA,
+        None,
+        "player.get_now_playing_media_failed",
+        replace=True,
+    )
+    # Write event through mock device
+    await mock_device.write_event(
+        "event.player_now_playing_changed", {"player_id": player.player_id}
+    )
+
+    while "Unexpected exception in task:" not in caplog.text:
+        await asyncio.sleep(0.1)
+
+    command.assert_called()
