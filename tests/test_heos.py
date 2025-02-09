@@ -52,6 +52,7 @@ from tests.common import MediaItems
 
 from . import (
     CallCommand,
+    CommandModifier,
     MockHeosDevice,
     calls_command,
     calls_commands,
@@ -336,6 +337,24 @@ async def test_command_duplicate_response(
         await heos.heart_beat()
     while "Unexpected response received: 'system/heart_beat'" not in caplog.text:
         await asyncio.sleep(0.1)
+
+
+@calls_command("system.heart_beat")
+async def test_event_received_during_command(mock_device: MockHeosDevice) -> None:
+    """Test event received during command execution."""
+    heos = await Heos.create_and_connect("127.0.0.1", heart_beat=False)
+
+    mock_device._modifiers.append(
+        CommandModifier(c.COMMAND_HEART_BEAT, delay_response=0.2)
+    )
+    command_task = asyncio.create_task(heos.heart_beat())
+
+    await asyncio.sleep(0.1)
+    await mock_device.write_event("event.user_changed_signed_in")
+
+    await command_task
+
+    await heos.disconnect()
 
 
 async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None:
