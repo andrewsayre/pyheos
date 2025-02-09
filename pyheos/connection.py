@@ -89,6 +89,15 @@ class ConnectionBase:
         for callback in self._on_command_error_callbacks:
             await callback(error)
 
+    def _log_callback_exception(self, future: asyncio.Future[Any]) -> None:
+        """Log uncaught exception that occurs in a callback."""
+        if not future.cancelled() and future.exception():
+            _LOGGER.exception(
+                "Unexpected exception in task: %s",
+                future,
+                exc_info=future.exception(),
+            )
+
     def _register_task(
         self, future: Coroutine[Any, Any, None], name: str | None = None
     ) -> None:
@@ -96,6 +105,7 @@ class ConnectionBase:
         task: asyncio.Task[None] = asyncio.create_task(future, name=name)
         self._running_tasks.add(task)
         task.add_done_callback(self._running_tasks.discard)
+        task.add_done_callback(self._log_callback_exception)
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
