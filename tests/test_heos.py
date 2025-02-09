@@ -317,6 +317,27 @@ async def test_commands_fail_when_disconnected(
     )
 
 
+@calls_command("system.heart_beat")
+async def test_command_timeout(mock_device: MockHeosDevice, heos: Heos) -> None:
+    """Test command times out."""
+    with mock_device.modify(c.COMMAND_HEART_BEAT, delay_response=0.2):
+        with pytest.raises(CommandError):
+            await heos.heart_beat()
+    await asyncio.sleep(0.2)
+    await heos.heart_beat()
+
+
+@calls_command("system.heart_beat")
+async def test_command_duplicate_response(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a duplicate command response is discarded."""
+    with mock_device.modify(c.COMMAND_HEART_BEAT, replay_response=2):
+        await heos.heart_beat()
+    while "Unexpected response received: 'system/heart_beat'" not in caplog.text:
+        await asyncio.sleep(0.1)
+
+
 async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(

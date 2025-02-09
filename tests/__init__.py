@@ -3,8 +3,9 @@
 import asyncio
 import functools
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Generator, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, cast
 from urllib.parse import parse_qsl, quote_plus, urlencode, urlparse
@@ -273,6 +274,7 @@ class MockHeosDevice:
         self._started: bool = False
         self.connections: list[ConnectionLog] = []
         self._matchers: list[CommandMatcher] = []
+        self._modifiers: list[CommandModifier] = []
 
     async def start(self) -> None:
         """Start the heos server."""
@@ -354,6 +356,18 @@ class MockHeosDevice:
             f"Command was not registered: {target_command} with args {target_args}."
         )
 
+    @contextmanager
+    def modify(
+        self, command: str, *, replay_response: int = 1, delay_response: float = 0.0
+    ) -> Generator[None]:
+        """Modifies behavior of command processing."""
+        modifier = CommandModifier(
+            command, replay_response=replay_response, delay_response=delay_response
+        )
+        self._modifiers.append(modifier)
+        yield
+        self._modifiers.remove(modifier)
+
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     ) -> None:
@@ -387,10 +401,27 @@ class MockHeosDevice:
                 None,
             )
             if matcher:
+                # Apply modifiers
+                modifier = next(
+                    (
+                        modifier
+                        for modifier in self._modifiers
+                        if modifier.command == command
+                    ),
+                    DEFAULT_MODIFIER,
+                )
+
+                # Delay the response if set
+                if modifier.delay_response > 0:
+                    await asyncio.sleep(modifier.delay_response)
+
                 responses = await matcher.get_response(query)
-                for response in responses:
-                    writer.write((response + SEPARATOR).encode())
-                    await writer.drain()
+                # Write the response multiple times if set
+                for _ in range(modifier.replay_response):
+                    for response in responses:
+                        writer.write((response + SEPARATOR).encode())
+                        await writer.drain()
+
                 continue
 
             # Special processing for known/unknown commands
@@ -512,3 +543,15 @@ class ConnectionLog:
         data = (payload + SEPARATOR).encode()
         self._writer.write(data)
         await self._writer.drain()
+
+
+@dataclass
+class CommandModifier:
+    """Define a command modifier."""
+
+    command: str
+    replay_response: int = field(kw_only=True, default=1)
+    delay_response: float = field(kw_only=True, default=0.0)
+
+
+DEFAULT_MODIFIER = CommandModifier(c.COMMAND_GET_PLAYERS)
