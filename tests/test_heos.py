@@ -344,7 +344,7 @@ async def test_event_received_during_command(mock_device: MockHeosDevice) -> Non
     """Test event received during command execution."""
     heos = await Heos.create_and_connect("127.0.0.1", heart_beat=False)
 
-    mock_device._modifiers.append(
+    mock_device.modifiers.append(
         CommandModifier(c.COMMAND_HEART_BEAT, delay_response=0.2)
     )
     command_task = asyncio.create_task(heos.heart_beat())

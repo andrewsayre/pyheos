@@ -274,7 +274,7 @@ class MockHeosDevice:
         self._started: bool = False
         self.connections: list[ConnectionLog] = []
         self._matchers: list[CommandMatcher] = []
-        self._modifiers: list[CommandModifier] = []
+        self.modifiers: list[CommandModifier] = []
 
     async def start(self) -> None:
         """Start the heos server."""
@@ -364,9 +364,9 @@ class MockHeosDevice:
         modifier = CommandModifier(
             command, replay_response=replay_response, delay_response=delay_response
         )
-        self._modifiers.append(modifier)
+        self.modifiers.append(modifier)
         yield
-        self._modifiers.remove(modifier)
+        self.modifiers.remove(modifier)
 
     async def _handle_connection(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -405,7 +405,7 @@ class MockHeosDevice:
                 modifier = next(
                     (
                         modifier
-                        for modifier in self._modifiers
+                        for modifier in self.modifiers
                         if modifier.command == command
                     ),
                     DEFAULT_MODIFIER,
