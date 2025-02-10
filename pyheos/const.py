@@ -6,6 +6,8 @@ used internally are located in the modules where they are used.
 
 from typing import Final
 
+TARGET_VERSION: Final = "3.34.0"
+
 DEFAULT_TIMEOUT: Final = 10.0
 DEFAULT_RECONNECT_DELAY: Final = 10.0
 DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
