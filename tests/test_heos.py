@@ -527,6 +527,19 @@ async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     assert players == snapshot
 
 
+@calls_player_commands(
+    (1, 2),
+    CallCommand("player.get_players_unsupported", {}, replace=True),
+)
+async def test_get_players_unsupported_versions(
+    heos: Heos, snapshot: SnapshotAssertion
+) -> None:
+    """Test the get_players method load players with unsupported versions."""
+    players = await heos.get_players()
+
+    assert players == snapshot
+
+
 @calls_commands(
     CallCommand("player.get_player_info", {c.ATTR_PLAYER_ID: -263109739}),
     CallCommand("player.get_play_state", {c.ATTR_PLAYER_ID: -263109739}),
