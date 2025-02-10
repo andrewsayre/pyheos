@@ -89,6 +89,15 @@ class ConnectionBase:
         for callback in self._on_command_error_callbacks:
             await callback(error)
 
+    def _log_callback_exception(self, future: asyncio.Future[Any]) -> None:
+        """Log uncaught exception that occurs in a callback."""
+        if not future.cancelled() and future.exception():
+            _LOGGER.exception(
+                "Unexpected exception in task: %s",
+                future,
+                exc_info=future.exception(),
+            )
+
     def _register_task(
         self, future: Coroutine[Any, Any, None], name: str | None = None
     ) -> None:
@@ -96,6 +105,7 @@ class ConnectionBase:
         task: asyncio.Task[None] = asyncio.create_task(future, name=name)
         self._running_tasks.add(task)
         task.add_done_callback(self._running_tasks.discard)
+        task.add_done_callback(self._log_callback_exception)
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
@@ -137,11 +147,11 @@ class ConnectionBase:
                 return
             else:
                 self._last_activity = datetime.now()
-                await self._handle_message(
+                self._handle_message(
                     HeosMessage._from_raw_message(binary_result.decode())
                 )
 
-    async def _handle_message(self, message: HeosMessage) -> None:
+    def _handle_message(self, message: HeosMessage) -> None:
         """Handle a message received from the HEOS device."""
         if message.is_under_process:
             _LOGGER.debug("Command under process '%s'", message.command)
@@ -152,7 +162,10 @@ class ConnectionBase:
             return
 
         # Set the message on the pending command.
-        self._pending_command_event.set(message)
+        if not self._pending_command_event.set(message):
+            _LOGGER.debug(
+                "Unexpected response received: '%s': '%s'", message.command, message
+            )
 
     async def command(self, command: HeosCommand) -> HeosMessage:
         """Send a command to the HEOS device."""
@@ -165,18 +178,18 @@ class ConnectionBase:
                 raise CommandError(command.command, "Not connected to device")
             if TYPE_CHECKING:
                 assert self._writer is not None
-            assert not self._pending_command_event.is_set()
+
             # Send the command
             try:
                 self._writer.write((command.uri + SEPARATOR).encode())
                 await self._writer.drain()
             except (ConnectionError, OSError, AttributeError) as error:
                 # Occurs when the connection is broken. Run in the background to ensure connection is reset.
-                self._register_task(
-                    self._disconnect_from_error(error), "Disconnect From Error"
-                )
                 _LOGGER.debug(
                     "Command failed '%s': %s: %s", command, type(error).__name__, error
+                )
+                self._register_task(
+                    self._disconnect_from_error(error), "Disconnect From Error"
                 )
                 raise CommandError(
                     command.command, f"Command failed: {error}"
@@ -192,7 +205,7 @@ class ConnectionBase:
             # Wait for the response with a timeout
             try:
                 response = await asyncio.wait_for(
-                    self._pending_command_event.wait(), self._timeout
+                    self._pending_command_event.wait(command.command), self._timeout
                 )
             except asyncio.TimeoutError as error:
                 # Occurs when the command times out
@@ -200,9 +213,6 @@ class ConnectionBase:
                 raise CommandError(command.command, "Command timed out") from error
             finally:
                 self._pending_command_event.clear()
-
-            # The retrieved response should match the command
-            assert command.command == response.command
 
             # Check the result
             if not response.result:
@@ -340,24 +350,27 @@ class ResponseEvent:
         """Init a new instance of the CommandEvent."""
         self._event: asyncio.Event = asyncio.Event()
         self._response: HeosMessage | None = None
+        self._target_command: str | None = None
 
-    async def wait(self) -> HeosMessage:
+    async def wait(self, target_command: str) -> HeosMessage:
         """Wait until the event is set."""
+        self._target_command = target_command
         await self._event.wait()
         if TYPE_CHECKING:
             assert self._response is not None
         return self._response
 
-    def set(self, response: HeosMessage) -> None:
+    def set(self, response: HeosMessage) -> bool:
         """Set the response."""
+        if self._target_command is None or self._target_command != response.command:
+            return False
+        self._target_command = None
         self._response = response
         self._event.set()
+        return True
 
     def clear(self) -> None:
         """Clear the event."""
         self._response = None
+        self._target_command = None
         self._event.clear()
-
-    def is_set(self) -> bool:
-        """Return True if the event is set."""
-        return self._event.is_set()

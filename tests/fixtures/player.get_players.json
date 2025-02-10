@@ -9,7 +9,7 @@
 			"pid": 1,
 			"gid": 2,
 			"model": "HEOS Drive",
-			"version": "1.493.180",
+			"version": "3.34.240",
 			"ip": "127.0.0.1",
 			"network": "wired",
 			"lineout": 2,
@@ -20,7 +20,7 @@
 			"pid": 2,
 			"gid": 2,
 			"model": "HEOS Drive",
-			"version": "1.493.180",
+			"version": "3.34.240",
 			"ip": "127.0.0.2",
 			"network": "wifi",
 			"lineout": 1

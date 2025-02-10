@@ -52,6 +52,7 @@ from tests.common import MediaItems
 
 from . import (
     CallCommand,
+    CommandModifier,
     MockHeosDevice,
     calls_command,
     calls_commands,
@@ -72,6 +73,15 @@ async def test_init() -> None:
 
 @calls_command("player.get_players")
 async def test_validate_connection(
+    mock_device: MockHeosDevice, snapshot: SnapshotAssertion
+) -> None:
+    """Test get_system_info method returns system info."""
+    system_info = await Heos.validate_connection("127.0.0.1")
+    assert system_info == snapshot
+
+
+@calls_command("player.get_players_unsupported")
+async def test_validate_connection_unsupported_versions(
     mock_device: MockHeosDevice, snapshot: SnapshotAssertion
 ) -> None:
     """Test get_system_info method returns system info."""
@@ -317,6 +327,45 @@ async def test_commands_fail_when_disconnected(
     )
 
 
+@calls_command("system.heart_beat")
+async def test_command_timeout(mock_device: MockHeosDevice, heos: Heos) -> None:
+    """Test command times out."""
+    with mock_device.modify(c.COMMAND_HEART_BEAT, delay_response=0.2):
+        with pytest.raises(CommandError):
+            await heos.heart_beat()
+    await asyncio.sleep(0.2)
+    await heos.heart_beat()
+
+
+@calls_command("system.heart_beat")
+async def test_command_duplicate_response(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test a duplicate command response is discarded."""
+    with mock_device.modify(c.COMMAND_HEART_BEAT, replay_response=2):
+        await heos.heart_beat()
+    while "Unexpected response received: 'system/heart_beat'" not in caplog.text:
+        await asyncio.sleep(0.1)
+
+
+@calls_command("system.heart_beat")
+async def test_event_received_during_command(mock_device: MockHeosDevice) -> None:
+    """Test event received during command execution."""
+    heos = await Heos.create_and_connect("127.0.0.1", heart_beat=False)
+
+    mock_device.modifiers.append(
+        CommandModifier(c.COMMAND_HEART_BEAT, delay_response=0.2)
+    )
+    command_task = asyncio.create_task(heos.heart_beat())
+
+    await asyncio.sleep(0.1)
+    await mock_device.write_event("event.user_changed_signed_in")
+
+    await command_task
+
+    await heos.disconnect()
+
+
 async def test_connection_error(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test connection error during event results in disconnected."""
     disconnect_signal = connect_handler(
@@ -473,6 +522,19 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 @calls_player_commands()
 async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get_players method load players."""
+    players = await heos.get_players()
+
+    assert players == snapshot
+
+
+@calls_player_commands(
+    (1, 2),
+    CallCommand("player.get_players_unsupported", {}, replace=True),
+)
+async def test_get_players_unsupported_versions(
+    heos: Heos, snapshot: SnapshotAssertion
+) -> None:
+    """Test the get_players method load players with unsupported versions."""
     players = await heos.get_players()
 
     assert players == snapshot
@@ -1478,3 +1540,29 @@ async def test_unrecognized_event_logs(
     await heos.dispatcher.wait_all()
 
     assert "Unrecognized event: " in caplog.text
+
+
+@calls_player_commands()
+async def test_uncaught_error_in_event_callback_logs(
+    mock_device: MockHeosDevice, heos: Heos, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test unexpected exception during event callback execution logs."""
+    await heos.get_players()
+    player = heos.players[1]
+
+    # Register command that results in an exception
+    command = mock_device.register(
+        c.COMMAND_GET_NOW_PLAYING_MEDIA,
+        None,
+        "player.get_now_playing_media_failed",
+        replace=True,
+    )
+    # Write event through mock device
+    await mock_device.write_event(
+        "event.player_now_playing_changed", {"player_id": player.player_id}
+    )
+
+    while "Unexpected exception in task:" not in caplog.text:
+        await asyncio.sleep(0.1)
+
+    command.assert_called()

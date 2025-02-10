@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from pyheos import command as c
+from pyheos.common import is_supported_version
 from pyheos.types import NetworkType
 
 
@@ -17,9 +18,10 @@ class HeosHost:
     name: str
     model: str
     serial: str | None
-    version: str
-    ip_address: str
+    version: str | None
+    ip_address: str | None
     network: NetworkType
+    supported_version: bool
 
     @staticmethod
     def _from_data(data: dict[str, Any]) -> "HeosHost":
@@ -31,13 +33,15 @@ class HeosHost:
         Returns:
             HeosHost: The created HeosHost object.
         """
+        version = data.get(c.ATTR_VERSION)
         return HeosHost(
             data[c.ATTR_NAME],
             data[c.ATTR_MODEL],
             data.get(c.ATTR_SERIAL),
-            data[c.ATTR_VERSION],
-            data[c.ATTR_IP_ADDRESS],
+            version,
+            data.get(c.ATTR_IP_ADDRESS),
             c.parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
+            is_supported_version(version),
         )
 
 
@@ -49,7 +53,7 @@ class HeosSystem:
     """
 
     signed_in_username: str | None
-    host: HeosHost
+    host: HeosHost | None
     hosts: list[HeosHost]
     is_signed_in: bool = field(init=False)
     preferred_hosts: list[HeosHost] = field(init=False)
@@ -59,6 +63,14 @@ class HeosSystem:
         """Post initialize the system."""
         self.is_signed_in = self.signed_in_username is not None
         self.preferred_hosts = list(
-            [host for host in self.hosts if host.network == NetworkType.WIRED]
+            [
+                host
+                for host in self.hosts
+                if host.network == NetworkType.WIRED
+                and host.supported_version
+                and host.ip_address is not None
+            ]
         )
-        self.connected_to_preferred_host = self.host in self.preferred_hosts
+        self.connected_to_preferred_host = (
+            self.host is not None and self.host in self.preferred_hosts
+        )
