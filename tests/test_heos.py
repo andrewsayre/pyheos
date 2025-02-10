@@ -80,6 +80,15 @@ async def test_validate_connection(
     assert system_info == snapshot
 
 
+@calls_command("player.get_players_unsupported")
+async def test_validate_connection_unsupported_versions(
+    mock_device: MockHeosDevice, snapshot: SnapshotAssertion
+) -> None:
+    """Test get_system_info method returns system info."""
+    system_info = await Heos.validate_connection("127.0.0.1")
+    assert system_info == snapshot
+
+
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
     heos = Heos(

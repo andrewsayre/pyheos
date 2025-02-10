@@ -1,0 +1,21 @@
+{
+	"heos": {
+		"command": "player/get_players",
+		"result": "success",
+		"message": ""
+	},
+	"payload": [{
+			"name": "Back Patio",
+			"pid": 1,
+			"model": "HEOS Link"
+		}, {
+			"name": "Front Porch",
+			"pid": 2,
+			"model": "HEOS 5",
+			"version": "1.583.147",
+			"ip": "127.0.0.2",
+			"network": "wifi",
+			"lineout": 0
+		}
+	]
+}

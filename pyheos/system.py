@@ -53,7 +53,7 @@ class HeosSystem:
     """
 
     signed_in_username: str | None
-    host: HeosHost
+    host: HeosHost | None
     hosts: list[HeosHost]
     is_signed_in: bool = field(init=False)
     preferred_hosts: list[HeosHost] = field(init=False)
@@ -71,4 +71,6 @@ class HeosSystem:
                 and host.ip_address is not None
             ]
         )
-        self.connected_to_preferred_host = self.host in self.preferred_hosts
+        self.connected_to_preferred_host = (
+            self.host is not None and self.host in self.preferred_hosts
+        )

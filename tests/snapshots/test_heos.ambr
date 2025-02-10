@@ -1000,3 +1000,33 @@
     'signed_in_username': 'example@example.com',
   })
 # ---
+# name: test_validate_connection_unsupported_versions
+  dict({
+    'connected_to_preferred_host': False,
+    'host': None,
+    'hosts': list([
+      dict({
+        'ip_address': None,
+        'model': 'HEOS Link',
+        'name': 'Back Patio',
+        'network': <NetworkType.UNKNOWN: 'unknown'>,
+        'serial': None,
+        'supported_version': False,
+        'version': None,
+      }),
+      dict({
+        'ip_address': '127.0.0.2',
+        'model': 'HEOS 5',
+        'name': 'Front Porch',
+        'network': <NetworkType.WIFI: 'wifi'>,
+        'serial': None,
+        'supported_version': False,
+        'version': '1.583.147',
+      }),
+    ]),
+    'is_signed_in': True,
+    'preferred_hosts': list([
+    ]),
+    'signed_in_username': 'example@example.com',
+  })
+# ---
