@@ -101,7 +101,7 @@ class PlayerCommands(ConnectionMixin):
         for player_data in payload:
             player_id = int(player_data[c.ATTR_PLAYER_ID])
             name = player_data[c.ATTR_NAME]
-            version = player_data[c.ATTR_VERSION]
+            version = player_data.get(c.ATTR_VERSION)
             serial = player_data.get(c.ATTR_SERIAL)
             # Try matching by serial (if available), then try matching by player_id
             # and fallback to matching name when firmware version is different
@@ -111,7 +111,11 @@ class PlayerCommands(ConnectionMixin):
                     for player in existing
                     if (player.serial == serial and serial is not None)
                     or player.player_id == player_id
-                    or (player.name == name and player.version != version)
+                    or (
+                        player.name == name
+                        and player.version != version
+                        and version is not None
+                    )
                 ),
                 None,
             )

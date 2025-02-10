@@ -12,6 +12,7 @@ from pyheos.const import (
     MUSIC_SOURCE_PLAYLISTS,
     MUSIC_SOURCE_TIDAL,
     SEARCHED_TRACKS,
+    TARGET_VERSION,
 )
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
@@ -20,24 +21,61 @@ from tests import CallCommand, calls_command, calls_commands, value
 from tests.common import MediaItems
 
 
-@pytest.mark.parametrize(
-    "network",
-    [None, "wired", "invalid"],
-)
-def test_from_data(network: str | None, snapshot: SnapshotAssertion) -> None:
+@pytest.mark.parametrize("network", [None, "wired", "invalid"])
+def test_from_data_network(network: str | None, snapshot: SnapshotAssertion) -> None:
     """Test the from_data function."""
     data = {
         c.ATTR_NAME: "Back Patio",
         c.ATTR_PLAYER_ID: 1,
         c.ATTR_MODEL: "HEOS Drive",
-        c.ATTR_VERSION: "1.493.180",
+        c.ATTR_VERSION: TARGET_VERSION,
         c.ATTR_IP_ADDRESS: "192.168.0.1",
         c.ATTR_NETWORK: network,
         c.ATTR_LINE_OUT: 1,
         c.ATTR_SERIAL: "1234567890",
     }
     player = HeosPlayer._from_data(data, None)
-    assert player == snapshot
+    assert player == snapshot()
+
+
+@pytest.mark.parametrize("version", [None, "", "1.493.180", TARGET_VERSION, "100.0.0"])
+def test_from_data_version(version: str | None, snapshot: SnapshotAssertion) -> None:
+    """Test the from_data function."""
+    data = {
+        c.ATTR_NAME: "Back Patio",
+        c.ATTR_PLAYER_ID: 1,
+        c.ATTR_MODEL: "HEOS Drive",
+        c.ATTR_IP_ADDRESS: "192.168.0.1",
+        c.ATTR_NETWORK: "wired",
+        c.ATTR_LINE_OUT: 1,
+        c.ATTR_SERIAL: "1234567890",
+    }
+    if version is not None:
+        data[c.ATTR_VERSION] = version
+
+    player = HeosPlayer._from_data(data, None)
+    assert player == snapshot()
+
+
+@pytest.mark.parametrize("ip_address", [None, "", "192.168.0.1"])
+def test_from_data_ip_address(
+    ip_address: str | None, snapshot: SnapshotAssertion
+) -> None:
+    """Test the from_data function."""
+    data = {
+        c.ATTR_NAME: "Back Patio",
+        c.ATTR_PLAYER_ID: 1,
+        c.ATTR_MODEL: "HEOS Drive",
+        c.ATTR_VERSION: TARGET_VERSION,
+        c.ATTR_NETWORK: "wired",
+        c.ATTR_LINE_OUT: 1,
+        c.ATTR_SERIAL: "1234567890",
+    }
+    if ip_address is not None:
+        data[c.ATTR_IP_ADDRESS] = ip_address
+
+    player = HeosPlayer._from_data(data, None)
+    assert player == snapshot()
 
 
 async def test_update_from_data(
@@ -48,7 +86,7 @@ async def test_update_from_data(
         c.ATTR_NAME: "Patio",
         c.ATTR_PLAYER_ID: 2,
         c.ATTR_MODEL: "HEOS Drives",
-        c.ATTR_VERSION: "2.0.0",
+        c.ATTR_VERSION: "3.34.610",
         c.ATTR_IP_ADDRESS: "192.168.0.2",
         c.ATTR_NETWORK: "wifi",
         c.ATTR_LINE_OUT: "0",

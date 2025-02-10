@@ -119,7 +119,7 @@ def calls_commands(*commands: CallCommand) -> Callable[..., Any]:
                 )
 
             # Register commands
-            assert_list: list[Callable[..., None]] = []
+            assert_list: list[CommandMatcher] = []
 
             for command in matched_commands:
                 # Get the fixture command
@@ -142,14 +142,15 @@ def calls_commands(*commands: CallCommand) -> Callable[..., Any]:
 
                 # Store item to assert later (so we don't need to keep a copy of the resolved args)
                 if command.assert_called:
-                    assert_list.append(matcher.assert_called)
+                    assert_list.append(matcher)
 
             # Call the wrapped method
             result = await func(*args, **kwargs)
 
             # Assert the commands were called
-            for callable in assert_list:
-                callable()
+            for matcher in assert_list:
+                if matcher in mock_device._matchers:
+                    matcher.assert_called()
 
             return result
 
@@ -514,9 +515,10 @@ class CommandMatcher:
 
     def assert_called(self) -> None:
         """Assert that the command was called."""
-        assert self.match_count, (
-            f"Command {self.command} was not called with arguments {self._args}."
-        )
+        if self.match_count == 0:
+            raise AssertionError(
+                f"Command {self.command} was not called with arguments {self._args}."
+            )
 
 
 class ConnectionLog:

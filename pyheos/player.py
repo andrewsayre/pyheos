@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from pyheos.abc import RemoveHeosFieldABC
 from pyheos.command import optional_int, parse_enum, parse_optional_enum
+from pyheos.common import is_supported_version
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
 from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
@@ -192,8 +193,9 @@ class HeosPlayer(RemoveHeosFieldABC):
     player_id: int = field(repr=True, hash=True, compare=True)
     model: str = field(repr=True, hash=False, compare=False)
     serial: str | None = field(repr=False, hash=False, compare=False)
-    version: str = field(repr=True, hash=False, compare=False)
-    ip_address: str = field(repr=True, hash=False, compare=False)
+    version: str | None = field(repr=True, hash=False, compare=False)
+    supported_version: bool = field(repr=True, hash=False, compare=False)
+    ip_address: str | None = field(repr=True, hash=False, compare=False)
     network: NetworkType = field(repr=False, hash=False, compare=False)
     line_out: LineOutLevelType = field(repr=False, hash=False, compare=False)
     control: VolumeControlType = field(
@@ -220,14 +222,15 @@ class HeosPlayer(RemoveHeosFieldABC):
         heos: Optional["Heos"] = None,
     ) -> "HeosPlayer":
         """Create a new instance from the provided data."""
-
+        version = data.get(c.ATTR_VERSION)
         return HeosPlayer(
             name=data[c.ATTR_NAME],
             player_id=int(data[c.ATTR_PLAYER_ID]),
             model=data[c.ATTR_MODEL],
             serial=data.get(c.ATTR_SERIAL),
-            version=data[c.ATTR_VERSION],
-            ip_address=data[c.ATTR_IP_ADDRESS],
+            version=version,
+            supported_version=is_supported_version(version),
+            ip_address=data.get(c.ATTR_IP_ADDRESS),
             network=parse_enum(c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN),
             line_out=parse_enum(
                 c.ATTR_LINE_OUT, data, LineOutLevelType, LineOutLevelType.UNKNOWN
@@ -245,8 +248,9 @@ class HeosPlayer(RemoveHeosFieldABC):
         self.player_id = int(data[c.ATTR_PLAYER_ID])
         self.model = data[c.ATTR_MODEL]
         self.serial = data.get(c.ATTR_SERIAL)
-        self.version = data[c.ATTR_VERSION]
-        self.ip_address = data[c.ATTR_IP_ADDRESS]
+        self.version = data.get(c.ATTR_VERSION)
+        self.supported_version = is_supported_version(self.version)
+        self.ip_address = data.get(c.ATTR_IP_ADDRESS)
         self.network = parse_enum(
             c.ATTR_NETWORK, data, NetworkType, NetworkType.UNKNOWN
         )

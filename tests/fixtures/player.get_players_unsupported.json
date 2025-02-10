@@ -7,21 +7,15 @@
 	"payload": [{
 			"name": "Back Patio",
 			"pid": 1,
-			"model": "HEOS Drive",
-			"version": "3.34.240",
-			"ip": "127.0.0.1",
-			"network": "wired",
-			"lineout": 2,
-			"control": 2,
-			"serial": "B1A2C3K"
+			"model": "HEOS Link"
 		}, {
 			"name": "Front Porch",
 			"pid": 2,
-			"model": "HEOS Drive",
-			"version": "3.34.240",
+			"model": "HEOS 5",
+			"version": "1.583.147",
 			"ip": "127.0.0.2",
 			"network": "wifi",
-			"lineout": 1
+			"lineout": 0
 		}
 	]
 }

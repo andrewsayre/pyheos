@@ -80,6 +80,15 @@ async def test_validate_connection(
     assert system_info == snapshot
 
 
+@calls_command("player.get_players_unsupported")
+async def test_validate_connection_unsupported_versions(
+    mock_device: MockHeosDevice, snapshot: SnapshotAssertion
+) -> None:
+    """Test get_system_info method returns system info."""
+    system_info = await Heos.validate_connection("127.0.0.1")
+    assert system_info == snapshot
+
+
 async def test_connect(mock_device: MockHeosDevice) -> None:
     """Test connect updates state and fires signal."""
     heos = Heos(
@@ -513,6 +522,19 @@ async def test_reconnect_cancelled(mock_device: MockHeosDevice) -> None:
 @calls_player_commands()
 async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     """Test the get_players method load players."""
+    players = await heos.get_players()
+
+    assert players == snapshot
+
+
+@calls_player_commands(
+    (1, 2),
+    CallCommand("player.get_players_unsupported", {}, replace=True),
+)
+async def test_get_players_unsupported_versions(
+    heos: Heos, snapshot: SnapshotAssertion
+) -> None:
+    """Test the get_players method load players with unsupported versions."""
     players = await heos.get_players()
 
     assert players == snapshot

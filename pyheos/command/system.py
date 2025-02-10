@@ -134,5 +134,7 @@ class SystemCommands(ConnectionMixin):
         response = await self._connection.command(HeosCommand(c.COMMAND_GET_PLAYERS))
         payload = cast(Sequence[dict[str, Any]], response.payload)
         hosts = list([HeosHost._from_data(item) for item in payload])
-        host = next(host for host in hosts if host.ip_address == self._options.host)
+        host = next(
+            (host for host in hosts if host.ip_address == self._options.host), None
+        )
         return HeosSystem(self._signed_in_username, host, hosts)
