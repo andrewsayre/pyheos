@@ -1097,6 +1097,39 @@ async def test_groups_changed_event_players_not_loaded(
 
 
 @calls_player_commands()
+async def test_groups_changed_event_groups_not_loaded(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test groups changed fires dispatcher and updates players when groups not loaded."""
+    players = await heos.get_players()
+    assert all(player.group_id is not None for player in players.values())
+    signal = asyncio.Event()
+
+    async def handler(event: str, data: dict[str, Any]) -> None:
+        assert event == EVENT_GROUPS_CHANGED
+        signal.set()
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    # Write event through mock device
+    commands = [
+        mock_device.register(
+            c.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
+        ),
+        mock_device.register(
+            c.COMMAND_GET_PLAYERS, None, "player.get_players_no_groups", replace=True
+        ),
+    ]
+    await mock_device.write_event("event.groups_changed")
+
+    # Wait until the signal is set
+    await signal.wait()
+    map(lambda c: c.assert_called(), commands)
+    assert all(player.group_id is None for player in players.values())
+    assert not heos.groups
+
+
+@calls_player_commands()
 async def test_player_playback_error_event(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:

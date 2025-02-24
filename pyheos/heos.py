@@ -235,17 +235,21 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         result: PlayerUpdateResult | None = None
         if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
             result = await self.load_players()
-        if event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded:
+        elif (
+            event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded
+        ):
             await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_USER_CHANGED:
             if c.ATTR_SIGNED_IN in event.message:
                 self._signed_in_username = event.get_message_value(c.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
-        elif event.command == const.EVENT_GROUPS_CHANGED and self._groups_loaded:
+        elif event.command == const.EVENT_GROUPS_CHANGED:
             if self._players_loaded:
-                await self.get_players(refresh=True)
-            await self.get_groups(refresh=True)
+                # Ensure player group ID attributes (i.e. group_id) are update
+                await self._refresh_players_base_info()
+            if self._groups_loaded:
+                await self.get_groups(refresh=True)
 
         await self._dispatcher.wait_send(
             SignalType.CONTROLLER_EVENT, event.command, result, return_exceptions=True

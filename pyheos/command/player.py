@@ -150,6 +150,16 @@ class PlayerCommands(ConnectionMixin):
         self._players_loaded = True
         return result
 
+    async def _refresh_players_base_info(self) -> None:
+        """Refresh the attributes of all player's base information."""
+        response = await self._connection.command(HeosCommand(c.COMMAND_GET_PLAYERS))
+        payload = cast(Sequence[dict[str, str]], response.payload)
+        for player_data in payload:
+            player_id = int(player_data[c.ATTR_PLAYER_ID])
+            player = self._players.get(player_id)
+            if player:
+                player._update_from_data(player_data)
+
     async def player_get_play_state(self, player_id: int) -> PlayState:
         """Get the state of the player.
 
