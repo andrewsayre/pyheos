@@ -1,4 +1,4 @@
-# pyheos
+# ![pyheos](assets/pyheos-logo.png "pyheos - An asynchronous Python library for controlling Denon and Marantz products with HEOS® Built-in")
 
 [![CI Status](https://github.com/andrewsayre/pyheos/workflows/CI/badge.svg)](https://github.com/andrewsayre/pyheos/actions)
 [![codecov](https://codecov.io/github/andrewsayre/pyheos/graph/badge.svg?token=PV4P3AN7Z1)](https://codecov.io/github/andrewsayre/pyheos)
@@ -6,7 +6,7 @@
 [![image](https://img.shields.io/pypi/pyversions/pyheos.svg)](https://pypi.org/project/pyheos/)
 [![image](https://img.shields.io/pypi/l/pyheos.svg)](https://pypi.org/project/pyheos/)
 
-An async python library for controlling HEOS devices through the HEOS CLI Protocol (version 1.21 for HEOS firmware 3.40 or newer).
+An asynchronous Python library for controlling Denon and Marantz products with HEOS® Built-in through the HEOS CLI Protocol (version 1.21 for HEOS firmware 3.40 or newer).
 
 ## Installation
 
