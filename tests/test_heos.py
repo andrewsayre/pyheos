@@ -397,6 +397,45 @@ async def test_connection_error_during_command(
     assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
+@calls_player_commands()
+@calls_group_commands()
+async def test_reconnect_refreshes_players_and_groups(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test refreshes players and groups after reconnecting and raises event."""
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            heart_beat=False,
+        )
+    )
+
+    signal_players = asyncio.Event()
+    signal_groups = asyncio.Event()
+
+    async def handler(event: str, result: PlayerUpdateResult | None = None) -> None:
+        if event == EVENT_PLAYERS_CHANGED:
+            signal_players.set()
+            assert result is not None
+        elif event == EVENT_GROUPS_CHANGED:
+            signal_groups.set()
+        assert result is not None
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    await heos.connect()
+    await heos.get_players()
+    await heos.get_groups()
+
+    await mock_device.restart()
+
+    await asyncio.gather(signal_players.wait(), signal_groups.wait())
+    await heos.disconnect()
+
+
 async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos(
