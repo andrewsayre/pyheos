@@ -148,9 +148,9 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
         """Handle when connected, which may occur more than once."""
         assert self._connection.state == ConnectionState.CONNECTED
 
-        await self._dispatcher.wait_send(
-            SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED, return_exceptions=True
-        )
+        events: list[tuple[Any, ...]] = [
+            (SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED)
+        ]
 
         if self.current_credentials:
             # Sign-in to the account if provided
@@ -164,10 +164,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                     "Failed to sign-in to HEOS Account after connection: %s", err
                 )
                 self.current_credentials = None
-                await self._dispatcher.wait_send(
-                    SignalType.HEOS_EVENT,
-                    SignalHeosEvent.USER_CREDENTIALS_INVALID,
-                    return_exceptions=True,
+                events.append(
+                    (SignalType.HEOS_EVENT, SignalHeosEvent.USER_CREDENTIALS_INVALID)
                 )
         else:
             # Determine the logged in user
@@ -177,7 +175,18 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
         # Refresh players and mark available
         if self._players_loaded:
-            await self.load_players()
+            update = await self.load_players()
+            events.append(
+                (SignalType.CONTROLLER_EVENT, const.EVENT_PLAYERS_CHANGED, update)
+            )
+
+        # Refresh groups
+        if self._groups_loaded:
+            await self.get_groups(refresh=True)
+            events.append((SignalType.CONTROLLER_EVENT, const.EVENT_GROUPS_CHANGED))
+
+        for event in events:
+            await self._dispatcher.wait_send(*event, return_exceptions=True)
 
     async def _on_disconnected(self, from_error: bool) -> None:
         """Handle when disconnected, which may occur more than once."""

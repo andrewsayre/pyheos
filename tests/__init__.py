@@ -304,6 +304,12 @@ class MockHeosDevice:
         # Wait for server to close
         await self._server.wait_closed()
 
+    async def restart(self) -> None:
+        """Restart the heos server."""
+        await self.stop()
+        await asyncio.sleep(0.1)
+        await self.start()
+
     async def write_event(
         self, fixture: str, replacements: dict[str, Any] | None = None
     ) -> None:
@@ -428,9 +434,7 @@ class MockHeosDevice:
             # Special processing for known/unknown commands
             if command == c.COMMAND_REBOOT:
                 # Simulate a reboot by shutting down the server
-                await self.stop()
-                await asyncio.sleep(0.3)
-                await self.start()
+                await self.restart()
                 return
             if command == c.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[c.ATTR_ENABLE])
