@@ -39,7 +39,7 @@ def test_to_from_media_uri_media(media: MediaItem, expected_uri: str) -> None:
     uri = mediauri.to_media_uri(media)
     assert uri == expected_uri
 
-    new_media = mediauri.from_media_uri(uri)
+    new_media, _ = mediauri.from_media_uri(uri)
     assert isinstance(new_media, MediaItem)
     assert new_media.source_id == media.source_id
     assert new_media.type == media.type
@@ -79,7 +79,7 @@ def test_to_from_media_uri_music_source(
     uri = mediauri.to_media_uri(media)
     assert uri == expected_uri
 
-    new_media = mediauri.from_media_uri(uri)
+    new_media, _ = mediauri.from_media_uri(uri)
     assert isinstance(new_media, MediaMusicSource)
     assert new_media.source_id == media.source_id
     assert new_media.type == media.type
@@ -87,3 +87,21 @@ def test_to_from_media_uri_music_source(
     assert new_media.image_url == media.image_url
     assert new_media.available == media.available
     assert new_media.service_username == media.service_username
+
+
+def test_to_from_media_uri_with_extra() -> None:
+    """Test extra data is passed correctly."""
+    uri = mediauri.to_media_uri(MediaItems.INPUT, {"range_start": 0, "range_end": 10})
+    assert (
+        uri
+        == "heos://media/-263109739/station?name=HEOS+Drive+-+AUX+In+1&image_url=&playable=True&browsable=False&media_id=inputs%2Faux_in_1&extra=%7B%22range_start%22%3A+0%2C+%22range_end%22%3A+10%7D"
+    )
+
+    new_media, extra = mediauri.from_media_uri(uri)
+    assert extra == {"range_start": 0, "range_end": 10}
+
+
+def test_from_media_uri_invalid_raises() -> None:
+    """Test the is_media_uri function."""
+    with pytest.raises(ValueError):
+        mediauri.from_media_uri("http://example.com")

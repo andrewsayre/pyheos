@@ -1,5 +1,6 @@
-"""Define the mediauri module."""
+"""Defines utilities for serializing MediaItem and MediaMusicSource instances to/from URI strings."""
 
+import json
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse
 
@@ -20,11 +21,12 @@ def is_media_uri(uri: str) -> bool:
     return uri.startswith(BASE_URI)
 
 
-def to_media_uri(media: MediaItem | MediaMusicSource) -> str:
+def to_media_uri(media: MediaItem | MediaMusicSource, extra: Any | None = None) -> str:
     """Get URI string that can uniquely identify the media item.
 
     Args:
         media: The item to get the URI for.
+        extra: Additional fields to serialize and include in the URI.
     Returns:
         A URI string that uniquely identifies this media item in the format:
         heos://media/<souce_id>/<type>?fields=values
@@ -52,11 +54,15 @@ def to_media_uri(media: MediaItem | MediaMusicSource) -> str:
         params["available"] = media.available
         if media.service_username:
             params["service_username"] = media.service_username
+    if extra:
+        params["extra"] = json.dumps(extra)
 
     return f"{base_uri}?{urlencode(params)}"
 
 
-def from_media_uri(uri: str) -> MediaItem | MediaMusicSource:
+def from_media_uri(
+    uri: str,
+) -> tuple[MediaItem | MediaMusicSource, Any]:
     """Create a new instance from the provided URI.
 
     Args:
@@ -73,6 +79,9 @@ def from_media_uri(uri: str) -> MediaItem | MediaMusicSource:
     query = dict(
         parse_qsl(parse_result.query, keep_blank_values=True, strict_parsing=True)
     )
+    extra: Any | None = None
+    if "extra" in query:
+        extra = json.loads(query["extra"])
     if "playable" in query:
         return MediaItem(
             source_id=int(path[0]),
@@ -87,7 +96,7 @@ def from_media_uri(uri: str) -> MediaItem | MediaMusicSource:
             album=query.get("album"),
             album_id=query.get("album_id"),
             heos=None,
-        )
+        ), extra
     else:
         return MediaMusicSource(
             source_id=int(path[0]),
@@ -97,4 +106,4 @@ def from_media_uri(uri: str) -> MediaItem | MediaMusicSource:
             available=query["available"] == "True",
             service_username=query.get("service_username"),
             heos=None,
-        )
+        ), extra
