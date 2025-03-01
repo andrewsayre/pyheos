@@ -35,3 +35,17 @@ def test_system_preferred_hosts(snapshot: SnapshotAssertion) -> None:
     system = HeosSystem("username", hosts[0], hosts)
 
     assert system == snapshot
+
+
+def test_system_preferred_hosts_with_invalid(snapshot: SnapshotAssertion) -> None:
+    """Test the preferred hosts property with an invalid ip address."""
+    network = [NetworkType.WIRED, NetworkType.WIFI]
+    hosts: list[HeosHost] = []
+    for index, item in enumerate(network):
+        hosts.insert(
+            0,
+            HeosHost(f"name{index}", "model", None, "1.0.0", "invalid", item, True),
+        )
+    system = HeosSystem("username", hosts[0], hosts)
+
+    assert system == snapshot

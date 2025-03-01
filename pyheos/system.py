@@ -9,7 +9,19 @@ from pyheos.common import is_supported_version
 from pyheos.types import NetworkType
 
 
-@dataclass
+def _safe_ip_address(
+    address: str | None,
+) -> tuple[bool, IPv4Address | IPv6Address | None]:
+    """Safely parse an IP address."""
+    if address is None:
+        return True, None
+    try:
+        return False, ip_address(address)
+    except ValueError:
+        return True, None
+
+
+@dataclass(frozen=True)
 class HeosHost:
     """Represents a HEOS host.
 
@@ -48,23 +60,15 @@ class HeosHost:
 
     def __post_init__(self) -> None:
         """Post initialize the host."""
-        self.preferred_host = (
-            self.network == NetworkType.WIRED
-            and self.supported_version
-            and self.ip_address is not None
+        object.__setattr__(
+            self,
+            "preferred_host",
+            (
+                self.network == NetworkType.WIRED
+                and self.supported_version
+                and _safe_ip_address(self.ip_address)[1] is not None
+            ),
         )
-
-
-def _safe_ip_address(
-    address: str | None,
-) -> tuple[bool, IPv4Address | IPv6Address | None]:
-    """Safely parse an IP address."""
-    if address is None:
-        return True, None
-    try:
-        return False, ip_address(address)
-    except ValueError:
-        return True, None
 
 
 @dataclass

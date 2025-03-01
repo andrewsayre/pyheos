@@ -200,3 +200,44 @@
     'signed_in_username': 'username',
   })
 # ---
+# name: test_system_preferred_hosts_with_invalid
+  dict({
+    'connected_to_preferred_host': False,
+    'host': dict({
+      'ip_address': 'invalid',
+      'model': 'model',
+      'name': 'name1',
+      'network': <NetworkType.WIFI: 'wifi'>,
+      'preferred_host': False,
+      'serial': None,
+      'supported_version': True,
+      'version': '1.0.0',
+    }),
+    'hosts': list([
+      dict({
+        'ip_address': 'invalid',
+        'model': 'model',
+        'name': 'name1',
+        'network': <NetworkType.WIFI: 'wifi'>,
+        'preferred_host': False,
+        'serial': None,
+        'supported_version': True,
+        'version': '1.0.0',
+      }),
+      dict({
+        'ip_address': 'invalid',
+        'model': 'model',
+        'name': 'name0',
+        'network': <NetworkType.WIRED: 'wired'>,
+        'preferred_host': False,
+        'serial': None,
+        'supported_version': True,
+        'version': '1.0.0',
+      }),
+    ]),
+    'is_signed_in': True,
+    'preferred_hosts': list([
+    ]),
+    'signed_in_username': 'username',
+  })
+# ---
