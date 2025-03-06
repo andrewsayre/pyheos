@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from abc import ABC
 from collections.abc import Awaitable, Callable, Coroutine
 from contextlib import suppress
 from datetime import datetime, timedelta
@@ -21,7 +22,7 @@ MAX_RECONNECT_DELAY = 600
 _LOGGER: Final = logging.getLogger(__name__)
 
 
-class ConnectionBase:
+class ConnectionBase(ABC):
     """
     Define a base class for HEOS connections.
 
@@ -269,29 +270,19 @@ class ConnectionBase:
         await self._on_disconnected()
 
 
-class AutoReconnectingConnection(ConnectionBase):
-    """
-    Define a class that manages the connection state and automatically reconnects on failure.
-
-    This class adds heartbeat functionality and auto-reconnect logic.
-    """
+class HeartBeatBehavior(ConnectionBase, ABC):
+    """Define a class that adds heart beat functionality to a connection."""
 
     def __init__(
         self,
         host: str,
         *,
         timeout: float,
-        reconnect: bool = True,
-        reconnect_delay: float,
-        reconnect_max_attempts: int,
         heart_beat: bool = True,
         heart_beat_interval: float,
     ) -> None:
         """Init a new instance of the AutoReconnectingConnection class."""
         super().__init__(host, timeout=timeout)
-        self._reconnect = reconnect
-        self._reconnect_delay = reconnect_delay
-        self._reconnect_max_attempts = reconnect_max_attempts
         self._heart_beat = heart_beat
         self._heart_beat_interval = heart_beat_interval
         self._heart_beat_interval_delta = timedelta(seconds=heart_beat_interval)
@@ -311,6 +302,43 @@ class AutoReconnectingConnection(ConnectionBase):
             # Sleep until next interval
             await asyncio.sleep(self._heart_beat_interval)
 
+    async def _on_connected(self) -> None:
+        """Handle when the connection is established."""
+        # Start heart beat when enabled
+        if self._heart_beat:
+            self._register_task(self._heart_beat_handler(), "Heart Beat")
+        await super()._on_connected()
+
+
+class AutoReconnectingConnection(HeartBeatBehavior):
+    """
+    Define a class that manages the connection state and automatically reconnects on failure.
+
+    This class adds heartbeat functionality and auto-reconnect logic.
+    """
+
+    def __init__(
+        self,
+        host: str,
+        *,
+        timeout: float,
+        reconnect: bool = True,
+        reconnect_delay: float,
+        reconnect_max_attempts: int,
+        heart_beat: bool = True,
+        heart_beat_interval: float,
+    ) -> None:
+        """Init a new instance of the AutoReconnectingConnection class."""
+        super().__init__(
+            host,
+            timeout=timeout,
+            heart_beat=heart_beat,
+            heart_beat_interval=heart_beat_interval,
+        )
+        self._reconnect = reconnect
+        self._reconnect_delay = reconnect_delay
+        self._reconnect_max_attempts = reconnect_max_attempts
+
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect after disconnection from error."""
         self._state = ConnectionState.RECONNECTING
@@ -328,13 +356,6 @@ class AutoReconnectingConnection(ConnectionBase):
                 delay = min(delay * 2, MAX_RECONNECT_DELAY)
             else:
                 return
-
-    async def _on_connected(self) -> None:
-        """Handle when the connection is established."""
-        # Start heart beat when enabled
-        if self._heart_beat:
-            self._register_task(self._heart_beat_handler(), "Heart Beat")
-        await super()._on_connected()
 
     async def _on_disconnected(self, due_to_error: bool = False) -> None:
         """Handle when the connection is lost. Invoked after the connection has been reset."""
