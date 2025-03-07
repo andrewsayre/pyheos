@@ -1,6 +1,6 @@
 """Define the connection mixin module."""
 
-from pyheos.connection import AutoReconnectingConnection
+from pyheos.connection import AutoFailoverConnection
 from pyheos.options import HeosOptions
 from pyheos.types import ConnectionState
 
@@ -11,7 +11,7 @@ class ConnectionMixin:
     def __init__(self, options: HeosOptions) -> None:
         """Init a new instance of the ConnectionMixin."""
         self._options = options
-        self._connection = AutoReconnectingConnection(
+        self._connection = AutoFailoverConnection(
             options.host,
             timeout=options.timeout,
             reconnect=options.auto_reconnect,
@@ -19,6 +19,8 @@ class ConnectionMixin:
             reconnect_max_attempts=options.auto_reconnect_max_attempts,
             heart_beat=options.heart_beat,
             heart_beat_interval=options.heart_beat_interval,
+            failover=False,
+            failover_hosts=[],
         )
 
     @property
