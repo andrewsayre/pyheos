@@ -55,6 +55,8 @@ This class encapsulates the options and configuration for connecting to a HEOS s
 - `events: bool`: Set to `True` to enable event updates, `False` to disable. The default is `True`.
 - `all_progress_events: bool`: Set to `True` to receive media progress events, `False` to only receive media changed events. The default is `True`.
 - `dispatcher: pyheos.Dispatcher | None`: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
+- `auto_failover: bool`: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with `auto_failover_hosts`.
+- `auto_failover_hosts: Sequence[str]`: A sequence of host names or IP addresses of other hosts in the HEOS system. The default is an empty list, which will be populated automatically from the system information.
 - `auto_reconnect: bool`: Set to `True` to automatically reconnect if the connection is lost. The default is `False`. Used in conjunction with `auto_reconnect_delay`.
 - `auto_reconnect_delay: float`: The number of seconds to wait before attempting to reconnect upon a connection failure. The default is `DEFAULT_RECONNECT_DELAY = 10.0`. Used in conjunction with `auto_reconnect`.
 - `auto_reconnect_max_attempts: float`: The maximum number of reconnection attempts before giving up. Set to `0` for unlimited attempts. The default is `0` (unlimited).
