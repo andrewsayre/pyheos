@@ -105,3 +105,11 @@ class HeosSystem:
         self.connected_to_preferred_host = (
             self.host is not None and self.host in self.preferred_hosts
         )
+
+    def get_ip_addresses(self) -> list[str]:
+        """Get a list of IP addresses for the hosts."""
+        hosts = sorted(
+            [host for host in self.hosts if host.ip_address is not None],
+            key=lambda x: (x.preferred_host, *_safe_ip_address(x.ip_address)),
+        )
+        return [host.ip_address for host in hosts]  # type: ignore[misc]

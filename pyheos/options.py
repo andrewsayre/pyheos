@@ -1,5 +1,6 @@
 """Define the options module."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from pyheos import const
@@ -40,3 +41,6 @@ class HeosOptions:
     heart_beat: bool = field(default=True, kw_only=True)
     heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
     credentials: Credentials | None = field(default=None, kw_only=True)
+    auto_failover: bool = field(default=False, kw_only=True)
+    auto_failover_hosts: Sequence[str] = field(default_factory=list, kw_only=True)
+    auto_populate_failover_hosts: bool = field(default=True, kw_only=True)

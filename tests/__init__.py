@@ -277,11 +277,11 @@ class MockHeosDevice:
         self._matchers: list[CommandMatcher] = []
         self.modifiers: list[CommandModifier] = []
 
-    async def start(self) -> None:
+    async def start(self, address: str = "127.0.0.1") -> None:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
-            self._handle_connection, "127.0.0.1", CLI_PORT
+            self._handle_connection, address, CLI_PORT
         )
 
         self.register(c.COMMAND_ACCOUNT_CHECK, None, "system.check_account")

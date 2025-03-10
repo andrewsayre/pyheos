@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from abc import ABC
-from collections.abc import Awaitable, Callable, Coroutine
+from collections.abc import Awaitable, Callable, Coroutine, Sequence
 from contextlib import suppress
 from datetime import datetime, timedelta
 from itertools import cycle
@@ -392,7 +392,7 @@ class AutoFailoverConnection(AutoReconnectingBehavior):
         reconnect_delay: float,
         reconnect_max_attempts: int,
         failover: bool,
-        failover_hosts: list[str],
+        failover_hosts: Sequence[str],
     ) -> None:
         """Init a new instance of the AutoFailoverConnection class."""
         super().__init__(
@@ -405,7 +405,17 @@ class AutoFailoverConnection(AutoReconnectingBehavior):
             reconnect_max_attempts=reconnect_max_attempts,
         )
         self._failover = failover
-        self._failover_hosts = failover_hosts
+        self._failover_hosts = list(failover_hosts)
+
+    @property
+    def failover_hosts(self) -> Sequence[str]:
+        """Get the list of failover hosts."""
+        return self._failover_hosts
+
+    @failover_hosts.setter
+    def failover_hosts(self, hosts: Sequence[str]) -> None:
+        """Set the list of failover hosts."""
+        self._failover_hosts = list(hosts)
 
     async def _attempt_failover(self) -> None:
         """Attempt to fail over to a backup host."""
@@ -415,15 +425,13 @@ class AutoFailoverConnection(AutoReconnectingBehavior):
         assert self._host == next(failover_hosts)
 
         # First attempt to reconnect to the current host
-        await self._attempt_reconnect(1.0, 1)
+        await self._attempt_reconnect(self._reconnect_delay, 1)
 
         while self._state is not ConnectionState.CONNECTED:
             old_host = self._host
             self._host = next(failover_hosts)
-            _LOGGER.debug(
-                "Failed to connect to %s. Trying next host %s", old_host, self._host
-            )
-            await self._attempt_reconnect(0, 1)
+            _LOGGER.debug("Failing over from %s to %s", old_host, self._host)
+            await self._attempt_reconnect(self._reconnect_delay, 1)
 
     async def _on_disconnected(self, due_to_error: bool = False) -> None:
         """Handle when the connection is lost. Invoked after the connection has been reset."""

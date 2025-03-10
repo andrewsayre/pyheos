@@ -19,11 +19,16 @@ class ConnectionMixin:
             reconnect_max_attempts=options.auto_reconnect_max_attempts,
             heart_beat=options.heart_beat,
             heart_beat_interval=options.heart_beat_interval,
-            failover=False,
-            failover_hosts=[],
+            failover=options.auto_failover,
+            failover_hosts=options.auto_failover_hosts,
         )
 
     @property
     def connection_state(self) -> ConnectionState:
         """Get the state of the connection."""
         return self._connection.state
+
+    @property
+    def current_host(self) -> str:
+        """Get the host name or IP address."""
+        return self._connection.host
