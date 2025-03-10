@@ -2,9 +2,11 @@
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable, Coroutine
+from abc import ABC
+from collections.abc import Awaitable, Callable, Coroutine, Sequence
 from contextlib import suppress
 from datetime import datetime, timedelta
+from itertools import cycle
 from typing import TYPE_CHECKING, Any, Final
 
 from pyheos.command import COMMAND_HEART_BEAT, COMMAND_REBOOT
@@ -21,7 +23,7 @@ MAX_RECONNECT_DELAY = 600
 _LOGGER: Final = logging.getLogger(__name__)
 
 
-class ConnectionBase:
+class ConnectionBase(ABC):
     """
     Define a base class for HEOS connections.
 
@@ -50,6 +52,11 @@ class ConnectionBase:
     def state(self) -> ConnectionState:
         """Get the current state of the connection."""
         return self._state
+
+    @property
+    def host(self) -> str:
+        """Get the host of the connection."""
+        return self._host
 
     def add_on_event(self, callback: Callable[[HeosMessage], Awaitable[None]]) -> None:
         """Add a callback to be invoked when an event is received."""
@@ -269,29 +276,19 @@ class ConnectionBase:
         await self._on_disconnected()
 
 
-class AutoReconnectingConnection(ConnectionBase):
-    """
-    Define a class that manages the connection state and automatically reconnects on failure.
-
-    This class adds heartbeat functionality and auto-reconnect logic.
-    """
+class HeartBeatBehavior(ConnectionBase, ABC):
+    """Define a class that adds heart beat functionality to a connection."""
 
     def __init__(
         self,
         host: str,
         *,
         timeout: float,
-        reconnect: bool = True,
-        reconnect_delay: float,
-        reconnect_max_attempts: int,
         heart_beat: bool = True,
         heart_beat_interval: float,
     ) -> None:
         """Init a new instance of the AutoReconnectingConnection class."""
         super().__init__(host, timeout=timeout)
-        self._reconnect = reconnect
-        self._reconnect_delay = reconnect_delay
-        self._reconnect_max_attempts = reconnect_max_attempts
         self._heart_beat = heart_beat
         self._heart_beat_interval = heart_beat_interval
         self._heart_beat_interval_delta = timedelta(seconds=heart_beat_interval)
@@ -311,15 +308,53 @@ class AutoReconnectingConnection(ConnectionBase):
             # Sleep until next interval
             await asyncio.sleep(self._heart_beat_interval)
 
-    async def _attempt_reconnect(self) -> None:
+    async def _on_connected(self) -> None:
+        """Handle when the connection is established."""
+        # Start heart beat when enabled
+        if self._heart_beat:
+            self._register_task(self._heart_beat_handler(), "Heart Beat")
+        await super()._on_connected()
+
+
+class AutoReconnectingBehavior(HeartBeatBehavior, ABC):
+    """
+    Define a class that manages the connection state and automatically reconnects on failure.
+    """
+
+    def __init__(
+        self,
+        host: str,
+        *,
+        timeout: float,
+        heart_beat: bool = True,
+        heart_beat_interval: float,
+        reconnect: bool = True,
+        reconnect_delay: float,
+        reconnect_max_attempts: int,
+    ) -> None:
+        """Init a new instance of the AutoReconnectingBehavior class."""
+        super().__init__(
+            host,
+            timeout=timeout,
+            heart_beat=heart_beat,
+            heart_beat_interval=heart_beat_interval,
+        )
+        self._reconnect = reconnect
+        self._reconnect_delay = reconnect_delay
+        self._reconnect_max_attempts = reconnect_max_attempts
+
+    async def _attempt_reconnect(self, delay: float, max_attempts: int) -> None:
         """Attempt to reconnect after disconnection from error."""
         self._state = ConnectionState.RECONNECTING
         attempts = 0
-        unlimited_attempts = self._reconnect_max_attempts == 0
-        delay = min(self._reconnect_delay, MAX_RECONNECT_DELAY)
-        while (attempts < self._reconnect_max_attempts) or unlimited_attempts:
-            _LOGGER.debug("Waiting %s seconds before attempting to reconnect", delay)
-            await asyncio.sleep(delay)
+        unlimited_attempts = max_attempts == 0
+        delay = min(delay, MAX_RECONNECT_DELAY)
+        while (attempts < max_attempts) or unlimited_attempts:
+            if delay > 0:
+                _LOGGER.debug(
+                    "Waiting %s seconds before attempting to reconnect", delay
+                )
+                await asyncio.sleep(delay)
             _LOGGER.debug("Attempting reconnect #%s to %s", (attempts + 1), self._host)
             try:
                 await self.connect()
@@ -329,17 +364,82 @@ class AutoReconnectingConnection(ConnectionBase):
             else:
                 return
 
-    async def _on_connected(self) -> None:
-        """Handle when the connection is established."""
-        # Start heart beat when enabled
-        if self._heart_beat:
-            self._register_task(self._heart_beat_handler(), "Heart Beat")
-        await super()._on_connected()
-
     async def _on_disconnected(self, due_to_error: bool = False) -> None:
         """Handle when the connection is lost. Invoked after the connection has been reset."""
         if due_to_error and self._reconnect:
-            self._register_task(self._attempt_reconnect(), "Reconnect")
+            self._register_task(
+                self._attempt_reconnect(
+                    self._reconnect_delay, self._reconnect_max_attempts
+                ),
+                "Reconnect",
+            )
+        await super()._on_disconnected(due_to_error)
+
+
+class AutoFailoverConnection(AutoReconnectingBehavior):
+    """
+    Define a class that manages the connection state and fails over to a backup host on failure.
+    """
+
+    def __init__(
+        self,
+        host: str,
+        *,
+        timeout: float,
+        heart_beat: bool = True,
+        heart_beat_interval: float,
+        reconnect: bool = True,
+        reconnect_delay: float,
+        reconnect_max_attempts: int,
+        failover: bool,
+        failover_hosts: Sequence[str],
+    ) -> None:
+        """Init a new instance of the AutoFailoverConnection class."""
+        super().__init__(
+            host,
+            timeout=timeout,
+            heart_beat=heart_beat,
+            heart_beat_interval=heart_beat_interval,
+            reconnect=reconnect,
+            reconnect_delay=reconnect_delay,
+            reconnect_max_attempts=reconnect_max_attempts,
+        )
+        self._failover = failover
+        self._failover_hosts = list(failover_hosts)
+
+    @property
+    def failover_hosts(self) -> Sequence[str]:
+        """Get the list of failover hosts."""
+        return self._failover_hosts
+
+    @failover_hosts.setter
+    def failover_hosts(self, hosts: Sequence[str]) -> None:
+        """Set the list of failover hosts."""
+        self._failover_hosts = list(hosts)
+
+    async def _attempt_failover(self) -> None:
+        """Attempt to fail over to a backup host."""
+        self._state = ConnectionState.RECONNECTING
+
+        failover_hosts = cycle([self._host, *self._failover_hosts])
+        assert self._host == next(failover_hosts)
+
+        # First attempt to reconnect to the current host
+        await self._attempt_reconnect(self._reconnect_delay, 1)
+
+        while self._state is not ConnectionState.CONNECTED:
+            old_host = self._host
+            self._host = next(failover_hosts)
+            _LOGGER.debug("Failing over from %s to %s", old_host, self._host)
+            await self._attempt_reconnect(self._reconnect_delay, 1)
+
+    async def _on_disconnected(self, due_to_error: bool = False) -> None:
+        """Handle when the connection is lost. Invoked after the connection has been reset."""
+        if due_to_error and self._failover and self._failover_hosts:
+            self._register_task(self._attempt_failover(), "Failover")
+            # Call super on heart beat to prevent the reconnect logic from running
+            await super(HeartBeatBehavior, self)._on_disconnected(due_to_error)
+            return
         await super()._on_disconnected(due_to_error)
 
 

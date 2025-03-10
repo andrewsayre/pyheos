@@ -1,6 +1,7 @@
 """Define the heos manager module."""
 
 import logging
+from contextlib import suppress
 from typing import Any, Final
 
 from pyheos.command import COMMAND_SIGN_IN
@@ -47,6 +48,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             events: Set to True to enable event updates, False to disable. The default is True.
             all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
             dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
+            auto_failover: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with auto_failover_hosts.
+            auto_failover_hosts: A list of host names or IP addresses to use for failover. Used in conjunction with auto_failover.
             auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
             auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
             auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
@@ -171,6 +174,9 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             # Determine the logged in user
             await self.check_account()
 
+        # Populate failover hosts if enabled
+        await self._update_failover_hosts()
+
         await self.register_for_change_events(self._options.events)
 
         # Refresh players and mark available
@@ -233,8 +239,10 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
     async def _on_event_heos(self, event: HeosMessage) -> None:
         """Process a HEOS system event."""
         result: PlayerUpdateResult | None = None
-        if event.command == const.EVENT_PLAYERS_CHANGED and self._players_loaded:
-            result = await self.load_players()
+        if event.command == const.EVENT_PLAYERS_CHANGED:
+            await self._update_failover_hosts()
+            if self._players_loaded:
+                result = await self.load_players()
         elif (
             event.command == const.EVENT_SOURCES_CHANGED and self._music_sources_loaded
         ):
@@ -282,6 +290,16 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                 return_exceptions=True,
             )
             _LOGGER.debug("Event received for group %s: %s", group_id, event.command)
+
+    async def _update_failover_hosts(self) -> None:
+        """Update the failover hosts in the connection."""
+        if not self._options.auto_failover or self._options.auto_failover_hosts:
+            return
+        system_info = await self.get_system_info()
+        hosts = system_info.get_ip_addresses()
+        with suppress(ValueError):
+            hosts.remove(self._connection.host)
+        self._connection.failover_hosts = hosts
 
     @property
     def dispatcher(self) -> Dispatcher:

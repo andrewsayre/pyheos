@@ -1,5 +1,6 @@
 """Define the options module."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from pyheos import const
@@ -23,6 +24,8 @@ class HeosOptions:
         auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
         auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
         credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
+        auto_failover: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with auto_failover_hosts.
+        auto_failover_hosts: A list of host names or IP addresses to use for failover. Used in conjunction with auto_failover.
     """
 
     host: str
@@ -40,3 +43,5 @@ class HeosOptions:
     heart_beat: bool = field(default=True, kw_only=True)
     heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
     credentials: Credentials | None = field(default=None, kw_only=True)
+    auto_failover: bool = field(default=False, kw_only=True)
+    auto_failover_hosts: Sequence[str] = field(default_factory=list, kw_only=True)
