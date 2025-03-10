@@ -277,11 +277,11 @@ class MockHeosDevice:
         self._matchers: list[CommandMatcher] = []
         self.modifiers: list[CommandModifier] = []
 
-    async def start(self) -> None:
+    async def start(self, address: str = "127.0.0.1") -> None:
         """Start the heos server."""
         self._started = True
         self._server = await asyncio.start_server(
-            self._handle_connection, "127.0.0.1", CLI_PORT
+            self._handle_connection, address, CLI_PORT
         )
 
         self.register(c.COMMAND_ACCOUNT_CHECK, None, "system.check_account")
@@ -303,6 +303,12 @@ class MockHeosDevice:
 
         # Wait for server to close
         await self._server.wait_closed()
+
+    async def restart(self) -> None:
+        """Restart the heos server."""
+        await self.stop()
+        await asyncio.sleep(0.1)
+        await self.start()
 
     async def write_event(
         self, fixture: str, replacements: dict[str, Any] | None = None
@@ -428,9 +434,7 @@ class MockHeosDevice:
             # Special processing for known/unknown commands
             if command == c.COMMAND_REBOOT:
                 # Simulate a reboot by shutting down the server
-                await self.stop()
-                await asyncio.sleep(0.3)
-                await self.start()
+                await self.restart()
                 return
             if command == c.COMMAND_REGISTER_FOR_CHANGE_EVENTS:
                 enable = str(query[c.ATTR_ENABLE])

@@ -397,6 +397,45 @@ async def test_connection_error_during_command(
     assert heos.connection_state == ConnectionState.DISCONNECTED
 
 
+@calls_player_commands()
+@calls_group_commands()
+async def test_reconnect_refreshes_players_and_groups(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test refreshes players and groups after reconnecting and raises event."""
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            heart_beat=False,
+        )
+    )
+
+    signal_players = asyncio.Event()
+    signal_groups = asyncio.Event()
+
+    async def handler(event: str, result: PlayerUpdateResult | None = None) -> None:
+        if event == EVENT_PLAYERS_CHANGED:
+            signal_players.set()
+            assert result is not None
+        elif event == EVENT_GROUPS_CHANGED:
+            signal_groups.set()
+        assert result is not None
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    await heos.connect()
+    await heos.get_players()
+    await heos.get_groups()
+
+    await mock_device.restart()
+
+    await asyncio.gather(signal_players.wait(), signal_groups.wait())
+    await heos.disconnect()
+
+
 async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos(
@@ -1055,6 +1094,39 @@ async def test_groups_changed_event_players_not_loaded(
     await signal.wait()
     get_groups_command.assert_called()
     assert not await heos.get_groups()
+
+
+@calls_player_commands()
+async def test_groups_changed_event_groups_not_loaded(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test groups changed fires dispatcher and updates players when groups not loaded."""
+    players = await heos.get_players()
+    assert all(player.group_id is not None for player in players.values())
+    signal = asyncio.Event()
+
+    async def handler(event: str, data: dict[str, Any]) -> None:
+        assert event == EVENT_GROUPS_CHANGED
+        signal.set()
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    # Write event through mock device
+    commands = [
+        mock_device.register(
+            c.COMMAND_GET_GROUPS, None, "group.get_groups_changed", replace=True
+        ),
+        mock_device.register(
+            c.COMMAND_GET_PLAYERS, None, "player.get_players_no_groups", replace=True
+        ),
+    ]
+    await mock_device.write_event("event.groups_changed")
+
+    # Wait until the signal is set
+    await signal.wait()
+    map(lambda c: c.assert_called(), commands)
+    assert all(player.group_id is None for player in players.values())
+    assert not heos.groups
 
 
 @calls_player_commands()
