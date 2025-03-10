@@ -22,7 +22,7 @@ class HeosOptions:
         all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
         dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
         auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
-        auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
+        auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 1 second. Used in conjunction with auto_reconnect.
         credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
         auto_failover: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with auto_failover_hosts.
         auto_failover_hosts: A list of host names or IP addresses to use for failover. Used in conjunction with auto_failover.

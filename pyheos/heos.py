@@ -51,7 +51,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             auto_failover: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with auto_failover_hosts.
             auto_failover_hosts: A list of host names or IP addresses to use for failover. Used in conjunction with auto_failover.
             auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
-            auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
+            auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 1 second. Used in conjunction with auto_reconnect.
             auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
             heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
             heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
