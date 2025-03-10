@@ -20,7 +20,6 @@ async def test_failover_hosts_updated_on_connection(
             auto_reconnect=True,
             auto_reconnect_delay=0.1,
             auto_failover=True,
-            auto_populate_failover_hosts=True,
             heart_beat=False,
         )
     )
@@ -42,7 +41,6 @@ async def test_failover_hosts_updated_on_players_changed(
             auto_reconnect=True,
             auto_reconnect_delay=0.1,
             auto_failover=True,
-            auto_populate_failover_hosts=True,
             heart_beat=False,
         )
     )
@@ -61,6 +59,27 @@ async def test_failover_hosts_updated_on_players_changed(
     await heos.disconnect()
 
 
+async def test_failover_hosts_manually_provided_hosts(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test manually provided hosts are preserved."""
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            auto_failover=True,
+            auto_failover_hosts=["127.0.0.3"],
+            heart_beat=False,
+        )
+    )
+    await heos.connect()
+    assert heos.connection_state == ConnectionState.CONNECTED
+    assert heos._connection.failover_hosts == ["127.0.0.3"]
+    await heos.disconnect()
+
+
 @calls_command("player.get_players")
 async def test_failover(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
@@ -72,7 +91,6 @@ async def test_failover(mock_device: MockHeosDevice) -> None:
             auto_reconnect_delay=0.1,
             heart_beat=False,
             auto_failover=True,
-            auto_populate_failover_hosts=True,
         )
     )
 
@@ -119,7 +137,6 @@ async def test_failover_retries_current_host(mock_device: MockHeosDevice) -> Non
             auto_reconnect_delay=0.1,
             heart_beat=False,
             auto_failover=True,
-            auto_populate_failover_hosts=True,
         )
     )
 

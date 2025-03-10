@@ -293,7 +293,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
     async def _update_failover_hosts(self) -> None:
         """Update the failover hosts in the connection."""
-        if not self._options.auto_failover or not self._options.auto_failover_hosts:
+        if not self._options.auto_failover or self._options.auto_failover_hosts:
             return
         system_info = await self.get_system_info()
         hosts = system_info.get_ip_addresses()
