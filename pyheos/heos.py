@@ -50,7 +50,6 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
             auto_failover: Set to True to automatically failover to other hosts if the connection is lost. The default is False. Used in conjunction with auto_failover_hosts.
             auto_failover_hosts: A list of host names or IP addresses to use for failover. Used in conjunction with auto_failover.
-            auto_populate_failover_hosts: Set to True to automatically populate the failover hosts list with the host name or IP address of the connected device. The default is False. Used in conjunction with auto_failover.
             auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
             auto_reconnect_delay: The delay in seconds before attempting to reconnect. The default is 10 seconds. Used in conjunction with auto_reconnect.
             auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
@@ -294,10 +293,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
 
     async def _update_failover_hosts(self) -> None:
         """Update the failover hosts in the connection."""
-        if (
-            not self._options.auto_failover
-            or not self._options.auto_populate_failover_hosts
-        ):
+        if not self._options.auto_failover or not self._options.auto_failover_hosts:
             return
         system_info = await self.get_system_info()
         hosts = system_info.get_ip_addresses()
