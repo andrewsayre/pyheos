@@ -249,6 +249,62 @@
     'source_id': 1028,
   })
 # ---
+# name: test_browse_media_music_source_unavailable
+  dict({
+    'container_id': None,
+    'count': 3,
+    'items': list([
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://mediaserver-cont-ch1-1-v4v6.pandora.com/images/public/devicead/t/r/a/m/daartpralbumart_500W_500H.jpg',
+        'media_id': '3790855220637622543',
+        'name': 'Thumbprint Radio',
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://cdn-radiotime-logos.tunein.com/s7332q.png',
+        'media_id': 's7332',
+        'name': '99.5 | Classical MPR (Classical Music)',
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+      dict({
+        'album': None,
+        'album_id': None,
+        'artist': None,
+        'browsable': False,
+        'container_id': None,
+        'image_url': 'http://mediaserver-cont-dc6-2-v4v6.pandora.com/images/public/int/4/0/8/2/00602577432804_500W_500H.jpg',
+        'media_id': '1935916853323522319',
+        'name': "Today's Hits Radio",
+        'playable': True,
+        'source_id': 1028,
+        'type': <MediaType.STATION: 'station'>,
+      }),
+    ]),
+    'options': list([
+      dict({
+        'context': 'browse',
+        'id': 20,
+        'name': 'Remove from HEOS Favorites',
+      }),
+    ]),
+    'returned': 3,
+    'source_id': 1028,
+  })
+# ---
 # name: test_get_favorites
   dict({
     1: dict({
