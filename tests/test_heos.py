@@ -24,6 +24,7 @@ from pyheos.const import (
     EVENT_USER_CHANGED,
     MUSIC_SOURCE_AUX_INPUT,
     MUSIC_SOURCE_FAVORITES,
+    MUSIC_SOURCE_PANDORA,
     MUSIC_SOURCE_PLAYLISTS,
     MUSIC_SOURCE_TUNEIN,
 )
@@ -1237,13 +1238,18 @@ async def test_browse_media_music_source(
     assert result == snapshot
 
 
-async def test_browse_media_music_source_unavailable_rasises(
+@calls_command(
+    "browse.browse_favorites",
+    {c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA},
+)
+async def test_browse_media_music_source_unavailable(
+    heos: Heos,
     media_music_source_unavailable: MediaMusicSource,
+    snapshot: SnapshotAssertion,
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
-    heos = Heos(HeosOptions("127.0.0.1"))
-    with pytest.raises(ValueError, match="Source is not available to browse"):
-        await heos.browse_media(media_music_source_unavailable)
+    result = await heos.browse_media(media_music_source_unavailable)
+    assert result == snapshot
 
 
 @calls_command(
