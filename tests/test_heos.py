@@ -1078,10 +1078,10 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
 
 
 @calls_command("browse.get_music_sources", {})
-async def test_sources_update_after_user_changed_event(
+async def test_sources_update_after_user_signed_out(
     mock_device: MockHeosDevice, heos: Heos
 ) -> None:
-    """Test music sources update when the user changes."""
+    """Test music sources update when the user signed out."""
     await heos.get_music_sources()
     signal = asyncio.Event()
 
