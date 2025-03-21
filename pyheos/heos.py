@@ -252,6 +252,8 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
                 self._signed_in_username = event.get_message_value(c.ATTR_USER_NAME)
             else:
                 self._signed_in_username = None
+            if self._music_sources_loaded:
+                await self.get_music_sources(refresh=True)
         elif event.command == const.EVENT_GROUPS_CHANGED:
             if self._players_loaded:
                 # Ensure player group ID attributes (i.e. group_id) are update
