@@ -3,6 +3,7 @@
 import asyncio
 import re
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from syrupy.assertion import SnapshotAssertion
@@ -24,6 +25,7 @@ from pyheos.const import (
     EVENT_USER_CHANGED,
     MUSIC_SOURCE_AUX_INPUT,
     MUSIC_SOURCE_FAVORITES,
+    MUSIC_SOURCE_PANDORA,
     MUSIC_SOURCE_PLAYLISTS,
     MUSIC_SOURCE_TUNEIN,
 )
@@ -969,6 +971,46 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.players[1].name == "Backyard"
 
 
+@pytest.mark.parametrize(
+    ("event", "device_event"),
+    [
+        (EVENT_PLAYERS_CHANGED, "event.players_changed"),
+        (EVENT_GROUPS_CHANGED, "event.groups_changed"),
+        (EVENT_SOURCES_CHANGED, "event.sources_changed"),
+        (EVENT_USER_CHANGED, "event.user_changed_signed_out"),
+    ],
+)
+@patch("pyheos.connection.DEBOUNCE_DELAY", 0.1)
+async def test_event_debouncing(
+    mock_device: MockHeosDevice, heos: Heos, event: str, device_event: str
+) -> None:
+    """Test that players changed events are debounced."""
+
+    counter = 0
+    signal = asyncio.Event()
+
+    async def handler(event: str, result: PlayerUpdateResult | None = None) -> None:
+        nonlocal counter
+        assert event == event
+        counter += 1
+        signal.set()
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    await mock_device.write_event(device_event)
+    await mock_device.write_event(device_event)
+    await asyncio.sleep(0.2)
+
+    await signal.wait()
+    with pytest.raises(StopIteration):
+        next(
+            task
+            for task in heos._connection._running_tasks
+            if task.get_name() == "Event Handler"
+        )
+    assert counter == 1
+
+
 @calls_player_commands((1, 2, 101, 102))
 async def test_players_changed_event_new_ids(
     mock_device: MockHeosDevice, heos: Heos
@@ -1035,6 +1077,32 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.music_sources[MUSIC_SOURCE_TUNEIN].available
 
 
+@calls_command("browse.get_music_sources", {})
+async def test_sources_update_after_user_signed_out(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test music sources update when the user signed out."""
+    await heos.get_music_sources()
+    signal = asyncio.Event()
+
+    signal = connect_handler(heos, SignalType.CONTROLLER_EVENT, EVENT_USER_CHANGED)
+
+    # Change sources
+    command = mock_device.register(
+        c.COMMAND_BROWSE_GET_SOURCES,
+        {c.ATTR_REFRESH: c.VALUE_ON},
+        "browse.get_music_sources_changed",
+        replace=True,
+    )
+    # Write event
+    await mock_device.write_event("event.user_changed_signed_out")
+
+    # Wait until the signal is set
+    await signal.wait()
+    command.assert_called()
+    assert heos.music_sources[MUSIC_SOURCE_TUNEIN].available
+
+
 @calls_player_commands()
 @calls_group_commands()
 async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
@@ -1061,7 +1129,6 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
         ),
     ]
     await mock_device.write_event("event.groups_changed")
-
     # Wait until the signal is set
     await signal.wait()
     map(lambda c: c.assert_called(), commands)
@@ -1237,13 +1304,18 @@ async def test_browse_media_music_source(
     assert result == snapshot
 
 
-async def test_browse_media_music_source_unavailable_rasises(
+@calls_command(
+    "browse.browse_favorites",
+    {c.ATTR_SOURCE_ID: MUSIC_SOURCE_PANDORA},
+)
+async def test_browse_media_music_source_unavailable(
+    heos: Heos,
     media_music_source_unavailable: MediaMusicSource,
+    snapshot: SnapshotAssertion,
 ) -> None:
     """Test browse with an unavailable MediaMusicSource raises."""
-    heos = Heos(HeosOptions("127.0.0.1"))
-    with pytest.raises(ValueError, match="Source is not available to browse"):
-        await heos.browse_media(media_music_source_unavailable)
+    result = await heos.browse_media(media_music_source_unavailable)
+    assert result == snapshot
 
 
 @calls_command(
@@ -1336,14 +1408,14 @@ async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None
     },
 )
 async def test_play_media_station(heos: Heos, media_item_station: MediaItem) -> None:
-    """Test play song succeeseds."""
+    """Test play song succeeds."""
     await heos.play_media(1, media_item_station)
 
 
 async def test_play_media_station_missing_media_id_raises(
     media_item_station: MediaItem,
 ) -> None:
-    """Test play song succeeseds."""
+    """Test play song succeeds."""
     heos = Heos(HeosOptions("127.0.0.1"))
     media_item_station.media_id = None
 
@@ -1356,9 +1428,31 @@ async def test_play_media_station_missing_media_id_raises(
 
 @calls_command("browse.get_music_sources", {})
 async def test_get_music_sources(heos: Heos, snapshot: SnapshotAssertion) -> None:
-    """Test the heos connect method."""
+    """Test the get_music_sources method."""
     sources = await heos.get_music_sources()
     assert sources == snapshot
+
+
+@calls_command("browse.get_music_sources", {})
+async def test_get_music_sources_ignores_sources_changed(
+    heos: Heos, mock_device: MockHeosDevice, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test sources changed are ignored during get music sources processing."""
+    event = connect_handler(heos, SignalType.CONTROLLER_EVENT, EVENT_SOURCES_CHANGED)
+    with mock_device.modify(
+        c.COMMAND_BROWSE_GET_SOURCES,
+        event_side_effects=[
+            "event.sources_changed",
+            "event.sources_changed",
+            "event.sources_changed",
+        ],
+    ):
+        await heos.get_music_sources()
+    assert (
+        "Ignored event: 'event/sources_changed' triggered during processing of 'browse/get_music_sources'"
+        in caplog.text
+    )
+    assert not event.is_set()
 
 
 @calls_commands(

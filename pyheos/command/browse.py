@@ -180,8 +180,6 @@ class BrowseCommands(ConnectionMixin):
             A BrowseResult instance containing the items in the media item.
         """
         if isinstance(media, MediaMusicSource):
-            if not media.available:
-                raise ValueError("Source is not available to browse")
             return await self.browse(media.source_id)
         else:
             if not media.browsable:
