@@ -1036,6 +1036,32 @@ async def test_sources_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.music_sources[MUSIC_SOURCE_TUNEIN].available
 
 
+@calls_command("browse.get_music_sources", {})
+async def test_sources_update_after_user_changed_event(
+    mock_device: MockHeosDevice, heos: Heos
+) -> None:
+    """Test music sources update when the user changes."""
+    await heos.get_music_sources()
+    signal = asyncio.Event()
+
+    signal = connect_handler(heos, SignalType.CONTROLLER_EVENT, EVENT_USER_CHANGED)
+
+    # Change sources
+    command = mock_device.register(
+        c.COMMAND_BROWSE_GET_SOURCES,
+        {c.ATTR_REFRESH: c.VALUE_ON},
+        "browse.get_music_sources_changed",
+        replace=True,
+    )
+    # Write event
+    await mock_device.write_event("event.user_changed_signed_out")
+
+    # Wait until the signal is set
+    await signal.wait()
+    command.assert_called()
+    assert heos.music_sources[MUSIC_SOURCE_TUNEIN].available
+
+
 @calls_player_commands()
 @calls_group_commands()
 async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> None:
