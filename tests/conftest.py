@@ -3,6 +3,7 @@
 import dataclasses
 from collections.abc import AsyncGenerator, Callable, Coroutine
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -30,9 +31,10 @@ def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
 async def mock_device_fixture() -> AsyncGenerator[MockHeosDevice]:
     """Fixture for mocking a HEOS device connection."""
     device = MockHeosDevice()
-    await device.start()
-    yield device
-    await device.stop()
+    with patch("pyheos.connection.DEBOUNCE_DELAY", 0):
+        await device.start()
+        yield device
+        await device.stop()
 
 
 @pytest_asyncio.fixture(name="heos")

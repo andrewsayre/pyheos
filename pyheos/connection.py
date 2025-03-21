@@ -14,7 +14,7 @@ from pyheos.command import (
     COMMAND_HEART_BEAT,
     COMMAND_REBOOT,
 )
-from pyheos.const import EVENT_SOURCES_CHANGED
+from pyheos.const import DEBOUNCED_EVENTS, EVENT_SOURCES_CHANGED
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
@@ -24,6 +24,7 @@ CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
 SEPARATOR_BYTES: Final = SEPARATOR.encode()
 MAX_RECONNECT_DELAY = 600
+DEBOUNCE_DELAY = 1.0
 
 _LOGGER: Final = logging.getLogger(__name__)
 
@@ -45,6 +46,7 @@ class ConnectionBase(ABC):
         self._running_tasks: set[asyncio.Task[None]] = set()
         self._last_activity: datetime = datetime.now()
         self._command_lock = asyncio.Lock()
+        self._event_debouncer: dict[str, asyncio.Task[None]] = {}
 
         self._on_event_callbacks: list[Callable[[HeosMessage], Awaitable[None]]] = []
         self._on_connected_callbacks: list[Callable[[], Awaitable[None]]] = []
@@ -112,12 +114,13 @@ class ConnectionBase(ABC):
 
     def _register_task(
         self, future: Coroutine[Any, Any, None], name: str | None = None
-    ) -> None:
+    ) -> asyncio.Task[None]:
         """Register a task that is running in the background, so it can be canceled and reset later."""
         task: asyncio.Task[None] = asyncio.create_task(future, name=name)
         self._running_tasks.add(task)
         task.add_done_callback(self._running_tasks.discard)
         task.add_done_callback(self._log_callback_exception)
+        return task
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
@@ -136,6 +139,7 @@ class ConnectionBase(ABC):
         # Reset other parameters
         self._pending_command_event.clear()
         self._last_activity = datetime.now()
+        self._event_debouncer.clear()
         self._state = ConnectionState.DISCONNECTED
 
     async def _disconnect_from_error(self, error: Exception) -> None:
@@ -183,7 +187,7 @@ class ConnectionBase(ABC):
                 return
 
             _LOGGER.debug("Event received: '%s': '%s'", message.command, message)
-            self._register_task(self._on_event(message), "Event Handler")
+            self._debounce_on_event(message)
             return
 
         # Set the message on the pending command.
@@ -191,6 +195,25 @@ class ConnectionBase(ABC):
             _LOGGER.debug(
                 "Unexpected response received: '%s': '%s'", message.command, message
             )
+
+    def _debounce_on_event(self, event: HeosMessage) -> None:
+        """Debounce the on event handler."""
+        if event.command not in DEBOUNCED_EVENTS:
+            self._register_task(self._on_event(event), "Event Handler")
+            return
+
+        task = self._event_debouncer.get(event.command)
+        if task and not task.done():
+            _LOGGER.debug("Debounced event: '%s'", event.command)
+            task.cancel()
+
+        async def delayed_event() -> None:
+            await asyncio.sleep(DEBOUNCE_DELAY)
+            await self._on_event(event)
+
+        self._event_debouncer[event.command] = self._register_task(
+            delayed_event(), "Event Handler"
+        )
 
     async def command(self, command: HeosCommand) -> HeosMessage:
         """Send a command to the HEOS device."""

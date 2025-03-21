@@ -3,6 +3,7 @@
 import asyncio
 import re
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from syrupy.assertion import SnapshotAssertion
@@ -970,6 +971,46 @@ async def test_players_changed_event(mock_device: MockHeosDevice, heos: Heos) ->
     assert heos.players[1].name == "Backyard"
 
 
+@pytest.mark.parametrize(
+    ("event", "device_event"),
+    [
+        (EVENT_PLAYERS_CHANGED, "event.players_changed"),
+        (EVENT_GROUPS_CHANGED, "event.groups_changed"),
+        (EVENT_SOURCES_CHANGED, "event.sources_changed"),
+        (EVENT_USER_CHANGED, "event.user_changed_signed_out"),
+    ],
+)
+@patch("pyheos.connection.DEBOUNCE_DELAY", 0.1)
+async def test_event_debouncing(
+    mock_device: MockHeosDevice, heos: Heos, event: str, device_event: str
+) -> None:
+    """Test that players changed events are debounced."""
+
+    counter = 0
+    signal = asyncio.Event()
+
+    async def handler(event: str, result: PlayerUpdateResult | None = None) -> None:
+        nonlocal counter
+        assert event == event
+        counter += 1
+        signal.set()
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    await mock_device.write_event(device_event)
+    await mock_device.write_event(device_event)
+    await asyncio.sleep(0.2)
+
+    await signal.wait()
+    with pytest.raises(StopIteration):
+        next(
+            task
+            for task in heos._connection._running_tasks
+            if task.get_name() == "Event Handler"
+        )
+    assert counter == 1
+
+
 @calls_player_commands((1, 2, 101, 102))
 async def test_players_changed_event_new_ids(
     mock_device: MockHeosDevice, heos: Heos
@@ -1088,7 +1129,6 @@ async def test_groups_changed_event(mock_device: MockHeosDevice, heos: Heos) -> 
         ),
     ]
     await mock_device.write_event("event.groups_changed")
-
     # Wait until the signal is set
     await signal.wait()
     map(lambda c: c.assert_called(), commands)
