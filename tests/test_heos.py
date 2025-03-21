@@ -1368,14 +1368,14 @@ async def test_play_media_input(heos: Heos, media_item_input: MediaItem) -> None
     },
 )
 async def test_play_media_station(heos: Heos, media_item_station: MediaItem) -> None:
-    """Test play song succeeseds."""
+    """Test play song succeeds."""
     await heos.play_media(1, media_item_station)
 
 
 async def test_play_media_station_missing_media_id_raises(
     media_item_station: MediaItem,
 ) -> None:
-    """Test play song succeeseds."""
+    """Test play song succeeds."""
     heos = Heos(HeosOptions("127.0.0.1"))
     media_item_station.media_id = None
 
@@ -1388,9 +1388,31 @@ async def test_play_media_station_missing_media_id_raises(
 
 @calls_command("browse.get_music_sources", {})
 async def test_get_music_sources(heos: Heos, snapshot: SnapshotAssertion) -> None:
-    """Test the heos connect method."""
+    """Test the get_music_sources method."""
     sources = await heos.get_music_sources()
     assert sources == snapshot
+
+
+@calls_command("browse.get_music_sources", {})
+async def test_get_music_sources_ignores_sources_changed(
+    heos: Heos, mock_device: MockHeosDevice, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Test sources changed are ignored during get music sources processing."""
+    event = connect_handler(heos, SignalType.CONTROLLER_EVENT, EVENT_SOURCES_CHANGED)
+    with mock_device.modify(
+        c.COMMAND_BROWSE_GET_SOURCES,
+        event_side_effects=[
+            "event.sources_changed",
+            "event.sources_changed",
+            "event.sources_changed",
+        ],
+    ):
+        await heos.get_music_sources()
+    assert (
+        "Ignored event: 'event/sources_changed' triggered during processing of 'browse/get_music_sources'"
+        in caplog.text
+    )
+    assert not event.is_set()
 
 
 @calls_commands(

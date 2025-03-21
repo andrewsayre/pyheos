@@ -9,7 +9,12 @@ from datetime import datetime, timedelta
 from itertools import cycle
 from typing import TYPE_CHECKING, Any, Final
 
-from pyheos.command import COMMAND_HEART_BEAT, COMMAND_REBOOT
+from pyheos.command import (
+    COMMAND_BROWSE_GET_SOURCES,
+    COMMAND_HEART_BEAT,
+    COMMAND_REBOOT,
+)
+from pyheos.const import EVENT_SOURCES_CHANGED
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
@@ -164,6 +169,19 @@ class ConnectionBase(ABC):
             _LOGGER.debug("Command under process '%s'", message.command)
             return
         if message.is_event:
+            # browse/get_music_sources?refresh=on triggers a flood of event_sources_changed during execution
+            if (
+                message.command == EVENT_SOURCES_CHANGED
+                and self._pending_command_event.target_command
+                == COMMAND_BROWSE_GET_SOURCES
+            ):
+                _LOGGER.debug(
+                    "Ignored event: '%s' triggered during processing of '%s'",
+                    message.command,
+                    self._pending_command_event.target_command,
+                )
+                return
+
             _LOGGER.debug("Event received: '%s': '%s'", message.command, message)
             self._register_task(self._on_event(message), "Event Handler")
             return
@@ -474,3 +492,8 @@ class ResponseEvent:
         self._response = None
         self._target_command = None
         self._event.clear()
+
+    @property
+    def target_command(self) -> str | None:
+        """Get the target command."""
+        return self._target_command

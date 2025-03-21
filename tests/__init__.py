@@ -365,11 +365,19 @@ class MockHeosDevice:
 
     @contextmanager
     def modify(
-        self, command: str, *, replay_response: int = 1, delay_response: float = 0.0
+        self,
+        command: str,
+        *,
+        replay_response: int = 1,
+        delay_response: float = 0.0,
+        event_side_effects: list[str] | None = None,
     ) -> Generator[None]:
         """Modifies behavior of command processing."""
         modifier = CommandModifier(
-            command, replay_response=replay_response, delay_response=delay_response
+            command,
+            replay_response=replay_response,
+            delay_response=delay_response,
+            event_side_effects=event_side_effects,
         )
         self.modifiers.append(modifier)
         yield
@@ -421,6 +429,10 @@ class MockHeosDevice:
                 # Delay the response if set
                 if modifier.delay_response > 0:
                     await asyncio.sleep(modifier.delay_response)
+
+                if modifier.event_side_effects:
+                    for event in modifier.event_side_effects:
+                        await self.write_event(event)
 
                 responses = await matcher.get_response(query)
                 # Write the response multiple times if set
@@ -558,6 +570,7 @@ class CommandModifier:
     command: str
     replay_response: int = field(kw_only=True, default=1)
     delay_response: float = field(kw_only=True, default=0.0)
+    event_side_effects: list[str] | None = field(kw_only=True, default=None)
 
 
 DEFAULT_MODIFIER = CommandModifier(c.COMMAND_GET_PLAYERS)
