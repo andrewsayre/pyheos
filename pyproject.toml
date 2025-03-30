@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,13 +8,12 @@ version = "1.0.4"
 description = "An async python library for controlling HEOS devices through the HEOS CLI Protocol"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "ASL 2.0" }
+license = "Apache-2.0"
 authors = [{ name = "Andrew Sayre", email = "andrew@sayre.net" }]
 keywords = ["heos", "dennon", "maranz"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries",
     "Topic :: Home Automation",
