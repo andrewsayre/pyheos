@@ -78,6 +78,7 @@ class PlayState(StrEnum):
     PLAY = "play"
     PAUSE = "pause"
     STOP = "stop"
+    UNKNOWN = "unknown"
 
 
 class SignalType(StrEnum):

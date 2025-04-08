@@ -175,6 +175,8 @@ class PlayerCommands(ConnectionMixin):
 
         References:
             4.2.4 Set Play State"""
+        if state is PlayState.UNKNOWN:
+            raise ValueError("'state' can not be set to 'unknown'")
         await self._connection.command(
             HeosCommand(
                 c.COMMAND_SET_PLAY_STATE,
