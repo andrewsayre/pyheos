@@ -106,6 +106,12 @@ async def test_set_state(player: HeosPlayer, state: PlayState) -> None:
     await player.set_state(state)
 
 
+async def test_set_state_unknown_raises(player: HeosPlayer) -> None:
+    """Test setting play state to unknown raises."""
+    with pytest.raises(ValueError):
+        await player.set_state(PlayState.UNKNOWN)
+
+
 @calls_command(
     "player.set_play_state",
     {c.ATTR_PLAYER_ID: 1, c.ATTR_STATE: PlayState.PLAY},
