@@ -10,7 +10,7 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.12.3
     hooks:
-      - id: ruff
+      - id: ruff-check
         args:
           - --extend-select=I
           - --fix
