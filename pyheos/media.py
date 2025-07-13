@@ -129,9 +129,10 @@ class MediaItem(Media):
         """Create a new instance from the provided data."""
 
         # Ensure we have a source_id
-        if c.ATTR_SOURCE_ID not in data and not source_id:
+        source_id_value = data.get(c.ATTR_SOURCE_ID, source_id)
+        if not source_id_value:
             raise ValueError("'source_id' is required when not present in 'data'")
-        new_source_id = int(data.get(c.ATTR_SOURCE_ID, source_id))
+        new_source_id = int(source_id_value)
         # Items is browsable if is a media source, or if it is a container
         new_browseable = (
             c.ATTR_SOURCE_ID in data or data.get(c.ATTR_CONTAINER) == c.VALUE_YES
