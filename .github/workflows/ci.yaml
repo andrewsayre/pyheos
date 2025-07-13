@@ -31,7 +31,7 @@ jobs:
       - name: Spelling (codespell)
         run: pre-commit run --all-files --hook-stage manual codespell --show-diff-on-failure
       - name: Lint (Ruff)
-        run: pre-commit run --all-files --hook-stage manual ruff --show-diff-on-failure
+        run: pre-commit run --all-files --hook-stage manual ruff-check --show-diff-on-failure
       - name: Format (Ruff)
         run: pre-commit run --all-files --hook-stage manual ruff-format --show-diff-on-failure
       - name: Format (Pylint)
