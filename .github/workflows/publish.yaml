@@ -1,12 +1,19 @@
 name: Publish to Pypi
 
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
-  workflow_dispatch:
   release:
     types: ["published"]
 
 jobs:
-  lint:
+  publish:
     name: "Package and Publish"
     runs-on: ubuntu-latest
     steps:
@@ -15,22 +22,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - uses: actions/cache@v4
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
         with:
-          path: ${{ env.pythonLocation }}
-          key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('test-requirements.txt') }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install -r requirements.txt -r test-requirements.txt --upgrade --system
-          uv pip install build twine --upgrade --system
+          enable-cache: true
       - name: Build
-        run: |
-          python -m build
-      - name: Deploy
-        run: |
-          python3 -m twine upload dist/*
         env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          UV_SYSTEM_PYTHON: 1
+        run: |
+          uv pip install --upgrade build
+          uv build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
