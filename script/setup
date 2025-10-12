@@ -9,10 +9,10 @@ pip install --upgrade pip
 pip install uv
 
 # Setup virtual environment
+if [[ -n "${VIRTUAL_ENV:-}" && -d "$VIRTUAL_ENV" ]]; then
+  rm -rf "$VIRTUAL_ENV"
+fi
 uv venv $VIRTUAL_ENV
 
 # install dependencies
 uv pip install -r requirements.txt -r test-requirements.txt
-
-# Install pre-commit hooks
-pre-commit install
