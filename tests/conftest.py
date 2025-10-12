@@ -21,8 +21,8 @@ from tests.syrupy import HeosSnapshotExtension
 from . import MockHeos, MockHeosDevice
 
 
-@pytest.fixture
-def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+@pytest.fixture(name="snapshot")
+def snapshot_fixture(snapshot: SnapshotAssertion) -> SnapshotAssertion:
     """Return snapshot assertion fixture with the Heos extension."""
     return snapshot.use_extension(HeosSnapshotExtension)
 

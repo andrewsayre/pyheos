@@ -9,6 +9,9 @@ pip install --upgrade pip
 pip install uv
 
 # Setup virtual environment
+if [[ -n "${VIRTUAL_ENV:-}" && -d "$VIRTUAL_ENV" ]]; then
+  rm -rf "$VIRTUAL_ENV"
+fi
 uv venv $VIRTUAL_ENV
 
 # install dependencies

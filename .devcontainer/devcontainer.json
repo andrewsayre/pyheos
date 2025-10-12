@@ -16,13 +16,15 @@
 		"vscode": {
 			"extensions": [
 				"charliermarsh.ruff",
+				"esbenp.prettier-vscode",
+				"GitHub.copilot",
+				"GitHub.vscode-pull-request-github",
+				"github.vscode-github-actions",
 				"ms-python.pylint",
 				"ms-python.vscode-pylance",
-				"visualstudioexptteam.vscodeintellicode",
 				"redhat.vscode-yaml",
-				"esbenp.prettier-vscode",
-				"GitHub.vscode-pull-request-github",
-				"GitHub.copilot"
+				"tamasfe.even-better-toml",
+				"visualstudioexptteam.vscodeintellicode"
 			],
 			"settings": {
 				"python.experiments.optOutFrom": [

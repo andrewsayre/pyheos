@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+import inspect
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -26,7 +27,7 @@ def _is_coroutine_function(func: TargetType) -> bool:
 
     while isinstance(func, functools.partial):
         func = func.func
-    return asyncio.iscoroutinefunction(func)
+    return inspect.iscoroutinefunction(func)
 
 
 def _filter_args(
