@@ -23,6 +23,7 @@
 				"ms-python.pylint",
 				"ms-python.vscode-pylance",
 				"redhat.vscode-yaml",
+				"tamasfe.even-better-toml",
 				"visualstudioexptteam.vscodeintellicode"
 			],
 			"settings": {
