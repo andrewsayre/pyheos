@@ -61,7 +61,7 @@ class ArgumentValue:
     def get_value(self, args: dict[str, Any]) -> Any:
         """Get the value."""
         if self.value:
-            return value
+            return self.value
         assert self.arg_name is not None
         arg_value = args[self.arg_name]
         if self.formatter == "on_off":
@@ -159,7 +159,7 @@ def calls_commands(*commands: CallCommand) -> Callable[..., Any]:
     return wrapper
 
 
-def value(
+def value_source(
     *,
     value: Any | None = None,
     arg_name: str | None = None,
