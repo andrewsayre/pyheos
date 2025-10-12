@@ -17,7 +17,8 @@ from pyheos.const import (
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
 from pyheos.types import AddCriteriaType, PlayState, RepeatType
-from tests import CallCommand, calls_command, calls_commands, value
+from tests import CallCommand, calls_command, calls_commands
+from tests import value_source as value
 from tests.common import MediaItems
 
 

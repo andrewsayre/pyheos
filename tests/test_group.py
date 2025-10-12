@@ -8,7 +8,8 @@ from pyheos.const import EVENT_GROUP_VOLUME_CHANGED, EVENT_PLAYER_VOLUME_CHANGED
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
 from pyheos.message import HeosMessage
-from tests import CallCommand, calls_command, calls_commands, value
+from tests import CallCommand, calls_command, calls_commands
+from tests import value_source as value
 
 
 def test_group_from_data_no_leader_raises() -> None:

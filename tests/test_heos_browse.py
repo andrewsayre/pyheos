@@ -29,7 +29,8 @@ from pyheos.const import (
 from pyheos.heos import Heos
 from pyheos.media import MediaMusicSource
 from pyheos.options import HeosOptions
-from tests import calls_command, value
+from tests import calls_command
+from tests import value_source as value
 from tests.common import MediaMusicSources
 
 
