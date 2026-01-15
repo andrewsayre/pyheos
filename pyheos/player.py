@@ -439,12 +439,12 @@ class HeosPlayer(RemoveHeosFieldABC):
         )
 
     async def play_next(self) -> None:
-        """Clear the queue of the player."""
+        """Plays the next item in the queue."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_play_next(self.player_id)
 
     async def play_previous(self) -> None:
-        """Clear the queue of the player."""
+        """Plays the previous item in the queue."""
         assert self.heos, "Heos instance not set"
         await self.heos.player_play_previous(self.player_id)
 
