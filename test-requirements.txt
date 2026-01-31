@@ -10,4 +10,4 @@ pytest-asyncio==1.3.0
 pytest-cov==7.0.0
 pytest-timeout==2.4.0
 ruff==0.14.14
-syrupy==5.0.0
+syrupy==5.1.0
