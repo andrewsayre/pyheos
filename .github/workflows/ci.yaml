@@ -72,7 +72,7 @@ jobs:
           flags: py-${{ matrix.python-version }}
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.python-version == '3.13' && hashFiles('coverage.xml') != '' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           use_oidc: true
           files: ./coverage.xml
