@@ -19,6 +19,7 @@ class ConnectionMixin:
             reconnect_max_attempts=options.auto_reconnect_max_attempts,
             heart_beat=options.heart_beat,
             heart_beat_interval=options.heart_beat_interval,
+            heart_beat_max_failures=options.heart_beat_max_failures,
             failover=options.auto_failover,
             failover_hosts=options.auto_failover_hosts,
         )
