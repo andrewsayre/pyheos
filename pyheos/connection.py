@@ -359,26 +359,28 @@ class HeartBeatBehavior(ConnectionBase, ABC):
         """
         consecutive_failures = 0
         while self._state == ConnectionState.CONNECTED:
+            timeout_error: CommandTimeoutError | None = None
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
                 try:
                     await self.command(HeosCommand(COMMAND_HEART_BEAT))
                 except CommandTimeoutError as error:
-                    consecutive_failures += 1
-                    _LOGGER.debug(
-                        "Heart beat timed out (%s/%s)",
-                        consecutive_failures,
-                        self._heart_beat_max_failures,
-                    )
-                    if consecutive_failures >= self._heart_beat_max_failures:
-                        await self._disconnect_from_error(error)
-                        return
+                    timeout_error = error
                 except CommandError:
-                    consecutive_failures = 0
-                else:
-                    consecutive_failures = 0
-            else:
+                    pass
+
+            if timeout_error is None:
                 consecutive_failures = 0
+            else:
+                consecutive_failures += 1
+                _LOGGER.debug(
+                    "Heart beat timed out (%s/%s)",
+                    consecutive_failures,
+                    self._heart_beat_max_failures,
+                )
+                if consecutive_failures >= self._heart_beat_max_failures:
+                    await self._disconnect_from_error(timeout_error)
+                    return
             # Sleep until next interval
             await asyncio.sleep(self._heart_beat_interval)
 
