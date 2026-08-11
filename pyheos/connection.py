@@ -18,7 +18,12 @@ from pyheos.const import DEBOUNCED_EVENTS, EVENT_SOURCES_CHANGED
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
-from .error import CommandError, CommandFailedError, HeosError
+from .error import (
+    CommandError,
+    CommandFailedError,
+    CommandTimeoutError,
+    HeosError,
+)
 
 CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
@@ -124,6 +129,9 @@ class ConnectionBase(ABC):
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
+        current_task = asyncio.current_task()
+        if current_task is not None:
+            self._running_tasks.discard(current_task)
         # Stop running tasks and clear list
         while self._running_tasks:
             task = self._running_tasks.pop()
@@ -258,7 +266,9 @@ class ConnectionBase(ABC):
             except asyncio.TimeoutError as error:
                 # Occurs when the command times out
                 _LOGGER.debug("Command timed out '%s'", command)
-                raise CommandError(command.command, "Command timed out") from error
+                raise CommandTimeoutError(
+                    command.command, "Command timed out"
+                ) from error
             finally:
                 self._pending_command_event.clear()
 
@@ -344,8 +354,13 @@ class HeartBeatBehavior(ConnectionBase, ABC):
         while self._state == ConnectionState.CONNECTED:
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
-                with suppress(CommandError):
+                try:
                     await self.command(HeosCommand(COMMAND_HEART_BEAT))
+                except CommandTimeoutError as error:
+                    await self._disconnect_from_error(error)
+                    return
+                except CommandError:
+                    pass
             # Sleep until next interval
             await asyncio.sleep(self._heart_beat_interval)
 

@@ -32,6 +32,12 @@ class CommandError(HeosError):
         return self._command
 
 
+class CommandTimeoutError(CommandError):
+    """Define an error for when a HEOS command response times out."""
+
+    pass
+
+
 class CommandFailedError(CommandError):
     """Define an error for when a HEOS command is sent, but a failure response is returned."""
 
