@@ -564,7 +564,7 @@ async def test_reconnect_during_command(mock_device: MockHeosDevice) -> None:
     # Act
     await mock_device.stop()
     await mock_device.start()
-    with pytest.raises(CommandError, match="Connection lost"):
+    with pytest.raises(CommandError, match="Not connected to device"):
         await heos.get_players()
 
     # Assert signals set
