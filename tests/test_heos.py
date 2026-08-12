@@ -3,12 +3,13 @@
 import asyncio
 import re
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from syrupy.assertion import SnapshotAssertion
 
 from pyheos import command as c
+from pyheos.connection import HeartBeatBehavior
 from pyheos.const import (
     EVENT_GROUP_VOLUME_CHANGED,
     EVENT_GROUPS_CHANGED,
@@ -35,6 +36,7 @@ from pyheos.error import (
     CommandAuthenticationError,
     CommandError,
     CommandFailedError,
+    CommandTimeoutError,
     HeosError,
 )
 from pyheos.group import HeosGroup
@@ -259,6 +261,56 @@ async def test_background_heart_beat(mock_device: MockHeosDevice) -> None:
     await heos.disconnect()
 
 
+@calls_command("system.heart_beat")
+async def test_failed_background_heart_beat_disconnects(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test a failed background heart beat fires the disconnected event."""
+    heos = await Heos.create_and_connect(
+        "127.0.0.1", timeout=0.1, heart_beat_interval=0.1
+    )
+    disconnect_signal = connect_handler(
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.DISCONNECTED
+    )
+
+    with mock_device.modify(c.COMMAND_HEART_BEAT, replay_response=0):
+        await asyncio.wait_for(disconnect_signal.wait(), 0.5)
+
+    assert heos.connection_state == ConnectionState.DISCONNECTED
+
+
+async def test_background_heart_beat_uses_failure_threshold() -> None:
+    """Test successful heart beats reset the consecutive failure count."""
+    connection = HeartBeatBehavior(
+        "127.0.0.1",
+        timeout=0.1,
+        heart_beat_interval=0,
+        heart_beat_max_failures=3,
+    )
+    connection._state = ConnectionState.CONNECTED
+    disconnected = AsyncMock()
+    connection.add_on_disconnected(disconnected)
+
+    def timeout_error() -> CommandTimeoutError:
+        return CommandTimeoutError(c.COMMAND_HEART_BEAT, "Command timed out")
+
+    command = AsyncMock(
+        side_effect=[
+            timeout_error(),
+            None,
+            timeout_error(),
+            timeout_error(),
+            timeout_error(),
+        ]
+    )
+    with patch.object(connection, "command", command):
+        await connection._heart_beat_handler()
+
+    assert command.await_count == 5
+    disconnected.assert_awaited_once_with(True)
+    assert connection.state is ConnectionState.DISCONNECTED
+
+
 async def test_connect_fails() -> None:
     """Test connect fails when host not available."""
     heos = Heos(HeosOptions("127.0.0.1", timeout=0.1, heart_beat=False))
@@ -333,7 +385,7 @@ async def test_commands_fail_when_disconnected(
 async def test_command_timeout(mock_device: MockHeosDevice, heos: Heos) -> None:
     """Test command times out."""
     with mock_device.modify(c.COMMAND_HEART_BEAT, delay_response=0.2):
-        with pytest.raises(CommandError):
+        with pytest.raises(CommandTimeoutError):
             await heos.heart_beat()
     await asyncio.sleep(0.2)
     await heos.heart_beat()
@@ -390,7 +442,7 @@ async def test_connection_error_during_command(
 
     # Assert transitions to disconnected and fires disconnect
     await mock_device.stop()
-    with pytest.raises(CommandError) as e_info:
+    with pytest.raises(CommandTimeoutError) as e_info:
         await heos.get_players()
     assert str(e_info.value) == "Command timed out"
     assert isinstance(e_info.value.__cause__, asyncio.TimeoutError)
