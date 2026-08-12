@@ -18,6 +18,7 @@ from .error import (
     CommandAuthenticationError,
     CommandError,
     CommandFailedError,
+    CommandTimeoutError,
     HeosError,
 )
 from .group import HeosGroup
@@ -68,6 +69,7 @@ __all__ = [
     "CommandAuthenticationError",
     "CommandError",
     "CommandFailedError",
+    "CommandTimeoutError",
     "CONTROLS_ALL",
     "CONTROLS_FORWARD_ONLY",
     "CONTROLS_PLAY_STOP",

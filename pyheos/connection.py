@@ -14,11 +14,20 @@ from pyheos.command import (
     COMMAND_HEART_BEAT,
     COMMAND_REBOOT,
 )
-from pyheos.const import DEBOUNCED_EVENTS, EVENT_SOURCES_CHANGED
+from pyheos.const import (
+    DEBOUNCED_EVENTS,
+    DEFAULT_HEART_BEAT_MAX_FAILURES,
+    EVENT_SOURCES_CHANGED,
+)
 from pyheos.message import HeosCommand, HeosMessage
 from pyheos.types import ConnectionState
 
-from .error import CommandError, CommandFailedError, HeosError
+from .error import (
+    CommandError,
+    CommandFailedError,
+    CommandTimeoutError,
+    HeosError,
+)
 
 CLI_PORT: Final = 1255
 SEPARATOR: Final = "\r\n"
@@ -124,6 +133,9 @@ class ConnectionBase(ABC):
 
     async def _reset(self) -> None:
         """Reset the state of the connection."""
+        current_task = asyncio.current_task()
+        if current_task is not None:
+            self._running_tasks.discard(current_task)
         # Stop running tasks and clear list
         while self._running_tasks:
             task = self._running_tasks.pop()
@@ -258,7 +270,9 @@ class ConnectionBase(ABC):
             except asyncio.TimeoutError as error:
                 # Occurs when the command times out
                 _LOGGER.debug("Command timed out '%s'", command)
-                raise CommandError(command.command, "Command timed out") from error
+                raise CommandTimeoutError(
+                    command.command, "Command timed out"
+                ) from error
             finally:
                 self._pending_command_event.clear()
 
@@ -327,25 +341,46 @@ class HeartBeatBehavior(ConnectionBase, ABC):
         timeout: float,
         heart_beat: bool = True,
         heart_beat_interval: float,
+        heart_beat_max_failures: int = DEFAULT_HEART_BEAT_MAX_FAILURES,
     ) -> None:
         """Init a new instance of the AutoReconnectingConnection class."""
         super().__init__(host, timeout=timeout)
         self._heart_beat = heart_beat
         self._heart_beat_interval = heart_beat_interval
+        self._heart_beat_max_failures = heart_beat_max_failures
         self._heart_beat_interval_delta = timedelta(seconds=heart_beat_interval)
 
     async def _heart_beat_handler(self) -> None:
         """
         Send heart beat command to the device at the heart beat interval.
 
-        This effectively tests that the connection to the device is still alive. If the heart beat
-        fails or times out, the existing command processing logic will reset the state of the connection.
+        Consecutive heart beat timeouts disconnect the connection once the configured
+        failure threshold is reached.
         """
+        consecutive_failures = 0
         while self._state == ConnectionState.CONNECTED:
+            timeout_error: CommandTimeoutError | None = None
             last_acitvity_delta = datetime.now() - self._last_activity
             if last_acitvity_delta >= self._heart_beat_interval_delta:
-                with suppress(CommandError):
+                try:
                     await self.command(HeosCommand(COMMAND_HEART_BEAT))
+                except CommandTimeoutError as error:
+                    timeout_error = error
+                except CommandError:
+                    pass
+
+            if timeout_error is None:
+                consecutive_failures = 0
+            else:
+                consecutive_failures += 1
+                _LOGGER.debug(
+                    "Heart beat timed out (%s/%s)",
+                    consecutive_failures,
+                    self._heart_beat_max_failures,
+                )
+                if consecutive_failures >= self._heart_beat_max_failures:
+                    await self._disconnect_from_error(timeout_error)
+                    return
             # Sleep until next interval
             await asyncio.sleep(self._heart_beat_interval)
 
@@ -369,6 +404,7 @@ class AutoReconnectingBehavior(HeartBeatBehavior, ABC):
         timeout: float,
         heart_beat: bool = True,
         heart_beat_interval: float,
+        heart_beat_max_failures: int = DEFAULT_HEART_BEAT_MAX_FAILURES,
         reconnect: bool = True,
         reconnect_delay: float,
         reconnect_max_attempts: int,
@@ -379,6 +415,7 @@ class AutoReconnectingBehavior(HeartBeatBehavior, ABC):
             timeout=timeout,
             heart_beat=heart_beat,
             heart_beat_interval=heart_beat_interval,
+            heart_beat_max_failures=heart_beat_max_failures,
         )
         self._reconnect = reconnect
         self._reconnect_delay = reconnect_delay
@@ -429,6 +466,7 @@ class AutoFailoverConnection(AutoReconnectingBehavior):
         timeout: float,
         heart_beat: bool = True,
         heart_beat_interval: float,
+        heart_beat_max_failures: int = DEFAULT_HEART_BEAT_MAX_FAILURES,
         reconnect: bool = True,
         reconnect_delay: float,
         reconnect_max_attempts: int,
@@ -441,6 +479,7 @@ class AutoFailoverConnection(AutoReconnectingBehavior):
             timeout=timeout,
             heart_beat=heart_beat,
             heart_beat_interval=heart_beat_interval,
+            heart_beat_max_failures=heart_beat_max_failures,
             reconnect=reconnect,
             reconnect_delay=reconnect_delay,
             reconnect_max_attempts=reconnect_max_attempts,

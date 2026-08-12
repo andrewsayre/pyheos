@@ -55,6 +55,7 @@ class Heos(SystemCommands, BrowseCommands, GroupCommands, PlayerCommands):
             auto_reconnect_max_attempts: The maximum number of reconnection attempts before giving up. Set to 0 for unlimited attempts. The default is 0 (unlimited).
             heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
             heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
+            heart_beat_max_failures: The number of consecutive heart beat timeouts required to disconnect.
             credentials: credentials to use to automatically sign-in to the HEOS account upon successful connection. If not provided, the account will not be signed in.
 
         """
