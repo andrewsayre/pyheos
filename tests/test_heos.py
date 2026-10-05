@@ -568,6 +568,30 @@ async def test_get_players(heos: Heos, snapshot: SnapshotAssertion) -> None:
     assert players == snapshot
 
 
+@calls_commands(
+    CallCommand("player.get_players"),
+    *[
+        CallCommand(fixture, {c.ATTR_PLAYER_ID: player_id})
+        for player_id in (1, 2)
+        for fixture in (
+            "player.get_play_state",
+            "player.get_now_playing_media",
+            "player.get_volume",
+            "player.get_mute",
+        )
+    ],
+    CallCommand("player.get_play_mode", {c.ATTR_PLAYER_ID: 1}),
+    CallCommand("player.get_play_mode_data_not_available", {c.ATTR_PLAYER_ID: 2}),
+)
+async def test_get_players_play_mode_not_available(heos: Heos) -> None:
+    """Test one player without a play mode yet does not fail loading every player."""
+    players = await heos.get_players()
+
+    assert set(players) == {1, 2}
+    assert players[2].repeat == RepeatType.OFF
+    assert not players[2].shuffle
+
+
 @calls_player_commands(
     (1, 2),
     CallCommand("player.get_players_unsupported", {}, replace=True),

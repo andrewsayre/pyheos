@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING, Any, Final, Optional, cast
 from pyheos.abc import RemoveHeosFieldABC
 from pyheos.command import optional_int, parse_enum, parse_optional_enum
 from pyheos.common import is_supported_version
+from pyheos.const import ERROR_DATA_NOT_AVAILABLE
 from pyheos.dispatch import DisconnectType, EventCallbackType, callback_wrapper
+from pyheos.error import CommandFailedError
 from pyheos.media import MediaItem, QueueItem, ServiceOption
 from pyheos.message import HeosMessage
 from pyheos.types import (
@@ -341,9 +343,20 @@ class HeosPlayer(RemoveHeosFieldABC):
         self.is_muted = await self.heos.player_get_mute(self.player_id)
 
     async def refresh_play_mode(self) -> None:
-        """Pull the latest play mode."""
+        """Pull the latest play mode.
+
+        Some players (e.g. a HEOS Link HS1, or an AVR's built-in player) answer
+        'Requested data not available' while stopped with no media loaded, such as
+        after a power cycle. Treat that as "no play mode yet" and keep the current
+        values, so one such player does not fail the refresh of every player.
+        """
         assert self.heos, "Heos instance not set"
-        play_mode = await self.heos.player_get_play_mode(self.player_id)
+        try:
+            play_mode = await self.heos.player_get_play_mode(self.player_id)
+        except CommandFailedError as err:
+            if err.error_id != ERROR_DATA_NOT_AVAILABLE:
+                raise
+            return
         self.repeat = play_mode.repeat
         self.shuffle = play_mode.shuffle
 

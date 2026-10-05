@@ -14,6 +14,7 @@ from pyheos.const import (
     SEARCHED_TRACKS,
     TARGET_VERSION,
 )
+from pyheos.error import CommandFailedError
 from pyheos.media import MediaItem
 from pyheos.player import HeosPlayer
 from pyheos.types import AddCriteriaType, PlayState, RepeatType
@@ -493,6 +494,25 @@ async def test_refresh_no_base_update(player: HeosPlayer) -> None:
 
     assert player.name == "Back Patio"
     assert player.player_id == 1
+
+
+@calls_command("player.get_play_mode_data_not_available", {c.ATTR_PLAYER_ID: 1})
+async def test_refresh_play_mode_data_not_available(player: HeosPlayer) -> None:
+    """Test a play mode that is not available yet leaves repeat and shuffle unchanged."""
+    player.repeat = RepeatType.ON_ALL
+    player.shuffle = True
+
+    await player.refresh_play_mode()
+
+    assert player.repeat == RepeatType.ON_ALL
+    assert player.shuffle
+
+
+@calls_command("player.get_play_mode_failed", {c.ATTR_PLAYER_ID: 1})
+async def test_refresh_play_mode_other_failure_raises(player: HeosPlayer) -> None:
+    """Test any other play mode failure is still raised."""
+    with pytest.raises(CommandFailedError, match=re.escape("ID Not Valid (2)")):
+        await player.refresh_play_mode()
 
 
 @calls_command("player.check_update", {c.ATTR_PLAYER_ID: 1})
