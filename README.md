@@ -46,12 +46,13 @@ Retrieve the available players as a `dict[int, pyheos.Heos.HeosPlayer]` where th
 
 This class encapsulates the options and configuration for connecting to a HEOS system.
 
-#### `pyheos.HeosOptions(host, *, timeout, heart_beat, heart_beat_interval, dispatcher, auto_reconnect, auto_reconnect_delay, auto_reconnect_max_attempts, credentials)`
+#### `pyheos.HeosOptions(host, *, timeout, heart_beat, heart_beat_interval, heart_beat_max_failures, dispatcher, auto_reconnect, auto_reconnect_delay, auto_reconnect_max_attempts, credentials)`
 
 - `host: str`: A host name or IP address of a HEOS-capable device. This parameter is required.
 - `timeout: float`: The timeout in seconds for opening a connection and issuing commands to the device. Default is `pyheos.const.DEFAULT_TIMEOUT = 15.0`. This parameter is required.
 - `heart_beat: bool`: Set to `True` to enable heart beat messages, `False` to disable. Used in conjunction with `heart_beat_delay`. The default is `True`.
 - `heart_beat_interval: float`: The interval in seconds between heart beat messages. Used in conjunction with `heart_beat`. Default is `pyheos.const.DEFAULT_HEART_BEAT = 10.0`
+- `heart_beat_max_failures: int`: The number of consecutive heart beat timeouts required to disconnect. Default is `pyheos.const.DEFAULT_HEART_BEAT_MAX_FAILURES = 1`.
 - `events: bool`: Set to `True` to enable event updates, `False` to disable. The default is `True`.
 - `all_progress_events: bool`: Set to `True` to receive media progress events, `False` to only receive media changed events. The default is `True`.
 - `dispatcher: pyheos.Dispatcher | None`: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.

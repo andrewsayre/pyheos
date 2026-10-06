@@ -12,6 +12,7 @@ DEFAULT_TIMEOUT: Final = 15.0
 DEFAULT_RECONNECT_DELAY: Final = 1.0
 DEFAULT_RECONNECT_ATTEMPTS: Final = 0  # Unlimited
 DEFAULT_HEART_BEAT: Final = 10.0
+DEFAULT_HEART_BEAT_MAX_FAILURES: Final = 1
 DEFAULT_STEP: Final = 5
 
 # Command error codes (keep discrete values as we do not control the list)

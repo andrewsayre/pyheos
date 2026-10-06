@@ -19,6 +19,7 @@ class HeosOptions:
         events: Set to True to enable event updates, False to disable. The default is True.
         heart_beat: Set to True to enable heart beat messages, False to disable. Used in conjunction with heart_beat_delay. The default is True.
         heart_beat_interval: The interval in seconds between heart beat messages. Used in conjunction with heart_beat.
+        heart_beat_max_failures: The number of consecutive heart beat timeouts required to disconnect.
         all_progress_events: Set to True to receive media progress events, False to only receive media changed events. The default is True.
         dispatcher: The dispatcher instance to use for event callbacks. If not provided, an internally created instance will be used.
         auto_reconnect: Set to True to automatically reconnect if the connection is lost. The default is False. Used in conjunction with auto_reconnect_delay.
@@ -42,6 +43,9 @@ class HeosOptions:
     )
     heart_beat: bool = field(default=True, kw_only=True)
     heart_beat_interval: float = field(default=const.DEFAULT_HEART_BEAT, kw_only=True)
+    heart_beat_max_failures: int = field(
+        default=const.DEFAULT_HEART_BEAT_MAX_FAILURES, kw_only=True
+    )
     credentials: Credentials | None = field(default=None, kw_only=True)
     auto_failover: bool = field(default=False, kw_only=True)
     auto_failover_hosts: Sequence[str] = field(default_factory=list, kw_only=True)
