@@ -438,6 +438,51 @@ async def test_reconnect_refreshes_players_and_groups(
     await heos.disconnect()
 
 
+@calls_player_commands()
+async def test_reconnect_retries_when_setup_after_connect_fails(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test reconnect keeps trying when a command during the connection setup fails.
+
+    The device accepts the connection again, but does not answer in time yet (e.g.
+    right after it rejoined Wi-Fi). The half-initialized connection must not count as
+    connected, otherwise the reconnect stops and the players stay unavailable."""
+    heos = Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            heart_beat=False,
+        )
+    )
+
+    signal_players = asyncio.Event()
+
+    async def handler(event: str, result: PlayerUpdateResult | None = None) -> None:
+        if event == EVENT_PLAYERS_CHANGED:
+            signal_players.set()
+
+    heos.dispatcher.connect(SignalType.CONTROLLER_EVENT, handler)
+
+    await heos.connect()
+    player = next(iter((await heos.get_players()).values()))
+    assert player.available
+
+    # Device comes back, but answers the account check during the setup too late
+    with mock_device.modify(c.COMMAND_ACCOUNT_CHECK, delay_response=0.3):
+        await mock_device.restart()
+        await asyncio.sleep(0.5)
+        assert not player.available
+        assert not signal_players.is_set()  # type: ignore[unreachable]
+
+    # Once the device answers in time again, the reconnect completes
+    await asyncio.wait_for(signal_players.wait(), 5)  # type: ignore[unreachable]
+    assert heos.connection_state == ConnectionState.CONNECTED
+    assert player.available
+    await heos.disconnect()
+
+
 async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
     """Test reconnect while waiting for events/responses."""
     heos = Heos(

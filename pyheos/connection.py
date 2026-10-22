@@ -122,14 +122,27 @@ class ConnectionBase(ABC):
         task.add_done_callback(self._log_callback_exception)
         return task
 
-    async def _reset(self) -> None:
-        """Reset the state of the connection."""
+    async def _reset(self, *, keep_current_task: bool = False) -> None:
+        """Reset the state of the connection.
+
+        Args:
+            keep_current_task: Do not cancel the calling task if it is a registered
+                task (e.g. the reconnect task resetting after a failed connection
+                setup); it keeps running and stays registered.
+        """
+        current_task = asyncio.current_task() if keep_current_task else None
+        keep: asyncio.Task[None] | None = None
         # Stop running tasks and clear list
         while self._running_tasks:
             task = self._running_tasks.pop()
+            if task is current_task:
+                keep = task
+                continue
             if task.cancel():
                 with suppress(asyncio.CancelledError):
                     await task
+        if keep is not None:
+            self._running_tasks.add(keep)
         # Close the writer
         if self._writer:
             self._writer.close()
@@ -308,7 +321,22 @@ class ConnectionBase(ABC):
         self._last_activity = datetime.now()
         self._state = ConnectionState.CONNECTED
         _LOGGER.debug("Connected to %s", self._host)
-        await self._on_connected()
+        try:
+            await self._on_connected()
+        except Exception as error:
+            # The connection is open, but the setup after connecting failed, e.g.
+            # a command timed out because the device was not ready yet. Do not leave
+            # the half-initialized connection CONNECTED: connect() would return early
+            # on the next attempt and the reconnect/failover logic would treat it as
+            # success, so players and groups would never be refreshed.
+            _LOGGER.debug(
+                "Setup after connecting to %s failed: %s: %s",
+                self._host,
+                type(error).__name__,
+                error,
+            )
+            await self._reset(keep_current_task=True)
+            raise
 
     async def disconnect(self) -> None:
         """Disconnect from the HEOS device."""
