@@ -287,6 +287,7 @@ class ConnectionBase(ABC):
         """Connect to the HEOS device."""
         if self._state is ConnectionState.CONNECTED:
             return
+        reconnecting = self._state is ConnectionState.RECONNECTING
         # Open the connection to the host
         try:
             reader, self._writer = await asyncio.wait_for(
@@ -308,7 +309,21 @@ class ConnectionBase(ABC):
         self._last_activity = datetime.now()
         self._state = ConnectionState.CONNECTED
         _LOGGER.debug("Connected to %s", self._host)
-        await self._on_connected()
+        try:
+            await self._on_connected()
+        except HeosError as error:
+            # Restoring state after a reconnect failed, but the connection is already
+            # marked connected, so retrying would return early and leave it stale.
+            # Disconnect from error instead, as a failed command write does: that
+            # resets the connection and starts a new reconnect.
+            if reconnecting and not any(
+                task.get_name() == "Disconnect From Error"
+                for task in self._running_tasks
+            ):
+                self._register_task(
+                    self._disconnect_from_error(error), "Disconnect From Error"
+                )
+            raise
 
     async def disconnect(self) -> None:
         """Disconnect from the HEOS device."""

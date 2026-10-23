@@ -40,6 +40,7 @@ from pyheos.error import (
 from pyheos.group import HeosGroup
 from pyheos.heos import Heos
 from pyheos.media import MediaItem, MediaMusicSource
+from pyheos.message import HeosCommand
 from pyheos.options import HeosOptions
 from pyheos.player import HeosPlayer, PlayerUpdateResult
 from pyheos.types import (
@@ -436,6 +437,165 @@ async def test_reconnect_refreshes_players_and_groups(
 
     await asyncio.gather(signal_players.wait(), signal_groups.wait())
     await heos.disconnect()
+
+
+def _reconnecting_heos(heart_beat: bool = False) -> Heos:
+    """Create a Heos instance that reconnects quickly."""
+    return Heos(
+        HeosOptions(
+            "127.0.0.1",
+            timeout=0.1,
+            auto_reconnect=True,
+            auto_reconnect_delay=0.1,
+            heart_beat=heart_beat,
+            heart_beat_interval=0.5,
+        )
+    )
+
+
+@calls_player_commands()
+async def test_reconnect_retries_after_post_connect_failure(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test a failure while restoring state after a reconnect is retried (#169)."""
+    heos = _reconnecting_heos()
+    connect_signal = connect_handler(
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
+    )
+    await heos.connect()
+    players = await heos.get_players()
+    connect_signal.clear()
+
+    # The first account check after the device comes back fails.
+    failing = mock_device.register(
+        c.COMMAND_ACCOUNT_CHECK, None, "other.unknown_command", replace=True
+    )
+    await mock_device.restart()
+    async with asyncio.timeout(2):
+        while failing.match_count == 0:
+            await asyncio.sleep(0.01)
+    mock_device.register(
+        c.COMMAND_ACCOUNT_CHECK, None, "system.check_account", replace=True
+    )
+
+    # The reconnect is retried, players are reloaded and connected is signaled.
+    async with asyncio.timeout(2):
+        await connect_signal.wait()
+    assert heos.connection_state == ConnectionState.CONNECTED
+    assert all(player.available for player in players.values())
+
+    await heos.disconnect()
+
+
+async def test_failed_post_connect_setup_does_not_stay_connected(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test a reconnect whose setup keeps failing is not reported as connected (#169)."""
+    heos = _reconnecting_heos()
+    await heos.connect()
+
+    failing = mock_device.register(
+        c.COMMAND_ACCOUNT_CHECK, None, "other.unknown_command", replace=True
+    )
+    await mock_device.restart()
+    async with asyncio.timeout(2):
+        while failing.match_count == 0:
+            await asyncio.sleep(0.01)
+    first_failures = failing.match_count
+
+    # Setup is retried rather than abandoned, and the state does not stay connected.
+    await asyncio.sleep(1)
+    assert failing.match_count > first_failures
+    async with asyncio.timeout(1):
+        while heos.connection_state is ConnectionState.CONNECTED:
+            await asyncio.sleep(0.01)
+
+    await heos.disconnect()
+
+
+async def test_disconnect_stops_reconnect_after_post_connect_failure(
+    mock_device: MockHeosDevice,
+) -> None:
+    """Test disconnect stops a reconnect that keeps failing after the socket opens."""
+    heos = _reconnecting_heos()
+    connect_signal = connect_handler(
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
+    )
+    await heos.connect()
+    connect_signal.clear()
+
+    failing = mock_device.register(
+        c.COMMAND_ACCOUNT_CHECK, None, "other.unknown_command", replace=True
+    )
+    await mock_device.restart()
+    async with asyncio.timeout(2):
+        while failing.match_count == 0:
+            await asyncio.sleep(0.01)
+
+    # Disconnect while the reconnect is waiting to retry, once the failed attempt
+    # has been torn down.
+    connection = heos._connection
+    async with asyncio.timeout(2):
+        while heos.connection_state is not ConnectionState.RECONNECTING or any(
+            task.get_name() == "Disconnect From Error"
+            for task in connection._running_tasks
+        ):
+            await asyncio.sleep(0.01)
+    async with asyncio.timeout(2):
+        await heos.disconnect()
+    mock_device.register(
+        c.COMMAND_ACCOUNT_CHECK, None, "system.check_account", replace=True
+    )
+    await asyncio.sleep(1)
+
+    assert heos.connection_state == ConnectionState.DISCONNECTED  # type: ignore[comparison-overlap]
+    assert not connect_signal.is_set()  # type: ignore[unreachable]
+    assert not heos._connection._running_tasks
+
+
+@pytest.mark.parametrize("attempt", range(10))
+async def test_reconnect_after_write_failure_during_setup(
+    mock_device: MockHeosDevice, attempt: int
+) -> None:
+    """Test a write failure while restoring state after a reconnect is retried.
+
+    The failed write schedules its own disconnect, so this checks that the two
+    teardowns do not wait on each other. Repeated because task order varies.
+    """
+    heos = _reconnecting_heos(heart_beat=True)
+    connect_signal = connect_handler(
+        heos, SignalType.HEOS_EVENT, SignalHeosEvent.CONNECTED
+    )
+    await heos.connect()
+    connect_signal.clear()
+
+    connection = heos._connection
+    failed = False
+
+    async def fail_write_once() -> None:
+        nonlocal failed
+        if failed:
+            return
+        failed = True
+        assert connection._writer is not None
+
+        def write(_: bytes) -> None:
+            raise ConnectionResetError("forced write failure")
+
+        connection._writer.write = write  # type: ignore[assignment]
+        await connection.command(HeosCommand(c.COMMAND_HEART_BEAT))
+
+    # Run before Heos restores its state, so the failure happens during setup.
+    connection._on_connected_callbacks.insert(0, fail_write_once)
+    await mock_device.restart()
+
+    async with asyncio.timeout(3):
+        while not (failed and connect_signal.is_set()):
+            await asyncio.sleep(0.01)
+    assert heos.connection_state == ConnectionState.CONNECTED
+
+    async with asyncio.timeout(2):
+        await heos.disconnect()
 
 
 async def test_reconnect_during_event(mock_device: MockHeosDevice) -> None:
